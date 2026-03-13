@@ -36,13 +36,14 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 4 — The Algorithm
+## Milestone 4 — The Algorithm ✅
 *The core execution engine that governs how the agent approaches every task.*
 
-- Port PAI Algorithm v3.7.0 into `instructions/algorithm.md`
-- Port behavioral steering rules into `instructions/steering-rules.md`
-- Write `pai-algorithm` plugin to inject both into the system prompt at session start
-- Validate mode dispatch (NATIVE / ALGORITHM / MINIMAL) works as expected
+- Port PAI Algorithm v3.7.0 into `instructions/algorithm.md` ✅
+- Port behavioral steering rules into `instructions/steering-rules.md` ✅
+- Update `instructions/AGENTS.md` with mode dispatch (NATIVE / ALGORITHM / MINIMAL) ✅
+- Add `scripts` to install.sh harness symlinks so voice.sh is reachable ✅
+- _(Deferred to M9)_ Write `pai-algorithm` plugin to inject algorithm + steering rules at session start
 
 ---
 
