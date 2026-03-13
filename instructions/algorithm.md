@@ -203,30 +203,27 @@ PLATFORM CAPABILITIES (consider alongside skills):
 
 | Capability | When to Select | How to Invoke |
 |------------|---------------|---------------|
-| **Plan agent** | Analysis or code review — need read-only safety (no edits, no bash) | `@plan` mention or set as session agent; can read all files, search, fetch web, run LSP diagnostics |
-| **General subagent** | Delegate a research task or multi-step workstream to run alongside main thread | Task tool delegation — full tools minus todo; returns result to primary agent |
-| **Explore subagent** | Complex filesystem or codebase search requiring multi-step navigation | Task tool delegation — optimized for search and exploration |
-| **Todo tool** | Track subtasks or criteria status across a long multi-step session | `todo` / `readtodo` tools — persistent task list within the session |
-| **Websearch** | Research, docs lookup, finding examples, checking latest API behavior | `websearch` tool — Exa AI backed; use freely |
-| **Webfetch** | Read a specific URL (docs page, GitHub file, API reference) | `webfetch` tool |
-| **LSP diagnostics** | Check type errors or lint issues mid-execution without running build | `lsp_diagnostics` tool |
-| **Bash** | Run tests, builds, linters, git commands, scripts | `bash` tool — full shell access |
-| **MCP tools** | Any capability from a configured MCP server (pai-skills, Figma, Linear, etc.) | Call tool by name directly — MCP tools appear alongside native tools |
-| **Custom tools** | Project-specific tools defined in `.opencode/tools/` | Call tool by name directly |
-| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | Native `skill` tool — lazy-loads the skill's SKILL.md on demand |
+| **Plan agent** | Analysis or code review — enforces read-only (no edits, no bash, must ask before any change) | `@plan` in TUI or configure as session agent; reads files, searches, fetches web, runs LSP diagnostics |
+| **Parallel subagents** | Multiple independent workstreams, competing hypotheses, parallel research | Multiple `agent` tool calls in a single message — each runs concurrently as a stateless Task agent |
+| **Task agent (single)** | Delegate one bounded read/search task without consuming primary context | `agent` tool — Task agents get: glob, grep, ls, view, sourcegraph. No bash, no write, no webfetch |
+| **Webfetch** | Read a specific URL (docs page, GitHub file, API reference) | `webfetch` tool — built-in, always available |
+| **Websearch** | Research, docs lookup, finding examples | `websearch` tool — requires OpenCode hosted plan (Exa AI); verify availability before selecting |
+| **LSP diagnostics** | Check type errors, lint issues, references, call hierarchy mid-execution | `diagnostics` tool — experimental; requires LSP configured in opencode.json |
+| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | `bash` tool — full shell access via configured shell |
+| **MCP tools** | Any capability from a configured MCP server (pai-skills, Figma, Linear, etc.) | Call tool by name directly — named `{serverName}_{toolName}`; appears alongside built-ins |
+| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | `skill` tool — lazy-loads the skill's SKILL.md by name on demand |
 | **Custom commands** | Parameterized slash command workflows with file/shell injection | `/commandname [args]` — supports `$ARGUMENTS`, `!shellcmd`, `@file` templates |
 
-> **Parallelism gap:** OpenCode has no native background or parallel agent execution (open issue #5887). Worktree isolation and async delegation require community plugins not yet in Holocron. Until Holocron adds these (see roadmap), sequential delegation via General/Explore subagents is the parallelism primitive.
+> **Note on Task agents:** Subagents spawned via the `agent` tool are read-only by design (glob, grep, ls, view only). They cannot run bash, write files, or fetch web. For tasks requiring those capabilities, use the primary agent or MCP tools.
 
 GUIDANCE:
 
 - Use the **Plan agent** for any review, audit, or analysis task — it enforces read-only by design.
-- Use **General/Explore subagents** to offload research or exploration while the primary agent continues work.
-- Use the **Todo tool** on Extended+ effort runs to maintain a live checklist the agent can update across phases.
+- **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
 - Use **skills** for any domain-specific workflow — check `~/.opencode/skills/` before building logic inline.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
 - Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
-- **Websearch is free** — use it liberally for docs, examples, and current behavior before reasoning from memory.
+- Verify **websearch** availability before selecting — requires OpenCode hosted plan. Use **webfetch** as the reliable fallback for specific URLs.
 
 OUTPUT:
 

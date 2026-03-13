@@ -131,16 +131,13 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 
 ---
 
-## Feature — Parallel & Background Agent Execution
-*Fill the platform gap: OpenCode has no native background or parallel agent execution (issue #5887).*
+## Feature — Worktree Isolation & Background Delegation
+*Parallel agent execution is native in OpenCode (multiple `agent` tool calls in one message). What's missing is worktree isolation for file-safe parallelism and true background/async delegation.*
 
-OpenCode's parallelism story requires community plugins. Until the platform ships native support, Holocron should provide a first-class solution:
-
-- Evaluate `kdcokenny/opencode-background-agents` — persists delegation results to `~/.local/share/opencode/delegations/` as markdown; assess reliability and retrieval UX
-- Evaluate `kdcokenny/opencode-worktree` — creates isolated git worktrees and auto-spawns terminals; assess fit for Algorithm BUILD phase parallelism
+- Evaluate `kdcokenny/opencode-worktree` — creates isolated git worktrees and auto-spawns terminals; assess fit for Algorithm BUILD phase when multiple agents need to edit different files simultaneously
 - Evaluate `SpillwaveSolutions/parallel-worktrees` — runs subagents across worktrees then syncs; relevant for `/batch`-style multi-file work
-- If no plugin meets the bar: write a `holocron-parallel` plugin that wraps background delegation with a clean API the Algorithm can reference
-- Update `algorithm.md` Platform Capabilities table once a solution is installed — replace the parallelism gap note with concrete invocation instructions
+- Evaluate `kdcokenny/opencode-background-agents` — async delegation with results persisted to `~/.local/share/opencode/delegations/` as markdown; assess UX for long-running tasks
+- Update `algorithm.md` Platform Capabilities table once a worktree solution is installed
 - _(Blocked on M9 plugin evaluation pass)_
 
 ---
