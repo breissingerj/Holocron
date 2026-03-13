@@ -1,0 +1,26 @@
+{
+  "_comment": "Holocron voice server configuration. Copy to config.json and fill in your ElevenLabs voice IDs. Set HOLOCRON_VOICE_CONFIG env var to override the path.",
+  "desktopNotifications": true,
+  "voices": {
+    "main": {
+      "voiceId": "YOUR_ELEVENLABS_VOICE_ID",
+      "voiceName": "Default",
+      "stability": 0.50,
+      "similarity_boost": 0.75,
+      "style": 0.0,
+      "speed": 1.0,
+      "use_speaker_boost": true,
+      "volume": 1.0
+    },
+    "engineer": {
+      "voiceId": "YOUR_ELEVENLABS_VOICE_ID",
+      "voiceName": "Engineer",
+      "stability": 0.70,
+      "similarity_boost": 0.85,
+      "style": 0.0,
+      "speed": 1.0,
+      "use_speaker_boost": true,
+      "volume": 1.0
+    }
+  }
+}

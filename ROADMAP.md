@@ -14,7 +14,19 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 2 — Plugin Installation
+## Milestone 2 — Voice & Notification System ✅
+*ElevenLabs TTS voice server, 5-level volume system, and cross-harness notification pipeline.*
+
+- Port PAI VoiceServer to `VoiceServer/` — config driven by `config.json` (not `settings.json`)
+- Port volume level system to `tools/VolumeLevel.ts` + `tools/ToggleMute.ts` (uses `$HOLOCRON_MEMORY_DIR`)
+- Port `scripts/voice.sh` announcement helper
+- Port `skills/volume/SKILL.md` for harness-native volume control
+- Config resolution: `$HOLOCRON_VOICE_CONFIG` → `VoiceServer/config.json` → fallback defaults
+- Notification icon: `$HOLOCRON_NOTIFICATION_ICON` → `assets/icon.png` → omit
+
+---
+
+## Milestone 3 — Plugin Installation
 *Critical and quality-of-life plugins installed and verified.*
 
 - Install critical safety plugins: CC Safety Net, Envsitter Guard
@@ -23,7 +35,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 3 — The Algorithm
+## Milestone 4 — The Algorithm
 *The core execution engine that governs how the agent approaches every task.*
 
 - Port PAI Algorithm v3.7.0 into `instructions/algorithm.md`
@@ -33,7 +45,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 4 — Skills & Commands
+## Milestone 5 — Skills & Commands
 *Domain-specific capabilities and slash commands that give the agent leverage.*
 
 - Port PAI skill files from `~/.claude/skills/` into `skills/`
@@ -43,10 +55,10 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 5 — Personal Context Loading
+## Milestone 6 — Personal Context Loading
 *What makes it personal — relationship memory, learning signals, and active work injected at session start.*
 
-- Design `OPENCODE_MEMORY_DIR` env var convention pointing to private memory repo
+- Design `HOLOCRON_MEMORY_DIR` env var convention pointing to private memory repo
 - Write `pai-context-loader` plugin to read and inject at session start:
   - Relationship memory
   - Recent learning signals
@@ -56,7 +68,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 6 — Memory & Work Tracking
+## Milestone 7 — Memory & Work Tracking
 *Persistent capture of work, learning, and decisions across sessions.*
 
 - Install Simple Memory plugin for learning/relationship captures
@@ -66,7 +78,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 7 — Learning Feedback Loop
+## Milestone 8 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
 - Write `pai-learning-capture` plugin:
@@ -76,15 +88,6 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
   - Learning write trigger on low ratings
 - Port Algorithm reflection JSONL format
 - Validate signals accumulate across sessions
-
----
-
-## Milestone 8 — Voice & Notifications
-*Ambient feedback — knowing when the agent is done without watching the screen.*
-
-- Install Smart Voice Notify for baseline OS notifications
-- Write `pai-voice` plugin to call ElevenLabs server (`localhost:8888`) on completion
-- Validate voice fires on task completion, silent on subagent work
 
 ---
 

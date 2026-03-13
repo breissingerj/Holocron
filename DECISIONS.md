@@ -14,6 +14,34 @@ Each entry has:
 
 ---
 
+## 2026-03-14
+
+
+### Port voice server vs use OpenCode notification plugin
+
+**Decision:** Port the full PAI VoiceServer (Bun/ElevenLabs TTS) into Holocron rather than relying on the OpenCode Smart Voice Notify plugin.
+
+**Options considered:**
+- Use Smart Voice Notify plugin — already exists, zero-effort integration, but limited to OS notifications with no TTS and no per-voice persona control
+- Port PAI voice server — more work, but carries over the full 3-tier voice resolution, emotional presets, pronunciation system, and 5-level volume control
+
+**Rationale:** The voice system is a core part of the PAI experience, not a nice-to-have. Smart Voice Notify handles OS banners but not ElevenLabs TTS, so it can't replicate the persona voice behavior (engineer vs architect vs default voice per agent). Porting the full server also keeps the voice system harness-agnostic — it runs as a standalone Bun service at `localhost:8888` that any harness can curl.
+
+---
+
+### Config isolation: config.json instead of settings.json
+
+**Decision:** Voice config lives in `VoiceServer/config.json` (or `$HOLOCRON_VOICE_CONFIG`) rather than inside a settings.json file.
+
+**Options considered:**
+- Read from `~/.opencode/settings.json` — mirrors PAI's `~/.claude/settings.json` pattern but ties config to a specific harness
+- Read from `~/.holocron/config.json` — harness-agnostic but adds another dotfolder
+- Read from `VoiceServer/config.json` local to the repo — self-contained, ships with sensible defaults via `config.json.example`, overridable via env var
+
+**Rationale:** Keeping config local to the `VoiceServer/` directory means the voice system is self-contained. No harness needs to know about it. The `config.json.example` pattern makes setup obvious on a new machine without leaking personal voice IDs into the public repo.
+
+---
+
 ## 2026-03-13
 
 
