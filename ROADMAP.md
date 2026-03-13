@@ -2,6 +2,8 @@
 
 Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure), built to be harness-agnostic.
 
+> **Plugin philosophy:** Don't install plugins speculatively. Before building any capability from scratch, check `PLUGINS.md` to see if a well-supported plugin already covers the scope. Install plugins just-in-time — when the work demands it.
+
 ---
 
 ## Milestone 1 — Scaffold & Symlinking ✅
@@ -26,11 +28,10 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 3 — Plugin Installation
-*Critical and quality-of-life plugins installed and verified.*
+## Milestone 3 — Safety Baseline
+*Minimum security guardrails before any real work happens in the harness.*
 
-- Install critical safety plugins: CC Safety Net, Envsitter Guard
-- Install quality-of-life plugins: Dynamic Context Pruning, opencode-snip, Oh My OpenCode Slim, Worktree
+- Install CC Safety Net — intercepts destructive git/filesystem commands before execution
 - Verify OpenCode launches cleanly with Holocron symlinked in
 
 ---
@@ -91,7 +92,20 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 9 — Agent Personas
+## Milestone 9 — Quality-of-Life Plugin Pass
+*Evaluate and install workflow plugins deferred from M3. Install only what repeated work has proven necessary.*
+
+See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
+
+- **Dynamic Context Pruning** — prunes stale tool outputs mid-session; useful on long tasks
+- **opencode-snip** — truncates verbose shell output; useful in CLI-heavy workflows
+- **Oh My OpenCode Slim** — pre-built subagents + LSP/AST tools + tmux integration
+- **Worktree** — git worktree automation with auto terminal spawn/cleanup
+- **Envsitter Guard** — blocks agent from reading/writing `.env*` files
+
+---
+
+## Milestone 10 — Agent Personas
 *Specialized agents with distinct identities for different types of work.*
 
 - Define custom agent persona files in `skills/agents/` for core PAI agents:
@@ -101,7 +115,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 10 — Hardening & Portability
+## Milestone 11 — Hardening & Portability
 *Make Holocron installable on a new machine in under 10 minutes.*
 
 - Finalize `install.sh` with full setup (clone, symlink, env vars, plugin installs)

@@ -17,7 +17,7 @@ declare -A HARNESSES
 HARNESSES["opencode"]="$HOME/.opencode"
 # HARNESSES["claude-code"]="$HOME/.claude"   # future
 
-# ── Helper ───────────────────────────────────────────────────────────────────
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 link_dir() {
   local src="$1"
@@ -28,6 +28,21 @@ link_dir() {
     echo "  ⚠  $label already symlinked — skipping"
   elif [[ -e "$dest" ]]; then
     echo "  ⚠  $label exists as a real directory — skipping (remove manually to replace)"
+  else
+    ln -s "$src" "$dest"
+    echo "  ✓  $label → $dest"
+  fi
+}
+
+link_file() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+
+  if [[ -L "$dest" ]]; then
+    echo "  ⚠  $label already symlinked — skipping"
+  elif [[ -e "$dest" ]]; then
+    echo "  ⚠  $label exists as a real file — skipping (remove manually to replace)"
   else
     ln -s "$src" "$dest"
     echo "  ✓  $label → $dest"
@@ -59,5 +74,19 @@ for harness in "${!HARNESSES[@]}"; do
   done
   echo ""
 done
+
+# ── Harness-specific file symlinks ───────────────────────────────────────────
+# Some harnesses read specific files from locations outside the main harness
+# directory. These are symlinked individually.
+
+echo "Harness config files"
+
+# OpenCode reads AGENTS.md from ~/.config/opencode/AGENTS.md as its primary
+# global instruction file (takes precedence over ~/.claude/CLAUDE.md fallback).
+if [[ -n "${HARNESSES[opencode]+_}" ]]; then
+  mkdir -p "$HOME/.config/opencode"
+  link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "$HOME/.config/opencode/AGENTS.md" "opencode/AGENTS.md"
+fi
+echo ""
 
 echo "Done. Restart your agent harness to pick up the new config."

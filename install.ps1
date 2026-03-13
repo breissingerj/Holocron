@@ -37,6 +37,22 @@ function Link-Dir {
   }
 }
 
+function Link-File {
+  param($Src, $Dest, $Label)
+
+  if (Test-Path $Dest) {
+    $item = Get-Item $Dest
+    if ($item.LinkType) {
+      Write-Host "  ⚠  $Label already linked — skipping"
+    } else {
+      Write-Host "  ⚠  $Label exists as a real file — skipping (remove manually to replace)"
+    }
+  } else {
+    New-Item -ItemType SymbolicLink -Path $Dest -Target $Src | Out-Null
+    Write-Host "  ✓  $Label → $Dest"
+  }
+}
+
 # ── Memory dir ───────────────────────────────────────────────────────────────
 
 Write-Host "Memory directory"
@@ -62,5 +78,20 @@ foreach ($harness in $Harnesses.Keys) {
   }
   Write-Host ""
 }
+
+# ── Harness-specific file symlinks ───────────────────────────────────────────
+# Some harnesses read specific files from locations outside the main harness
+# directory. These are symlinked individually.
+
+Write-Host "Harness config files"
+
+# OpenCode reads AGENTS.md from %APPDATA%\opencode\AGENTS.md as its primary
+# global instruction file (takes precedence over ~/.claude/CLAUDE.md fallback).
+if ($Harnesses.ContainsKey("opencode")) {
+  $OpenCodeConfig = "$env:APPDATA\opencode"
+  New-Item -ItemType Directory -Force -Path $OpenCodeConfig | Out-Null
+  Link-File "$HolocronDir\instructions\AGENTS.md" "$OpenCodeConfig\AGENTS.md" "opencode/AGENTS.md"
+}
+Write-Host ""
 
 Write-Host "Done. Restart your agent harness to pick up the new config."
