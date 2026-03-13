@@ -4,18 +4,26 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 1 — Scaffold
-*Get the repo structure in place and OpenCode running with a baseline config.*
+## Milestone 1 — Scaffold & Symlinking ✅
+*Directory structure, cross-platform install scripts, and harness symlinks in place.*
 
 - Define and create the directory structure (`skills/`, `commands/`, `plugins/`, `instructions/`)
-- Write `install.sh` to symlink config into `~/.opencode/`
+- Write `install.sh` (Mac/Linux) and `install.ps1` (Windows) to symlink config into the active harness
+- Support Mac, Linux, and Windows out of the box
+- Verify symlinks resolve correctly on each platform
+
+---
+
+## Milestone 2 — Plugin Installation
+*Critical and quality-of-life plugins installed and verified.*
+
 - Install critical safety plugins: CC Safety Net, Envsitter Guard
 - Install quality-of-life plugins: Dynamic Context Pruning, opencode-snip, Oh My OpenCode Slim, Worktree
 - Verify OpenCode launches cleanly with Holocron symlinked in
 
 ---
 
-## Milestone 2 — The Algorithm
+## Milestone 3 — The Algorithm
 *The core execution engine that governs how the agent approaches every task.*
 
 - Port PAI Algorithm v3.7.0 into `instructions/algorithm.md`
@@ -25,7 +33,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 3 — Skills & Commands
+## Milestone 4 — Skills & Commands
 *Domain-specific capabilities and slash commands that give the agent leverage.*
 
 - Port PAI skill files from `~/.claude/skills/` into `skills/`
@@ -35,7 +43,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 4 — Personal Context Loading
+## Milestone 5 — Personal Context Loading
 *What makes it personal — relationship memory, learning signals, and active work injected at session start.*
 
 - Design `OPENCODE_MEMORY_DIR` env var convention pointing to private memory repo
@@ -48,7 +56,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 5 — Memory & Work Tracking
+## Milestone 6 — Memory & Work Tracking
 *Persistent capture of work, learning, and decisions across sessions.*
 
 - Install Simple Memory plugin for learning/relationship captures
@@ -58,7 +66,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 6 — Learning Feedback Loop
+## Milestone 7 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
 - Write `pai-learning-capture` plugin:
@@ -71,7 +79,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 7 — Voice & Notifications
+## Milestone 8 — Voice & Notifications
 *Ambient feedback — knowing when the agent is done without watching the screen.*
 
 - Install Smart Voice Notify for baseline OS notifications
@@ -80,7 +88,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 8 — Agent Personas
+## Milestone 9 — Agent Personas
 *Specialized agents with distinct identities for different types of work.*
 
 - Define custom agent persona files in `skills/agents/` for core PAI agents:
@@ -90,7 +98,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 9 — Hardening & Portability
+## Milestone 10 — Hardening & Portability
 *Make Holocron installable on a new machine in under 10 minutes.*
 
 - Finalize `install.sh` with full setup (clone, symlink, env vars, plugin installs)

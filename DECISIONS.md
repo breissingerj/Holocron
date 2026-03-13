@@ -16,23 +16,6 @@ Each entry has:
 
 ## 2026-03-13
 
-### Name: Holocron
-
-**Decision:** Name the repo `Holocron`.
-
-**Options considered:**
-- `mimir` — Norse all-wise head Odin consults for counsel
-- `muninn` — Odin's Memory raven, whispers what it remembers
-- `grimoire` — personal wizard spellbook accumulated over years
-- `daemon` — Greek guiding spirit + Unix background process double meaning
-- `ossus` — the great Jedi library planet
-- `wayfinder` — Star Wars artifact that guides you to otherwise inaccessible places
-- `genius` — Roman animating spirit and creative force of a person
-- `anima` — Latin breath of life that animates inert things
-
-**Rationale:** A Jedi Holocron stores the knowledge *and personality* of its creator — you access it and it speaks in their voice. That's exactly what this repo is: my knowledge and character, loadable into any agent. Strong pop culture recognition, clean as a repo name, and the metaphor holds perfectly.
-
----
 
 ### Two-repo structure: public config + private memory
 
