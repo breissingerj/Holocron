@@ -131,6 +131,30 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 
 ---
 
+## Feature — Parallel & Background Agent Execution
+*Fill the platform gap: OpenCode has no native background or parallel agent execution (issue #5887).*
+
+OpenCode's parallelism story requires community plugins. Until the platform ships native support, Holocron should provide a first-class solution:
+
+- Evaluate `kdcokenny/opencode-background-agents` — persists delegation results to `~/.local/share/opencode/delegations/` as markdown; assess reliability and retrieval UX
+- Evaluate `kdcokenny/opencode-worktree` — creates isolated git worktrees and auto-spawns terminals; assess fit for Algorithm BUILD phase parallelism
+- Evaluate `SpillwaveSolutions/parallel-worktrees` — runs subagents across worktrees then syncs; relevant for `/batch`-style multi-file work
+- If no plugin meets the bar: write a `holocron-parallel` plugin that wraps background delegation with a clean API the Algorithm can reference
+- Update `algorithm.md` Platform Capabilities table once a solution is installed — replace the parallelism gap note with concrete invocation instructions
+- _(Blocked on M9 plugin evaluation pass)_
+
+---
+
+## Feature — Code Review Agent (/simplify equivalent)
+*PAI's /simplify runs 3 agents reviewing quality, reuse, and efficiency after code changes. No OpenCode equivalent exists.*
+
+- Define a hidden custom agent `reviewer` in Holocron's agent config — read-only (Plan permissions), focused on code quality, reuse, and efficiency
+- Trigger: primary agent invokes `@reviewer` after BUILD/EXECUTE phases on any code-producing Algorithm run
+- Optionally add a `/review` custom command that wraps the agent invocation for user-facing use
+- Update `algorithm.md` guidance to recommend invoking `@reviewer` as a near-default on code-producing runs (mirrors the `/simplify should be near-default` guidance from PAI)
+
+---
+
 ## Feature — Cross-Platform Voice & Notifications
 *`voice.sh` and VoiceServer are the canonical notification layer. Ensure they work everywhere.*
 
