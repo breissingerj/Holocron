@@ -45,6 +45,11 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 - Add `scripts` to install.sh harness symlinks so voice.sh is reachable ✅
 - _(Deferred to M9)_ Write `pai-algorithm` plugin to inject algorithm + steering rules at session start
 
+**Open items — apply back to algorithm.md when resolved:**
+- _(Blocked on M5)_ Capability invocation is currently described as "read skill's SKILL.md and follow the workflow" — weak compared to PAI's tool-enforced invocation. Strengthen once the skills MCP server (M5) gives the agent a real invocation mechanism.
+- _(Blocked on M6)_ "Address user by name" in steering-rules.md is generic. Once M6 injects user identity at session start, update steering-rules.md to reference the injected name.
+- _(Blocked on M7)_ Reflection JSONL in LEARN phase writes to `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/` — this directory won't exist until M7 defines the MEMORY/ structure. Add `mkdir -p` guard or scaffold the path in M7 setup.
+
 ---
 
 ## Milestone 5 — Skills & Commands
@@ -123,3 +128,16 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 - Document setup in README
 - Test clean install on a fresh shell
 - Tag `v1.0.0`
+
+---
+
+## Feature — Cross-Platform Voice & Notifications
+*`voice.sh` and VoiceServer are the canonical notification layer. Ensure they work everywhere.*
+
+The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (ElevenLabs + macOS notification center). Before v1.0.0, harden for all target platforms:
+
+- **Linux**: Verify ElevenLabs curl works; replace macOS notification call with `notify-send` or equivalent
+- **Windows**: `install.ps1` exists but voice.sh is bash — port announcement logic to PowerShell or add a Windows-native wrapper script
+- **No-server fallback**: When VoiceServer is not running, `voice.sh` should degrade gracefully (silent, no crash) rather than surfacing a curl error to the agent
+- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established (avoids assuming `~/.opencode` is always the harness dir)
+- **Test matrix**: Mac + ElevenLabs running, Mac + server down, Linux, Windows
