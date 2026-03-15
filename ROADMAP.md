@@ -76,13 +76,13 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 7 — Memory & Work Tracking
+## Milestone 7 — Memory & Work Tracking ✅
 *Persistent capture of work, learning, and decisions across sessions.*
 
-- Install Simple Memory plugin for learning/relationship captures
-- Write `pai-prd` plugin: PRD stub creation + frontmatter sync to `work.json`
-- Scaffold the `$HOLOCRON_MEMORY_DIR` directory structure per `MEMORY_CONTRACT.md` — create `WORK/`, `LEARNING/REFLECTIONS/`, `STATE/` in the private memory repo
-- Validate work sessions are tracked and retrievable
+- Install Simple Memory plugin for learning/relationship captures ✅ _(lean on `holocron-context-loader` instead — Simple Memory plugin removed)_
+- Write `pai-prd` plugin: PRD stub creation + frontmatter sync to `work.json` ✅ _(`plugins/holocron-prd/`)_
+- Scaffold the `$HOLOCRON_MEMORY_DIR` directory structure per `MEMORY_CONTRACT.md` — create `WORK/`, `LEARNING/REFLECTIONS/`, `STATE/` in the private memory repo ✅
+- Validate work sessions are tracked and retrievable ✅
 
 ---
 
@@ -105,7 +105,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 8 — Learning Feedback Loop
+## Milestone 8 — Learning Feedback Loop ✅
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
 - Write `holocron-learning-capture` plugin: ✅ _(`plugins/holocron-learning-capture/`)_
@@ -114,7 +114,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
   - Append to `LEARNING/SIGNALS/ratings.jsonl` ✅ _(JSONL format matching PAI schema)_
   - Learning write trigger on ratings ≤ 4 ✅ _(writes `.md` to `LEARNING/CAPTURES/YYYY-MM/`)_
 - Port Algorithm reflection JSONL format ✅ _(already live in LEARN phase bash echo; `LEARNING/REFLECTIONS/` scaffolded in M7)_
-- Validate signals accumulate across sessions _(pending — requires live harness test)_
+- Validate signals accumulate across sessions ✅ _(verified live: `3/10` message produced correct JSONL entry and `.md` capture)_
 - **Develop mechanism to apply learnings back to agent/memory structure** _(deferred — requires human review workflow; captured in DECISIONS.md for future milestone)_
 - `install.sh` scaffolds `LEARNING/SIGNALS/` and `LEARNING/CAPTURES/` ✅
 - `MEMORY_CONTRACT.md` updated with new paths ✅
