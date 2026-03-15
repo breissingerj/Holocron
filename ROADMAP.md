@@ -36,13 +36,19 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 4 — The Algorithm
+## Milestone 4 — The Algorithm ✅
 *The core execution engine that governs how the agent approaches every task.*
 
-- Port PAI Algorithm v3.7.0 into `instructions/algorithm.md`
-- Port behavioral steering rules into `instructions/steering-rules.md`
-- Write `pai-algorithm` plugin to inject both into the system prompt at session start
-- Validate mode dispatch (NATIVE / ALGORITHM / MINIMAL) works as expected
+- Port PAI Algorithm v3.7.0 into `instructions/algorithm.md` ✅
+- Port behavioral steering rules into `instructions/steering-rules.md` ✅
+- Update `instructions/AGENTS.md` with mode dispatch (NATIVE / ALGORITHM / MINIMAL) ✅
+- Add `scripts` to install.sh harness symlinks so voice.sh is reachable ✅
+- _(Deferred to M9)_ Write `pai-algorithm` plugin to inject algorithm + steering rules at session start
+
+**Open items — apply back to algorithm.md when resolved:**
+- _(Blocked on M5)_ Capability invocation is currently described as "read skill's SKILL.md and follow the workflow" — weak compared to PAI's tool-enforced invocation. Strengthen once the skills MCP server (M5) gives the agent a real invocation mechanism.
+- _(Blocked on M6)_ "Address user by name" in steering-rules.md is generic. Once M6 injects user identity at session start, update steering-rules.md to reference the injected name.
+- _(Blocked on M7)_ Reflection JSONL in LEARN phase writes to `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/` — this directory won't exist until M7 defines the MEMORY/ structure. Add `mkdir -p` guard or scaffold the path in M7 setup.
 
 ---
 
@@ -74,7 +80,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 - Install Simple Memory plugin for learning/relationship captures
 - Write `pai-prd` plugin: PRD stub creation + frontmatter sync to `work.json`
-- Define `MEMORY/` directory structure in the private memory repo
+- Scaffold the `$HOLOCRON_MEMORY_DIR` directory structure per `MEMORY_CONTRACT.md` — create `WORK/`, `LEARNING/REFLECTIONS/`, `STATE/` in the private memory repo
 - Validate work sessions are tracked and retrievable
 
 ---
@@ -122,3 +128,37 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 - Document setup in README
 - Test clean install on a fresh shell
 - Tag `v1.0.0`
+
+---
+
+## Feature — Worktree Isolation & Background Delegation
+*Parallel agent execution is native in OpenCode (multiple `agent` tool calls in one message). What's missing is worktree isolation for file-safe parallelism and true background/async delegation.*
+
+- Evaluate `kdcokenny/opencode-worktree` — creates isolated git worktrees and auto-spawns terminals; assess fit for Algorithm BUILD phase when multiple agents need to edit different files simultaneously
+- Evaluate `SpillwaveSolutions/parallel-worktrees` — runs subagents across worktrees then syncs; relevant for `/batch`-style multi-file work
+- Evaluate `kdcokenny/opencode-background-agents` — async delegation with results persisted to `~/.local/share/opencode/delegations/` as markdown; assess UX for long-running tasks
+- Update `algorithm.md` Platform Capabilities table once a worktree solution is installed
+- _(Blocked on M9 plugin evaluation pass)_
+
+---
+
+## Feature — Code Review Agent (/simplify equivalent)
+*PAI's /simplify runs 3 agents reviewing quality, reuse, and efficiency after code changes. No OpenCode equivalent exists.*
+
+- Define a hidden custom agent `reviewer` in Holocron's agent config — read-only (Plan permissions), focused on code quality, reuse, and efficiency
+- Trigger: primary agent invokes `@reviewer` after BUILD/EXECUTE phases on any code-producing Algorithm run
+- Optionally add a `/review` custom command that wraps the agent invocation for user-facing use
+- Update `algorithm.md` guidance to recommend invoking `@reviewer` as a near-default on code-producing runs (mirrors the `/simplify should be near-default` guidance from PAI)
+
+---
+
+## Feature — Cross-Platform Voice & Notifications
+*`voice.sh` and VoiceServer are the canonical notification layer. Ensure they work everywhere.*
+
+The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (ElevenLabs + macOS notification center). Before v1.0.0, harden for all target platforms:
+
+- **Linux**: Verify ElevenLabs curl works; replace macOS notification call with `notify-send` or equivalent
+- **Windows**: `install.ps1` exists but voice.sh is bash — port announcement logic to PowerShell or add a Windows-native wrapper script
+- **No-server fallback**: When VoiceServer is not running, `voice.sh` should degrade gracefully (silent, no crash) rather than surfacing a curl error to the agent
+- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established (avoids assuming `~/.opencode` is always the harness dir)
+- **Test matrix**: Mac + ElevenLabs running, Mac + server down, Linux, Windows

@@ -63,7 +63,7 @@ echo ""
 
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
-DIRS=("skills" "commands" "plugins" "instructions")
+DIRS=("skills" "commands" "plugins" "instructions" "scripts")
 
 for harness in "${!HARNESSES[@]}"; do
   target="${HARNESSES[$harness]}"
