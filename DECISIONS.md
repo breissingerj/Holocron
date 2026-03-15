@@ -194,3 +194,13 @@ Each entry has:
 - **Decision** — Do not pursue a custom TUI panel or alternative frontend application for PRD tracking at this time. Defer to a future milestone once the OpenCode plugin surface matures or a standalone tool is warranted.
 - **Options considered** — (1) External watcher script (`scripts/prd-watch.sh`) rendering a live criteria dashboard in a second terminal pane — viable but adds operational friction (must open a second pane manually). (2) Standalone web UI reading `WORK/` directly — decoupled but significant scope for marginal gain. (3) Wait for OpenCode to add a `tui.panel` hook — most elegant, zero Holocron code required.
 - **Rationale** — The existing `STATE/work.json` sync (M7) and the agent's native TodoWrite tool already provide adequate work visibility within the current workflow. Building a parallel UI before the pain is felt concretely would be premature. Revisit when: (a) OpenCode adds a panel extension API, (b) the number of simultaneous PRDs makes terminal-only tracking genuinely painful, or (c) Holocron is used by more than one person.
+
+---
+
+## 2026-03-15
+
+### Add Claude Code as a supported harness
+
+- **Decision** — Added `claude-code` to the `HARNESSES` map in `install.sh` targeting `~/.config/Claude`, and added a `link_file` block to symlink `instructions/AGENTS.md` to `~/.config/Claude/AGENTS.md`.
+- **Options considered** — (1) Keep Claude Code unsupported and maintain a separate manual copy of AGENTS.md. (2) Create a separate `install-claude-code.sh` script. (3) Add it directly to the existing `HARNESSES` map alongside opencode.
+- **Rationale** — Claude Code reads its global instruction file from `~/.config/Claude/AGENTS.md` and injects it into every session via the system prompt. Without this symlink, Holocron's behavioral rules (execution modes, algorithm reference, memory location rules) are not loaded when using Claude Code. Adding it to the existing harness map keeps install.sh as the single source of truth for all harness targets — consistent with the harness-agnostic design principle.

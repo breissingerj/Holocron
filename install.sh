@@ -15,7 +15,7 @@ echo ""
 
 declare -A HARNESSES
 HARNESSES["opencode"]="$HOME/.config/opencode"
-# HARNESSES["claude-code"]="$HOME/.claude"   # future
+HARNESSES["claude-code"]="$HOME/.config/Claude"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -98,6 +98,12 @@ if [[ -n "${HARNESSES[opencode]+_}" ]]; then
   else
     echo "  ℹ  opencode.json skipped — add it to \$HOLOCRON_MEMORY_DIR to enable"
   fi
+fi
+
+# Claude Code reads AGENTS.md from ~/.config/Claude/AGENTS.md as its global
+# instruction file (injected into every session via the system prompt).
+if [[ -n "${HARNESSES[claude-code]+_}" ]]; then
+  link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "${HARNESSES[claude-code]}/AGENTS.md" "claude-code/AGENTS.md"
 fi
 echo ""
 
