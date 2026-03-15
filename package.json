@@ -1,0 +1,16 @@
+{
+  "name": "holocron",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "plugins/holocron-prd",
+    "plugins/holocron-context-loader"
+  ],
+  "scripts": {
+    "test": "bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests",
+    "test:watch": "bun test --watch plugins/holocron-prd/tests plugins/holocron-context-loader/tests"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}
