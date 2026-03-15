@@ -108,14 +108,17 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 8 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
-- Write `holocron-learning-capture` plugin:
-  - Explicit rating detection from user prompts
-  - Haiku inference for implicit sentiment
-  - Append to `MEMORY/SIGNALS/ratings.jsonl`
-  - Learning write trigger on low ratings
-- Port Algorithm reflection JSONL format
-- Validate signals accumulate across sessions
-- **Develop mechanism to apply learnings back to agent/memory structure** where relevant (e.g. updating steering rules or specific skills based on repeated feedback).
+- Write `holocron-learning-capture` plugin: ✅ _(`plugins/holocron-learning-capture/`)_
+  - Explicit rating detection from user prompts ✅ _(regex matches `N/10`, `rate: N`, `rating: N`, `score: N`)_
+  - In-process keyword heuristic for implicit sentiment ✅ _(correction → 3, positive → 8; no external API needed)_
+  - Append to `LEARNING/SIGNALS/ratings.jsonl` ✅ _(JSONL format matching PAI schema)_
+  - Learning write trigger on ratings ≤ 4 ✅ _(writes `.md` to `LEARNING/CAPTURES/YYYY-MM/`)_
+- Port Algorithm reflection JSONL format ✅ _(already live in LEARN phase bash echo; `LEARNING/REFLECTIONS/` scaffolded in M7)_
+- Validate signals accumulate across sessions _(pending — requires live harness test)_
+- **Develop mechanism to apply learnings back to agent/memory structure** _(deferred — requires human review workflow; captured in DECISIONS.md for future milestone)_
+- `install.sh` scaffolds `LEARNING/SIGNALS/` and `LEARNING/CAPTURES/` ✅
+- `MEMORY_CONTRACT.md` updated with new paths ✅
+- 21 unit tests, all passing ✅
 
 ---
 

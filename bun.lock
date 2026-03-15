@@ -17,6 +17,15 @@
         "typescript": "^5.9.3",
       },
     },
+    "plugins/holocron-learning-capture": {
+      "name": "holocron-learning-capture",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
     "plugins/holocron-prd": {
       "name": "holocron-prd",
       "version": "1.0.0",
@@ -35,6 +44,8 @@
     "@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
 
     "holocron-context-loader": ["holocron-context-loader@workspace:plugins/holocron-context-loader"],
+
+    "holocron-learning-capture": ["holocron-learning-capture@workspace:plugins/holocron-learning-capture"],
 
     "holocron-prd": ["holocron-prd@workspace:plugins/holocron-prd"],
 
