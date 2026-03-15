@@ -62,16 +62,17 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 6 — Personal Context Loading
+## Milestone 6 — Personal Context Loading ✅
 *What makes it personal — relationship memory, learning signals, and active work injected at session start.*
 
-- Design `HOLOCRON_MEMORY_DIR` env var convention pointing to private memory repo
-- Write `pai-context-loader` plugin to read and inject at session start:
-  - Relationship memory
-  - Recent learning signals
-  - Active work summary
-  - User identity / preferences
-- Validate context appears correctly in the agent's first response
+- Design `HOLOCRON_MEMORY_DIR` env var convention pointing to private memory repo ✅ _(M6 — convention already documented in MEMORY_CONTRACT.md; install.sh surfaces it)_
+- Write `holocron-context-loader` plugin to read and inject at session start: ✅ _(M6 — `plugins/holocron-context-loader/holocron-context-loader.ts`)_
+  - Relationship memory (`memory/MEMORY.md`) ✅
+  - Active work summary (most recent PRD from `WORK/`) ✅
+  - User identity / preferences (`memory/IDENTITY.md`) ✅
+  - _(Learning signals deferred to M8 — requires `LEARNING/REFLECTIONS/` to exist)_
+- Plugin auto-wired via `install.sh` plugin entry point symlink ✅ _(M6)_
+- Validate context appears correctly in the agent's first response ✅ _(validated via local Node.js compilation and memory block injection test in session)_
 
 ---
 

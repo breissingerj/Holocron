@@ -42,6 +42,35 @@ Each entry has:
 
 ---
 
+## 2026-03-15
+
+### Plugin file structure — flat file in plugins/
+
+**Decision:** Plugin source lives as a flat `.ts` file directly in `plugins/` (e.g., `plugins/holocron-context-loader.ts`), not in a subdirectory.
+
+**Options considered:**
+- Subdirectory per plugin (`plugins/holocron-context-loader/holocron-context-loader.ts`) — better organization for multi-file plugins, but OpenCode discovers plugins by scanning files directly in the plugins directory (not recursively), so subdirectory files are invisible without extra install.sh symlink logic
+- Subdirectory + install.sh entry point symlink — works but creates a symlink inside the repo (because `~/.config/opencode/plugins/` is already symlinked to `Holocron/plugins/`), producing a confusing loop
+- Flat file per plugin at `plugins/holocron-context-loader.ts` — simple, picked up automatically by the existing directory symlink, no extra wiring needed
+
+**Rationale:** The existing `plugins/` directory symlink already makes all flat files in `plugins/` visible to OpenCode at `~/.config/opencode/plugins/`. Adding subdirectories and install.sh entry-point logic adds complexity that backfires (creates symlinks inside the repo). Flat files are the right fit for OpenCode's discovery model. If a plugin grows large enough to need multiple files, extract shared logic to a separate helper and import it.
+
+---
+
+### M6 context injection mechanism — session.created + tui.prompt.append
+
+**Decision:** Use `session.created` to trigger context loading and `tui.prompt.append` to inject it into the user's first prompt. Use `experimental.session.compacting` to re-inject context on compaction.
+
+**Options considered:**
+- OpenCode Rules (context files) — simpler, but static; can't read from `$HOLOCRON_MEMORY_DIR` dynamically at session start
+- `session.created` + custom tool — inject a tool the agent calls; more explicit but requires the agent to voluntarily call it
+- `session.created` + `tui.prompt.append` — fires before first user message; context appears in the conversation without requiring agent action
+- OpenViking MCP server — correct long-term answer but alpha-stage (see MEMORY_CONTRACT.md)
+
+**Rationale:** `tui.prompt.append` is the least-friction injection point — context prepends to the user's first message automatically, so the agent sees it without any special instruction. The compaction hook ensures context survives context window resets. This matches the PAI pattern where CLAUDE.md is injected at every session start.
+
+---
+
 ## 2026-03-13
 
 
@@ -81,3 +110,19 @@ Each entry has:
 - Use PAI as a reference architecture, build Holocron independently — clean slate with informed decisions
 
 **Rationale:** PAI is tightly coupled to Claude Code (hooks, `settings.json`, `CLAUDE.md` generation). Forking it means inheriting that coupling. Building independently while referencing PAI's architecture means Holocron can be genuinely harness-agnostic from day one, while still standing on PAI's shoulders for the hard design questions.
+
+## 2026-03-15
+
+### Context Loader Validation Approach
+
+- **Decision** — Validated `holocron-context-loader.ts` via an isolated Node.js simulation script checking the logic of `buildContextBlock` and `getMostRecentPRD` against a scaffolded temporary test memory directory.
+- **Options considered** — Booting a headless OpenCode session with a full test plugin configuration.
+- **Rationale** — The logic of the context formatting and discovery was mostly pure JS, testing it using a standalone `fs` and `process.env` mock script correctly verified the behavior without the complex and brittle setup of a sub-harness integration test run within the same harness context.
+## 2026-03-15
+
+### Enforcing Absolute Paths for Memory
+
+- **Decision** — The instructions in `algorithm.md` and `AGENTS.md` will be updated to explicitly demand the resolution of `$HOLOCRON_MEMORY_DIR` into an absolute path prior to filesystem operations.
+- **Options considered** — Leaving it up to the agent's interpretation of environment variables.
+- **Rationale** — The system prompt explicitly instructs the agent to construct absolute paths using the project root (`$PWD`). Without explicit overriding instructions to utilize the memory directory environment variable, agents will inherently write PRDs and learning JSONLs into the local repository being worked on.
+
