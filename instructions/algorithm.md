@@ -23,7 +23,7 @@ TIME CHECK at every phase — if elapsed >150% of budget, auto-compress.
 At Algorithm entry and every phase transition, announce via the voice script (not background):
 
 ```bash
-bash ~/.opencode/scripts/voice.sh "MESSAGE"
+bash ~/.config/opencode/scripts/voice.sh "MESSAGE"
 ```
 
 **Algorithm entry:** `"Entering the Algorithm"` — immediately before OBSERVE begins.
@@ -113,7 +113,7 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 
 **ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
 
-**Voice:** `bash ~/.opencode/scripts/voice.sh "Entering the Algorithm"`
+**Voice:** `bash ~/.config/opencode/scripts/voice.sh "Entering the Algorithm"`
 
 **Console output at Algorithm entry (MANDATORY):**
 ```
@@ -195,7 +195,7 @@ NOTE: Use as many perfectly selected CAPABILITIES for the task as you can that w
 SELECTION METHODOLOGY:
 
 1. Fully understand the task from the reverse engineering step.
-2. Review skills available in `~/.opencode/skills/` — read SKILL.md files to understand USE WHEN triggers.
+2. Review skills available in `~/.config/opencode/skills/` — read SKILL.md files to understand USE WHEN triggers.
 3. Consult the **Platform Capabilities** table below for harness-native capabilities beyond skills.
 4. SELECT capabilities across BOTH sources.
 
