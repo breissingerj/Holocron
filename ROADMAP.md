@@ -199,6 +199,18 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 
 ---
 
+## Milestone 13 — Memory Feed Sidebar
+*Live memory write feed in a Ghostty split pane — a sidebar equivalent for the OpenCode TUI.*
+
+> **Context:** The OpenCode TUI right-panel (Context / LSP) has no plugin extension API. The `LayoutConfig` type exists but only controls `"auto" | "stretch"` — no custom widget or panel injection is possible. This milestone implements the next best thing: a Ghostty split pane that renders a live feed of every file the agent writes to `$HOLOCRON_MEMORY_DIR`, giving the same visibility without waiting for upstream TUI API changes.
+
+- Write `plugins/holocron-memory-feed.ts` — listens on `file.edited` events, appends a timestamped entry to `/tmp/holocron-memory-feed.log` for every write inside `$HOLOCRON_MEMORY_DIR` ✅
+- Write `scripts/memory-feed.sh` — tail renderer: reads the log file, formats entries with color and short relative paths, suitable for a narrow Ghostty split ✅
+- Ghostty split wiring: document the keybind / startup command to open the feed pane alongside opencode ✅ _(documented in script header)_
+- Validate: writing a memory file inside an opencode session produces a visible, formatted line in the feed pane in real time
+
+---
+
 ## Milestone 12 — Testing & CI
 *Validating complex state manipulation independently of the harness APIs.*
 

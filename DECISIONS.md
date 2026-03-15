@@ -189,6 +189,18 @@ Each entry has:
 - **Observation** — The full `Hooks` interface in `@opencode-ai/plugin` contains no panel, widget, sidebar, or layout extension point. TUI-related SDK types are limited to: `tui.prompt.append`, `tui.command.execute`, `tui.toast.show`, `tui.session.select` (v2 only). The `LayoutConfig` type exists but is deprecated and only covers `"auto" | "stretch"` for the existing layout — not custom panels. A plugin cannot render any custom UI element inside the OpenCode TUI.
 - **Implication** — A live PRD criteria panel inside the OpenCode TUI is not buildable with the current plugin API surface.
 
+### M13 — memory feed via generic `event` hook, not `file.edited` string key
+
+- **Decision** — `holocron-memory-feed.ts` subscribes via the generic `event` hook (filtering `event.type === "file.edited"`) rather than a `"file.edited"` string key in the `Hooks` interface.
+- **Options considered** — Using `"file.edited"` as a direct hook key (matches the docs example syntax); using the generic `event` hook.
+- **Rationale** — The typed `Hooks` interface in `@opencode-ai/plugin` does not include `"file.edited"` as a named key. Only the generic `event` hook is in the type definition. Using the untyped string key compiles but produces a TS type error and could silently break across SDK upgrades. The `event` hook receives all event types; filtering by `event.type === "file.edited"` is type-safe against the `EventFileEdited` union member in `@opencode-ai/sdk`.
+
+### M13 — `file.edited` event shape: `properties.file`, not `properties.filePath`
+
+- **Decision** — The plugin reads the path from `event.properties.file` (not `filePath`).
+- **Options considered** — `properties.filePath` (used in the docs example); `properties.file` (the actual SDK type).
+- **Rationale** — `EventFileEdited` in `types.gen.d.ts` is `{ type: "file.edited"; properties: { file: string } }`. The docs example uses `filePath` which is incorrect or outdated. Verified against the generated types.
+
 ### Decision — Defer TUI extension and alternative frontend investigation to a future milestone
 
 - **Decision** — Do not pursue a custom TUI panel or alternative frontend application for PRD tracking at this time. Defer to a future milestone once the OpenCode plugin surface matures or a standalone tool is warranted.
