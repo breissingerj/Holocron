@@ -89,13 +89,14 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 8 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
-- Write `pai-learning-capture` plugin:
+- Write `holocron-learning-capture` plugin:
   - Explicit rating detection from user prompts
   - Haiku inference for implicit sentiment
   - Append to `MEMORY/SIGNALS/ratings.jsonl`
   - Learning write trigger on low ratings
 - Port Algorithm reflection JSONL format
 - Validate signals accumulate across sessions
+- **Develop mechanism to apply learnings back to agent/memory structure** where relevant (e.g. updating steering rules or specific skills based on repeated feedback).
 
 ---
 
