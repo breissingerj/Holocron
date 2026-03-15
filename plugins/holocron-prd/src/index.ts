@@ -14,7 +14,7 @@ import { join } from "path";
 
 const PLUGIN_TAG = "[holocron-prd]";
 
-async function ensureDir(dir: string): Promise<void> {
+export async function ensureDir(dir: string): Promise<void> {
   try {
     await mkdir(dir, { recursive: true });
   } catch (error: any) {
@@ -22,12 +22,87 @@ async function ensureDir(dir: string): Promise<void> {
   }
 }
 
-async function readFileSafe(filePath: string): Promise<string | null> {
+export async function readFileSafe(filePath: string): Promise<string | null> {
   try {
     return await readFile(filePath, "utf-8");
   } catch {
     return null;
   }
+}
+
+/** Parse YAML frontmatter block (between --- delimiters) into a key/value map. */
+export function parseFrontmatter(content: string): Record<string, string> | null {
+  const match = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!match) return null;
+  const state: Record<string, string> = {};
+  match[1].split("\n").forEach((line) => {
+    const colonIndex = line.indexOf(":");
+    if (colonIndex > 0) {
+      const key = line.substring(0, colonIndex).trim();
+      const value = line.substring(colonIndex + 1).trim();
+      state[key] = value;
+    }
+  });
+  return state;
+}
+
+/** Generate a slug in the form YYYYMMDD-HHMMSS_new-task from a Date. */
+export function generateSlug(now: Date): string {
+  const datePart = now.toISOString().replace(/[:-]/g, "").split("T")[0];
+  const timePart = now.toISOString().split("T")[1].replace(/[:-]/g, "").substring(0, 6);
+  return `${datePart}-${timePart}_new-task`;
+}
+
+/** Build the PRD stub markdown string for a given slug and timestamp. */
+export function buildPrdStub(slug: string, now: Date): string {
+  const iso = now.toISOString();
+  return `---
+task: New Task
+slug: ${slug}
+effort: standard
+phase: observe
+progress: 0/0
+mode: interactive
+started: ${iso}
+updated: ${iso}
+---
+
+## Context
+<!-- Describe what this task is, why it matters, what was requested and not requested. -->
+
+## Criteria
+<!-- - [ ] ISC-1: criterion text -->
+
+## Decisions
+<!-- Record non-obvious technical decisions made during the BUILD phase here. -->
+
+## Verification
+<!-- Add evidence for each completed criterion (screenshots, tests passed, command output). -->
+`;
+}
+
+/** Sync parsed frontmatter state into STATE/work.json, preserving existing entries. */
+export async function syncToWorkJson(
+  memoryDir: string,
+  state: Record<string, string>
+): Promise<void> {
+  const stateDir = join(memoryDir, "STATE");
+  await ensureDir(stateDir);
+
+  const workJsonPath = join(stateDir, "work.json");
+  let workData: Record<string, any> = {};
+
+  const existingWork = await readFileSafe(workJsonPath);
+  if (existingWork) {
+    try {
+      workData = JSON.parse(existingWork);
+    } catch {
+      // start fresh if corrupt
+    }
+  }
+
+  workData[state.slug] = state;
+  await writeFile(workJsonPath, JSON.stringify(workData, null, 2), "utf-8");
 }
 
 export const HolocronPrd: Plugin = async ({ $, client }) => {
@@ -45,13 +120,10 @@ export const HolocronPrd: Plugin = async ({ $, client }) => {
         return;
       }
 
-      // Generate slug: YYYYMMDD-HHMMSS_kebab-task
       const now = new Date();
-      const datePart = now.toISOString().replace(/[:-]/g, "").split("T")[0];
-      const timePart = now.toISOString().split("T")[1].replace(/[:-]/g, "").substring(0, 6);
-      const slug = `${datePart}-${timePart}_new-task`;
+      const slug = generateSlug(now);
       const workDir = join(memoryDir, "WORK", slug);
-      
+
       try {
         await ensureDir(workDir);
       } catch (e) {
@@ -59,89 +131,33 @@ export const HolocronPrd: Plugin = async ({ $, client }) => {
       }
 
       const prdPath = join(workDir, "PRD.md");
-      const stubContent = `---
-task: New Task
-slug: ${slug}
-effort: standard
-phase: observe
-progress: 0/0
-mode: interactive
-started: ${now.toISOString()}
-updated: ${now.toISOString()}
----
-
-## Context
-<!-- Describe what this task is, why it matters, what was requested and not requested. -->
-
-## Criteria
-<!-- - [ ] ISC-1: criterion text -->
-
-## Decisions
-<!-- Record non-obvious technical decisions made during the BUILD phase here. -->
-
-## Verification
-<!-- Add evidence for each completed criterion (screenshots, tests passed, command output). -->
-`;
-
+      const stubContent = buildPrdStub(slug, now);
       const prompt = `\n\n[HOLOCRON_PRD_STARTUP]: If there is no active PRD for this session, you must create one immediately at ${prdPath} using the following template:\n\`\`\`markdown\n${stubContent}\n\`\`\`\n`;
       output.system.push(prompt);
     },
 
     "tool.execute.after": async (input, output) => {
       if (input.tool !== "edit" && input.tool !== "write") return;
-      
+
       const args = input.args;
-      const filePath = args.filePath || args.path || args.file_path; // depending on tool definition
-      
+      const filePath = args.filePath || args.path || args.file_path;
+
       if (!filePath || typeof filePath !== "string" || !filePath.endsWith("PRD.md")) return;
-      
+
       const memoryDir = process.env.HOLOCRON_MEMORY_DIR;
       if (!memoryDir) return;
 
-      // Only sync PRDs within the WORK directory
       if (!filePath.startsWith(join(memoryDir, "WORK"))) return;
 
       try {
         const content = await readFileSafe(filePath);
         if (!content) return;
 
-        // Parse frontmatter
-        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-        if (!frontmatterMatch) return;
+        const state = parseFrontmatter(content);
+        if (!state || !state.slug) return;
 
-        const frontmatterText = frontmatterMatch[1];
-        const state: Record<string, string> = {};
-        
-        frontmatterText.split("\n").forEach((line) => {
-          const colonIndex = line.indexOf(":");
-          if (colonIndex > 0) {
-            const key = line.substring(0, colonIndex).trim();
-            const value = line.substring(colonIndex + 1).trim();
-            state[key] = value;
-          }
-        });
+        await syncToWorkJson(memoryDir, state);
 
-        if (!state.slug) return;
-
-        const stateDir = join(memoryDir, "STATE");
-        await ensureDir(stateDir);
-
-        const workJsonPath = join(stateDir, "work.json");
-        let workData: Record<string, any> = {};
-        
-        const existingWork = await readFileSafe(workJsonPath);
-        if (existingWork) {
-          try {
-            workData = JSON.parse(existingWork);
-          } catch {
-             // start fresh if corrupt
-          }
-        }
-
-        workData[state.slug] = state;
-
-        await writeFile(workJsonPath, JSON.stringify(workData, null, 2), "utf-8");
-        
         await client.app.log({
           body: {
             service: PLUGIN_TAG,
@@ -149,7 +165,6 @@ updated: ${now.toISOString()}
             message: `Synced PRD frontmatter to work.json for ${state.slug}`,
           },
         });
-
       } catch (err) {
         await client.app.log({
           body: {
@@ -159,6 +174,6 @@ updated: ${now.toISOString()}
           },
         });
       }
-    }
+    },
   };
 };

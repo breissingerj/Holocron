@@ -152,3 +152,25 @@ Each entry has:
 - **Decision** — Defer full unit testing and CI setup into a dedicated roadmap milestone (Milestone 12).
 - **Options considered** — Immediate implementation using `ts-node` or `jest` on a per-plugin basis (e.g. just for `holocron-prd`).
 - **Rationale** — Holocron is an amalgamation of bash scripts, a standalone TS application (`VoiceServer`), flat TS plugins (`holocron-context-loader`), and fully built TS projects (`holocron-prd`). An ad-hoc testing solution for just one of these ignores the repository architecture. A formal test runner setup (e.g., Vitest inside an NPM workspace) should be established universally so the entire stack can be verified locally and within GitHub Actions before releasing v1.0.0.
+
+---
+
+## 2026-03-15
+
+### M12 monorepo tooling: npm workspaces + Vitest over Lerna/Jest
+
+- **Decision** — Use a root `package.json` with npm workspaces pointing at `plugins/holocron-prd` and `plugins/holocron-context-loader`, with Vitest as the global test runner.
+- **Options considered** — (1) Lerna monorepo: more features but significant overhead for 2 packages. (2) Jest: works but requires `ts-jest` transform config and slower cold start vs Vitest. (3) Per-package independent test setups with no root coordination: no `npm test` from root, harder to add CI.
+- **Rationale** — npm workspaces is zero-dependency (built into npm 7+) and handles hoisting correctly for 2 packages. Vitest is ESM-native, requires no transform config for TypeScript via `skipLibCheck`, and is significantly faster than Jest. The root `npm test` running Vitest with `--reporter=verbose` gives a single command for both local dev and CI.
+
+### M12 holocron-context-loader promoted to proper package
+
+- **Decision** — Moved `plugins/holocron-context-loader.ts` (flat file) into `plugins/holocron-context-loader/src/index.ts` with its own `package.json`, matching the structure of `holocron-prd`.
+- **Options considered** — Keep it as a flat file and test via a root-level barrel import; test only via integration (boot a real OpenCode session).
+- **Rationale** — The flat file has no exports — `buildContextBlock` and `getMostRecentPRD` were unexported local functions. Without extracting them, unit testing is impossible. Promoting to a proper package with explicit exports is the minimal change that makes the logic testable without touching the OpenCode plugin interface. The install.sh `plugins/` symlink still works — OpenCode sees the directory the same way.
+
+### M12 switched from npm + Vitest to bun install + bun test
+
+- **Decision** — Use `bun install` for dependency resolution and `bun test` as the test runner across all packages. Vitest removed entirely.
+- **Options considered** — (1) Keep Vitest + npm: ran into `@rollup/rollup-darwin-arm64` optional dep hoisting bug that npm workspaces doesn't resolve reliably on Apple Silicon. (2) Keep Vitest, switch to bun install only: would fix the install bug but Vitest still pulls rollup as a dependency. (3) Full bun switch: eliminates rollup entirely, `bun test` uses the same Jest-compatible `describe`/`it`/`expect` API so test code required only a one-line import swap (`from "vitest"` → `from "bun:test"`).
+- **Rationale** — VoiceServer already runs on Bun — it's not a new tool. Bun's resolver handles platform-native optional deps correctly. `bun test` is faster (53ms for 24 tests vs ~1s+ cold start for Vitest), zero config, and the API is compatible. The CI switch to `oven-sh/setup-bun` is one-line. No downsides identified for a repo of this size.

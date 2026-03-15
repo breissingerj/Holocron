@@ -86,6 +86,19 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
+## Milestone 7.5 — PRD ↔ OpenCode Todo Integration
+*Sync ISC criteria from PRD.md into OpenCode's native Todo system so criteria show up as first-class tasks in the TUI.*
+
+- Research the OpenCode Todo API — identify the tool name, input schema, and any hook that fires when todos are written
+- Update `holocron-prd` plugin to parse `## Criteria` checkboxes from PRD.md after each PRD write and upsert them as OpenCode todos
+- Map ISC checkbox state to todo status: `- [ ]` → pending, `- [x]` → completed
+- Preserve existing todos not owned by holocron-prd (match by a `holocron:` prefix or tag on the todo title)
+- On session start (`experimental.chat.system.transform`), re-sync todos from the active PRD so the TUI reflects current criteria state without a manual write
+- Validate: writing a PRD criterion in the agent results in a visible todo in the TUI
+- Validate: checking off a criterion in the PRD marks the corresponding todo complete
+
+---
+
 ## Milestone 8 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
@@ -180,10 +193,10 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 ## Milestone 12 — Testing & CI
 *Validating complex state manipulation independently of the harness APIs.*
 
-- Introduce a monorepo setup (e.g. standard NPM workspaces or simple Lerna) for sub-projects inside `plugins/`
-- Set up **Vitest** as the global test runner for all typescript plugins
-- Set up a testing harness to mock `$HOLOCRON_MEMORY_DIR` for memory interactions safely
-- Write unit tests for `holocron-prd` covering PRD stub creation and frontmatter sync logic
-- Write unit tests for `holocron-context-loader` covering `buildContextBlock` extraction logic
-- Create integration tests or bash-test validators for `scripts/voice.sh` and install scripts
-- Establish a GitHub Actions CI pipeline to run `npm run test` against all commits
+- Introduce a monorepo setup (e.g. standard NPM workspaces or simple Lerna) for sub-projects inside `plugins/` ✅ _(root `package.json` with npm workspaces covering both plugins)_
+- Set up **Vitest** as the global test runner for all typescript plugins ✅ _(Vitest in root devDeps + per-plugin test scripts)_
+- Set up a testing harness to mock `$HOLOCRON_MEMORY_DIR` for memory interactions safely ✅ _(tests use `os.tmpdir()` + `randomUUID()` for isolated temp dirs)_
+- Write unit tests for `holocron-prd` covering PRD stub creation and frontmatter sync logic ✅ _(`plugins/holocron-prd/tests/index.test.ts` — parseFrontmatter, generateSlug, buildPrdStub, syncToWorkJson)_
+- Write unit tests for `holocron-context-loader` covering `buildContextBlock` extraction logic ✅ _(`plugins/holocron-context-loader/tests/index.test.ts` — buildContextBlock, getMostRecentPRD; required promoting to a proper package)_
+- Create integration tests or bash-test validators for `scripts/voice.sh` and install scripts _(deferred — lower value than plugin tests)_
+- Establish a GitHub Actions CI pipeline to run `npm run test` against all commits ✅ _(`.github/workflows/ci.yml` — ubuntu-latest, Node 20, push + PR on main)_
