@@ -72,6 +72,18 @@ mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/"
 
 ---
 
+## Future Upgrade Path — Queryable Memory
+
+The current contract uses plain files with no semantic search. This works at small scale but becomes unwieldy as the `memory/` and `WORK/` directories grow — agents must read entire files to find relevant context.
+
+**[OpenViking](https://github.com/volcengine/OpenViking)** (Apache 2.0, ByteDance/Volcengine) solves this with a hierarchical context database: a Go AGFS file server + Python VFS + C++17 vector index, exposing `memsearch`/`memread`/`membrowse` tools. It has a first-party OpenCode plugin. Its L0/L1/L2 tiered loading (auto-generated abstract → overview → full) and session-end memory extraction are directly applicable to the `memory/` directory use case.
+
+**Why not now:** Alpha-stage (0.2.x), requires an always-running server + external VLM/embedding API keys, and has no built-in git commit/push for agents — which is the core value of this repo.
+
+**When to revisit:** When OpenViking reaches a stable release and the `memory/` directory grows large enough that full-file reads become a token cost problem. At that point, adopting it for `memory/` specifically (while keeping WORK/, LEARNING/, STATE/ as plain files) is the right scope — those directories are Holocron-specific and have no OpenViking equivalent.
+
+---
+
 ## Commit Convention
 
 Agents that write memory (session notes, PRDs, reflections) should commit and push using:
