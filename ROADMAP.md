@@ -28,14 +28,6 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 ---
 
-## Milestone 3 — Safety Baseline
-*Minimum security guardrails before any real work happens in the harness.*
-
-- Install CC Safety Net — intercepts destructive git/filesystem commands before execution
-- Verify OpenCode launches cleanly with Holocron symlinked in
-
----
-
 ## Milestone 4 — The Algorithm ✅
 *The core execution engine that governs how the agent approaches every task.*
 
@@ -46,19 +38,27 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 - _(Deferred to M9)_ Write `pai-algorithm` plugin to inject algorithm + steering rules at session start
 
 **Open items — apply back to algorithm.md when resolved:**
-- _(Blocked on M5)_ Capability invocation is currently described as "read skill's SKILL.md and follow the workflow" — weak compared to PAI's tool-enforced invocation. Strengthen once the skills MCP server (M5) gives the agent a real invocation mechanism.
+- _(M5 complete — still open)_ Capability invocation is described as "read skill's SKILL.md and follow the workflow." Skills are now ported (M5 ✅) but OpenCode has no tool-enforced invocation mechanism equivalent to PAI's. The `skill` tool in algorithm.md is the current mechanism. Revisit if a skills MCP server becomes available.
 - _(Blocked on M6)_ "Address user by name" in steering-rules.md is generic. Once M6 injects user identity at session start, update steering-rules.md to reference the injected name.
 - _(Blocked on M7)_ Reflection JSONL in LEARN phase writes to `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/` — this directory won't exist until M7 defines the MEMORY/ structure. Add `mkdir -p` guard or scaffold the path in M7 setup.
 
 ---
 
-## Milestone 5 — Skills & Commands
+## Milestone 5 — Skills & Commands ✅
 *Domain-specific capabilities and slash commands that give the agent leverage.*
 
-- Port PAI skill files from `~/.claude/skills/` into `skills/`
-- Adapt `USE WHEN` frontmatter for OpenCode's skill loading model
-- Port slash commands (`/commit`, `/review-pr`, etc.) into `commands/`
-- Smoke test key skills trigger correctly
+- Port PAI skill files from `~/.claude/skills/` into `skills/` ✅
+- Adapt `USE WHEN` frontmatter for OpenCode's skill loading model ✅
+- Substitute PAI-specific paths (`~/.claude/PAI/` → `$HOLOCRON_DIR/`, `~/.claude/MEMORY/` → `$HOLOCRON_MEMORY_DIR/`) ✅
+- Remove `PAI/USER/SKILLCUSTOMIZATIONS` loading blocks (no Holocron equivalent yet) ✅
+
+**Skills ported (11):** acli, ContentAnalysis, Investigation, mermaid, op-1password, playwright-cli, Research, Scraping, Security, Thinking, Utilities
+
+**Skills removed post-port:** Media (Art + Remotion) — removed in commit `5f850b7`'s follow-up; not needed yet. Source is intact at `~/.claude/skills/Media/` and can be re-ported from there when media creation workflows are needed.
+
+**Skills deferred (PAI-specific):** Telos (private data repo dependency), USMetrics (FRED/EIA API tooling), Agents (PAI agent persona system)
+
+**Deferred to later milestone:** Slash commands (`/commit`, `/review-pr`) — no source commands in `~/.claude/commands/`; build from scratch when workflow patterns are established
 
 ---
 
@@ -128,6 +128,16 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 - Document setup in README
 - Test clean install on a fresh shell
 - Tag `v1.0.0`
+
+---
+
+## Milestone 3 — Safety Baseline
+*Minimum security guardrails before any real work happens in the harness.*
+
+> **Deferred:** Moved to end of queue. OpenCode's native confirmation prompts on destructive operations provide baseline safety. Revisit when real incidents surface a specific gap.
+
+- Install CC Safety Net — intercepts destructive git/filesystem commands before execution
+- Verify OpenCode launches cleanly with Holocron symlinked in ✅ _(already verified as part of M4 work)_
 
 ---
 

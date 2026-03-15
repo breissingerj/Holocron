@@ -14,7 +14,7 @@ echo ""
 # Add new harnesses here as they become supported.
 
 declare -A HARNESSES
-HARNESSES["opencode"]="$HOME/.opencode"
+HARNESSES["opencode"]="$HOME/.config/opencode"
 # HARNESSES["claude-code"]="$HOME/.claude"   # future
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ echo ""
 
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
-DIRS=("skills" "commands" "plugins" "instructions" "scripts")
+DIRS=("skills" "commands" "agents" "plugins" "instructions" "scripts")
 
 for harness in "${!HARNESSES[@]}"; do
   target="${HARNESSES[$harness]}"
@@ -82,10 +82,16 @@ done
 echo "Harness config files"
 
 # OpenCode reads AGENTS.md from ~/.config/opencode/AGENTS.md as its primary
-# global instruction file (takes precedence over ~/.claude/CLAUDE.md fallback).
+# global instruction file.
 if [[ -n "${HARNESSES[opencode]+_}" ]]; then
-  mkdir -p "$HOME/.config/opencode"
-  link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "$HOME/.config/opencode/AGENTS.md" "opencode/AGENTS.md"
+  link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "${HARNESSES[opencode]}/AGENTS.md" "opencode/AGENTS.md"
+  # opencode.json lives in the private memory repo (machine-specific paths + commands).
+  # Only symlink it if HOLOCRON_MEMORY_DIR is set and the file exists.
+  if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/opencode.json" ]]; then
+    link_file "$HOLOCRON_MEMORY_DIR/opencode.json" "${HARNESSES[opencode]}/opencode.json" "opencode.json (from memory repo)"
+  else
+    echo "  ℹ  opencode.json skipped — add it to \$HOLOCRON_MEMORY_DIR to enable"
+  fi
 fi
 echo ""
 
