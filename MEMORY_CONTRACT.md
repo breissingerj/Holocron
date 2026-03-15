@@ -32,8 +32,13 @@ $HOLOCRON_MEMORY_DIR/
 │       └── PRD.md                 ← One PRD per Algorithm session
 │
 ├── LEARNING/                      ← Learning signals (harness-agnostic, scaffolded in M7/M8)
-│   └── REFLECTIONS/
-│       └── algorithm-reflections.jsonl
+│   ├── REFLECTIONS/
+│   │   └── algorithm-reflections.jsonl
+│   ├── SIGNALS/
+│   │   └── ratings.jsonl          ← Explicit + implicit rating signals (appended by M8 plugin)
+│   └── CAPTURES/
+│       └── YYYY-MM/
+│           └── *_LEARNING_sentiment-rating-N.md  ← Per-session learning files for ratings ≤ 4
 │
 └── STATE/                         ← Runtime state (harness-agnostic)
     ├── volume.level               ← Current voice volume level (0–5); read by voice.sh
@@ -49,6 +54,8 @@ $HOLOCRON_MEMORY_DIR/
 | `memory/` | Claude Code (PAI), future harnesses | Symlinked into Claude Code's projects dir by `holocron-context/setup.sh` |
 | `WORK/` | Algorithm (all harnesses) | PRD files are harness-agnostic — plain markdown |
 | `LEARNING/REFLECTIONS/` | Algorithm LEARN phase (all harnesses) | JSONL format; feeds upgrade and rating workflows |
+| `LEARNING/SIGNALS/ratings.jsonl` | `holocron-learning-capture` plugin (M8) | JSONL; one entry per detected rating signal |
+| `LEARNING/CAPTURES/` | `holocron-learning-capture` plugin (M8) | Markdown learning files; written on ratings ≤ 4 |
 | `STATE/volume.level` | `scripts/voice.sh` (all harnesses) | Integer 0–5; created by volume skill |
 | `STATE/work.json` | PRD sync plugin (M7) | JSON registry of active/completed sessions |
 
