@@ -1,0 +1,20 @@
+{
+  "name": "holocron-prd",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "opencode",
+    "plugin"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Scaffolds new PRD files on session start and syncs frontmatter to work.json",
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.2.26",
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3"
+  }
+}

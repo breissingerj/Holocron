@@ -126,3 +126,11 @@ Each entry has:
 - **Options considered** — Leaving it up to the agent's interpretation of environment variables.
 - **Rationale** — The system prompt explicitly instructs the agent to construct absolute paths using the project root (`$PWD`). Without explicit overriding instructions to utilize the memory directory environment variable, agents will inherently write PRDs and learning JSONLs into the local repository being worked on.
 
+
+## 2026-03-15
+
+### holocron-prd plugin architecture
+
+- **Decision** — The `holocron-prd` plugin is scaffolded as a TypeScript project in `plugins/holocron-prd/` with its own `package.json` rather than a flat file in `plugins/`.
+- **Options considered** — Flat file like `holocron-context-loader.ts`.
+- **Rationale** — This plugin requires more complex file I/O and state management. Giving it a proper structure allows for easier testing, dependencies (if needed later), and separation of concerns compared to a single monolithic flat file.

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@knikolov/opencode-plugin-simple-memory": "^1.0.3"
+  }
+}
