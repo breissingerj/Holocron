@@ -89,13 +89,14 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 8 — Learning Feedback Loop
 *Ratings, sentiment capture, and reflection — the flywheel that improves the system over time.*
 
-- Write `pai-learning-capture` plugin:
+- Write `holocron-learning-capture` plugin:
   - Explicit rating detection from user prompts
   - Haiku inference for implicit sentiment
   - Append to `MEMORY/SIGNALS/ratings.jsonl`
   - Learning write trigger on low ratings
 - Port Algorithm reflection JSONL format
 - Validate signals accumulate across sessions
+- **Develop mechanism to apply learnings back to agent/memory structure** where relevant (e.g. updating steering rules or specific skills based on repeated feedback).
 
 ---
 
@@ -173,3 +174,16 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 - **No-server fallback**: When VoiceServer is not running, `voice.sh` should degrade gracefully (silent, no crash) rather than surfacing a curl error to the agent
 - **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established (avoids assuming `~/.opencode` is always the harness dir)
 - **Test matrix**: Mac + ElevenLabs running, Mac + server down, Linux, Windows
+
+---
+
+## Milestone 12 — Testing & CI
+*Validating complex state manipulation independently of the harness APIs.*
+
+- Introduce a monorepo setup (e.g. standard NPM workspaces or simple Lerna) for sub-projects inside `plugins/`
+- Set up **Vitest** as the global test runner for all typescript plugins
+- Set up a testing harness to mock `$HOLOCRON_MEMORY_DIR` for memory interactions safely
+- Write unit tests for `holocron-prd` covering PRD stub creation and frontmatter sync logic
+- Write unit tests for `holocron-context-loader` covering `buildContextBlock` extraction logic
+- Create integration tests or bash-test validators for `scripts/voice.sh` and install scripts
+- Establish a GitHub Actions CI pipeline to run `npm run test` against all commits

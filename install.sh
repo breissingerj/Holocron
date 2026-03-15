@@ -58,6 +58,10 @@ if [[ -z "$HOLOCRON_MEMORY_DIR" ]]; then
   echo "     export HOLOCRON_MEMORY_DIR=\"/path/to/your/private/memory\""
 else
   echo "  ✓  HOLOCRON_MEMORY_DIR=$HOLOCRON_MEMORY_DIR"
+  mkdir -p "$HOLOCRON_MEMORY_DIR/STATE"
+  mkdir -p "$HOLOCRON_MEMORY_DIR/WORK"
+  mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS"
+  echo "  ✓  Memory directories scaffolded"
 fi
 echo ""
 

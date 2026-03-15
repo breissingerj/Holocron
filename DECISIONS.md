@@ -14,6 +14,16 @@ Each entry has:
 
 ---
 
+## 2026-03-15
+
+### Simple Memory Plugin OpenCode Entry Point
+
+- **Decision** — Created `plugins/simple-memory/index.ts` to re-export the `@knikolov/opencode-plugin-simple-memory` package rather than adding the plugin as a flat file or expecting OpenCode to discover it from `node_modules` alone.
+- **Options considered** — Changing the symlink structure in `install.sh`, using an OpenCode configuration for explicit loading, or using an `index.js`.
+- **Rationale** — OpenCode plugin discovery from directories requires an entry file (`index.ts` or `index.js`) at the directory root. Since we bundle the plugin in `node_modules` inside `plugins/simple-memory`, this shim file is the most idiomatic way to expose the external npm package to the OpenCode engine.
+
+---
+
 ## 2026-03-14
 
 
@@ -126,3 +136,19 @@ Each entry has:
 - **Options considered** — Leaving it up to the agent's interpretation of environment variables.
 - **Rationale** — The system prompt explicitly instructs the agent to construct absolute paths using the project root (`$PWD`). Without explicit overriding instructions to utilize the memory directory environment variable, agents will inherently write PRDs and learning JSONLs into the local repository being worked on.
 
+
+## 2026-03-15
+
+### holocron-prd plugin architecture
+
+- **Decision** — The `holocron-prd` plugin is scaffolded as a TypeScript project in `plugins/holocron-prd/` with its own `package.json` rather than a flat file in `plugins/`.
+- **Options considered** — Flat file like `holocron-context-loader.ts`.
+- **Rationale** — This plugin requires more complex file I/O and state management. Giving it a proper structure allows for easier testing, dependencies (if needed later), and separation of concerns compared to a single monolithic flat file.
+
+## 2026-03-15
+
+### Testing Strategy
+
+- **Decision** — Defer full unit testing and CI setup into a dedicated roadmap milestone (Milestone 12).
+- **Options considered** — Immediate implementation using `ts-node` or `jest` on a per-plugin basis (e.g. just for `holocron-prd`).
+- **Rationale** — Holocron is an amalgamation of bash scripts, a standalone TS application (`VoiceServer`), flat TS plugins (`holocron-context-loader`), and fully built TS projects (`holocron-prd`). An ad-hoc testing solution for just one of these ignores the repository architecture. A formal test runner setup (e.g., Vitest inside an NPM workspace) should be established universally so the entire stack can be verified locally and within GitHub Actions before releasing v1.0.0.
