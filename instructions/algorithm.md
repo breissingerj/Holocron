@@ -35,7 +35,7 @@ These are direct, synchronous calls. Do not send to background. The voice notifi
 
 ### PRD as System of Record
 
-**The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `$HOLOCRON_MEMORY_DIR/WORK/{slug}/` is the single source of truth. The AI is the sole writer.
+**The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `$HOLOCRON_MEMORY_DIR/WORK/{slug}/` is the single source of truth. The AI is the sole writer. (See `MEMORY_CONTRACT.md` in the Holocron repo for the full `$HOLOCRON_MEMORY_DIR` directory structure.)
 
 **What the AI writes directly:**
 - YAML frontmatter (task, slug, effort, phase, progress, mode, started, updated; optional: iteration)

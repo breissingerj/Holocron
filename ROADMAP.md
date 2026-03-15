@@ -80,7 +80,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 
 - Install Simple Memory plugin for learning/relationship captures
 - Write `pai-prd` plugin: PRD stub creation + frontmatter sync to `work.json`
-- Define `MEMORY/` directory structure in the private memory repo
+- Scaffold the `$HOLOCRON_MEMORY_DIR` directory structure per `MEMORY_CONTRACT.md` — create `WORK/`, `LEARNING/REFLECTIONS/`, `STATE/` in the private memory repo
 - Validate work sessions are tracked and retrievable
 
 ---
