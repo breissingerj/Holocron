@@ -124,7 +124,7 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 **Console output at each phase transition (MANDATORY):** Output the phase header line as the FIRST thing at each phase, before voice and PRD edit.
 
 **PRD stub (MANDATORY — immediately after voice):**
-Create the PRD directory and write a stub PRD with frontmatter only.
+Create the PRD directory and write a stub PRD with frontmatter only. Ensure you evaluate `$HOLOCRON_MEMORY_DIR` into an absolute path (e.g., via `echo $HOLOCRON_MEMORY_DIR` in `bash`) before using filesystem tools to ensure PRDs are created in the global memory repo and NOT the local working directory.
 1. `mkdir -p $HOLOCRON_MEMORY_DIR/WORK/{slug}/` (slug format: `YYYYMMDD-HHMMSS_kebab-task-description`)
 2. Write `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md` — frontmatter only, no body sections yet:
 ```yaml
@@ -326,7 +326,7 @@ OUTPUT:
  [🧠 What capabilities should I have used that I didn't?]
  [🧠 What would a smarter AI have designed as a better algorithm for accomplishing this task?]
 
-- **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log.
+- **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
 
 ```bash
 echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
@@ -343,7 +343,7 @@ Fill in all bracketed values from the current session. `implied_sentiment` is yo
 - **Context compaction at phase transitions** — At each phase boundary (Extended+ effort), if accumulated tool outputs and reasoning exceed ~60% of working context, self-summarize before proceeding. Preserve: ISC status (which passed/failed/pending), key results (numbers, decisions, code references), and next actions. Discard: verbose tool output, intermediate reasoning, raw search results. Format: 1-3 paragraphs replacing prior phase content. This prevents context rot — the #1 cause of late-phase failures in long Algorithm runs.
 - **No phantom capabilities** — every selected capability MUST be actually invoked. Text-only output is NOT invocation. Selection without action is dishonest and a CRITICAL FAILURE.
 - **No silent stalls** — Ensure that no processes are hung, such as research agents not returning results.
-- **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. Every phase transition, every criterion check, every progress update — you do it with write/edit tools directly. If you skip it, the PRD stays stale. Period.
+- **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. Every phase transition, every criterion check, every progress update — you do it with write/edit tools directly. If you skip it, the PRD stays stale. Period. Also ensure PRDs are ALWAYS created inside the evaluated absolute path of `$HOLOCRON_MEMORY_DIR`, NEVER defaulting to the local directory.
 - **ISC Count Gate is mandatory** — Cannot exit OBSERVE with fewer ISC than the effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). No exceptions.
 - **Atomic criteria only** — Every criterion must pass the Splitting Test. No compound criteria with "and"/"with" joining independent verifiables. No scope words ("all", "every") without enumeration.
 

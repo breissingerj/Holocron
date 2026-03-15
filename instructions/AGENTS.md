@@ -67,3 +67,4 @@ FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 - **Mandatory output format** — Every response MUST use exactly one of the output formats above. No freeform output.
 - **Response format before questions** — Always complete the current response format output FIRST, then ask questions at the end.
+- **Memory Location (CRITICAL)** — Never write session PRDs (`WORK/`), reflections (`LEARNING/`), or relationship memory (`memory/`) into the current project's local directory unless the current project IS the private memory repo. **Always** evaluate the environment variable `$HOLOCRON_MEMORY_DIR` to determine the correct absolute path before writing any memory or session state files. If the variable is unset, explicitly ask the user to configure it.
