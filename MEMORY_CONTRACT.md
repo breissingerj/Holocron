@@ -76,11 +76,18 @@ mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/"
 
 The current contract uses plain files with no semantic search. This works at small scale but becomes unwieldy as the `memory/` and `WORK/` directories grow — agents must read entire files to find relevant context.
 
-**[OpenViking](https://github.com/volcengine/OpenViking)** (Apache 2.0, ByteDance/Volcengine) solves this with a hierarchical context database: a Go AGFS file server + Python VFS + C++17 vector index, exposing `memsearch`/`memread`/`membrowse` tools. It has a first-party OpenCode plugin. Its L0/L1/L2 tiered loading (auto-generated abstract → overview → full) and session-end memory extraction are directly applicable to the `memory/` directory use case.
+**[OpenViking](https://github.com/volcengine/OpenViking)** (Apache 2.0, ByteDance/Volcengine, 11k+ stars, #1 trending on GitHub 2026-03-15) solves this with a hierarchical context database: a Go AGFS file server + Python VFS + C++17 vector index, exposing a `viking://` URI scheme with L0/L1/L2 tiered loading (auto-generated abstract → overview → full) and session-end memory extraction.
 
-**Why not now:** Alpha-stage (0.2.x), requires an always-running server + external VLM/embedding API keys, and has no built-in git commit/push for agents — which is the core value of this repo.
+Both harnesses are supported first-party:
+- **Claude Code** — official hooks plugin at `/examples/claude-memory-plugin/` (SessionStart, Stop, SessionEnd hooks; Stop parses transcript and appends to OpenViking session; SessionEnd triggers async memory extraction into `viking://user/memories/` and `viking://agent/memories/`)
+- **OpenCode** — official TypeScript plugin at `/examples/opencode-memory-plugin/` (`memsearch`, `memread`, `membrowse`, `memcommit` tools)
+- **MCP server** — first-party, documented in `/docs/en/guides/06-mcp-integration.md`; use **HTTP/SSE transport** (`http://localhost:1933/mcp`) for multi-harness setups — stdio transport has a documented file contention bug when Claude Code and OpenCode run simultaneously against the same data directory
 
-**When to revisit:** When OpenViking reaches a stable release and the `memory/` directory grows large enough that full-file reads become a token cost problem. At that point, adopting it for `memory/` specifically (while keeping WORK/, LEARNING/, STATE/ as plain files) is the right scope — those directories are Holocron-specific and have no OpenViking equivalent.
+**Viable as an optional layer:** OpenViking does not require exclusive ownership of the files it indexes. Running `add_resource` on `$HOLOCRON_MEMORY_DIR/memory/` would index existing markdown files into the `viking://` hierarchy for semantic search, while git remains the source of truth and versioning system. This is architecturally sound.
+
+**Why not now:** Alpha-stage (0.2.x), requires an always-running HTTP server + external VLM/embedding API keys (zero-fallback queries fail without them), and has no built-in git commit/push for agents. A documented issue today: memory extraction returning 0 memories when VLM/embedding stack is misconfigured.
+
+**When to revisit:** When OpenViking reaches a stable release OR when `memory/` grows large enough that full-file reads become a token cost problem. Scope to `memory/` only — `WORK/`, `LEARNING/`, and `STATE/` are Holocron-specific structures with no OpenViking equivalent.
 
 ---
 
