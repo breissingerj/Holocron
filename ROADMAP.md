@@ -89,11 +89,17 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 7.5 — PRD ↔ OpenCode Todo Integration
 *Sync ISC criteria from PRD.md into OpenCode's native Todo system so criteria show up as first-class tasks in the TUI.*
 
-- Research the OpenCode Todo API — identify the tool name, input schema, and any hook that fires when todos are written
-- Update `holocron-prd` plugin to parse `## Criteria` checkboxes from PRD.md after each PRD write and upsert them as OpenCode todos
+> **Blocked — no plugin write API for todos.** The OpenCode SDK exposes `client.session.todo()` as a GET-only endpoint. Plugins cannot create or update todos programmatically — only the AI's built-in `todowrite` tool can write them. The `todo.updated` event fires when the AI writes todos (observable via the `event` hook), but there is no inverse write path from plugin → todo store.
+>
+> **Viable approach when unblocked:** The only path forward without an upstream API change is prompt injection — `experimental.chat.system.transform` injects a directive telling the AI to call `todowrite` with the current PRD criteria at session start. This is prompt-based, not programmatic, and degrades gracefully (AI may not always comply). Gate behind `HOLOCRON_TODO_SYNC=true` in a config file.
+>
+> **Revisit when:** OpenCode adds a `todo.write` or `todo.upsert` SDK method, or exposes a `tool` hook that allows plugins to call `todowrite` directly.
+
+- ~~Research the OpenCode Todo API~~ ✅ _(done — GET only, no plugin write path)_
+- Update `holocron-prd` plugin to inject a prompt directive to sync PRD criteria as todos at session start _(deferred — prompt-only approach, low reliability)_
+- Gate behind `HOLOCRON_TODO_SYNC` config variable, enabled by default
 - Map ISC checkbox state to todo status: `- [ ]` → pending, `- [x]` → completed
 - Preserve existing todos not owned by holocron-prd (match by a `holocron:` prefix or tag on the todo title)
-- On session start (`experimental.chat.system.transform`), re-sync todos from the active PRD so the TUI reflects current criteria state without a manual write
 - Validate: writing a PRD criterion in the agent results in a visible todo in the TUI
 - Validate: checking off a criterion in the PRD marks the corresponding todo complete
 

@@ -174,3 +174,23 @@ Each entry has:
 - **Decision** — Use `bun install` for dependency resolution and `bun test` as the test runner across all packages. Vitest removed entirely.
 - **Options considered** — (1) Keep Vitest + npm: ran into `@rollup/rollup-darwin-arm64` optional dep hoisting bug that npm workspaces doesn't resolve reliably on Apple Silicon. (2) Keep Vitest, switch to bun install only: would fix the install bug but Vitest still pulls rollup as a dependency. (3) Full bun switch: eliminates rollup entirely, `bun test` uses the same Jest-compatible `describe`/`it`/`expect` API so test code required only a one-line import swap (`from "vitest"` → `from "bun:test"`).
 - **Rationale** — VoiceServer already runs on Bun — it's not a new tool. Bun's resolver handles platform-native optional deps correctly. `bun test` is faster (53ms for 24 tests vs ~1s+ cold start for Vitest), zero config, and the API is compatible. The CI switch to `oven-sh/setup-bun` is one-line. No downsides identified for a repo of this size.
+
+---
+
+## 2026-03-15
+
+### M7.5 — OpenCode Todo write API is not available to plugins
+
+- **Observation** — The OpenCode SDK (`@opencode-ai/plugin` v1.2.15, `@opencode-ai/sdk`) exposes `client.session.todo()` as a GET-only endpoint. There is no `todo.create`, `todo.update`, or `todo.upsert` method in either the v1 or v2 SDK. Todos are written exclusively by the AI's built-in `todowrite` tool. A plugin can observe changes via `event.type === "todo.updated"` but cannot initiate writes. Confirmed by exhaustive search of all `.d.ts` files in both SDK packages — no write path exists.
+- **Implication** — M7.5 (PRD criteria → OpenCode Todo sync) cannot be implemented as a true bidirectional plugin. The only available approach is prompt injection: `experimental.chat.system.transform` injects a directive asking the AI to call `todowrite` with current PRD criteria — but this is prompt-based and not guaranteed.
+
+### M7.5 — OpenCode TUI has no plugin extension API
+
+- **Observation** — The full `Hooks` interface in `@opencode-ai/plugin` contains no panel, widget, sidebar, or layout extension point. TUI-related SDK types are limited to: `tui.prompt.append`, `tui.command.execute`, `tui.toast.show`, `tui.session.select` (v2 only). The `LayoutConfig` type exists but is deprecated and only covers `"auto" | "stretch"` for the existing layout — not custom panels. A plugin cannot render any custom UI element inside the OpenCode TUI.
+- **Implication** — A live PRD criteria panel inside the OpenCode TUI is not buildable with the current plugin API surface.
+
+### Decision — Defer TUI extension and alternative frontend investigation to a future milestone
+
+- **Decision** — Do not pursue a custom TUI panel or alternative frontend application for PRD tracking at this time. Defer to a future milestone once the OpenCode plugin surface matures or a standalone tool is warranted.
+- **Options considered** — (1) External watcher script (`scripts/prd-watch.sh`) rendering a live criteria dashboard in a second terminal pane — viable but adds operational friction (must open a second pane manually). (2) Standalone web UI reading `WORK/` directly — decoupled but significant scope for marginal gain. (3) Wait for OpenCode to add a `tui.panel` hook — most elegant, zero Holocron code required.
+- **Rationale** — The existing `STATE/work.json` sync (M7) and the agent's native TodoWrite tool already provide adequate work visibility within the current workflow. Building a parallel UI before the pain is felt concretely would be premature. Revisit when: (a) OpenCode adds a panel extension API, (b) the number of simultaneous PRDs makes terminal-only tracking genuinely painful, or (c) Holocron is used by more than one person.
