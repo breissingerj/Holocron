@@ -52,7 +52,9 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 - Substitute PAI-specific paths (`~/.claude/PAI/` → `$HOLOCRON_DIR/`, `~/.claude/MEMORY/` → `$HOLOCRON_MEMORY_DIR/`) ✅
 - Remove `PAI/USER/SKILLCUSTOMIZATIONS` loading blocks (no Holocron equivalent yet) ✅
 
-**Skills ported (12):** acli, ContentAnalysis, Investigation, Media, mermaid, op-1password, playwright-cli, Research, Scraping, Security, Thinking, Utilities
+**Skills ported (11):** acli, ContentAnalysis, Investigation, mermaid, op-1password, playwright-cli, Research, Scraping, Security, Thinking, Utilities
+
+**Skills removed post-port:** Media (Art + Remotion) — removed in commit `5f850b7`'s follow-up; not needed yet. Source is intact at `~/.claude/skills/Media/` and can be re-ported from there when media creation workflows are needed.
 
 **Skills deferred (PAI-specific):** Telos (private data repo dependency), USMetrics (FRED/EIA API tooling), Agents (PAI agent persona system)
 
