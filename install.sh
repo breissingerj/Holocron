@@ -86,7 +86,13 @@ echo "Harness config files"
 if [[ -n "${HARNESSES[opencode]+_}" ]]; then
   mkdir -p "$HOME/.config/opencode"
   link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "$HOME/.config/opencode/AGENTS.md" "opencode/AGENTS.md"
-  link_file "$HOLOCRON_DIR/opencode.json" "${HARNESSES[opencode]}/opencode.json" "opencode.json"
+  # opencode.json lives in the private memory repo (machine-specific paths).
+  # Only symlink it if HOLOCRON_MEMORY_DIR is set.
+  if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/opencode.json" ]]; then
+    link_file "$HOLOCRON_MEMORY_DIR/opencode.json" "${HARNESSES[opencode]}/opencode.json" "opencode.json (from memory repo)"
+  else
+    echo "  ℹ  opencode.json skipped — add it to \$HOLOCRON_MEMORY_DIR to enable"
+  fi
 fi
 echo ""
 
