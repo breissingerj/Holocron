@@ -63,6 +63,12 @@ FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 ---
 
+## Context Routing
+
+When you need context about the user, projects, system internals, or specific topics, read `$HOLOCRON_MEMORY_DIR/PAI/CONTEXT_ROUTING.md` (or `~/.claude/PAI/CONTEXT_ROUTING.md` depending on harness) for the file path.
+
+---
+
 ## Critical Rules (Zero Exceptions)
 
 - **Mandatory output format** — Every response MUST use exactly one of the output formats above. No freeform output.
