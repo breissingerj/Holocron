@@ -266,3 +266,25 @@ Each entry has:
 - **Decision** — Use a module-level `Set<string>` keyed by absolute AGENTS.md path. Each unique path is injected at most once per session lifetime.
 - **Options considered** — (1) Per-call dedup (no memory) — re-injects on every file read from the same directory; high token cost for busy sessions. (2) TTL-based cache — adds complexity without clear benefit; AGENTS.md content rarely changes mid-session. (3) Session-level Set — simple, zero overhead, correct: AGENTS.md for a directory is injected the first time the agent touches that directory, then never again.
 - **Rationale** — Session-level dedup matches the expected UX: the agent learns the rules for a directory once, keeps them in context, and is not spammed with re-injections. The Set is cleared implicitly by process restart (new session = fresh process for plugins loaded by OpenCode).
+
+---
+
+## 2026-03-16 (M14.3)
+
+### M14.3 Conditional Glob Rules — hook strategy: `tool.execute.after` over `tool.execute.before` + `noReply`
+
+- **Decision** — Use `tool.execute.after` (appending to `output.output`) instead of `tool.execute.before` with `noReply: true`.
+- **Options considered** — (1) `tool.execute.before` + `noReply: true` — the ROADMAP described this approach, but `noReply` does not exist in the OpenCode Plugin SDK `Hooks` interface as of v1.2.26; `tool.execute.before` only exposes mutable `output.args`, not an injection channel. (2) `experimental.chat.system.transform` — injects into the system prompt on every LLM request, not scoped to when specific file types are read; would always inject all matched rules rather than on-demand. (3) `tool.execute.after` with `output.output` mutation — appends to the tool result string the model sees; gives the agent the rules as part of the file read result, exactly when a matching file type is accessed.
+- **Rationale** — Same as M14.2: `tool.execute.after` output mutation is the correct semantic equivalent of `noReply: true`. The content enters model context as a tool result without TUI visibility, is on-demand, and is file-scoped.
+
+### M14.3 Conditional Glob Rules — glob matching: Node built-in `path.matchesGlob` over external library
+
+- **Decision** — Use `path.matchesGlob(path, pattern)` from Node's built-in `path` module. Zero external dependencies.
+- **Options considered** — (1) `minimatch` / `micromatch` / `picomatch` npm packages — battle-tested, widely used, but require an extra dep; none were pre-installed in the workspace. (2) `path.matchesGlob` — added in Node 22, available in Node 23.7.0 in use; supports `**` patterns correctly; marked experimental but stable enough for a local agent harness plugin. (3) Manual regex — fragile, error-prone for `**` semantics.
+- **Rationale** — Zero external dependencies keeps the plugin lean and install-script-free. The experimental warning is acceptable given the controlled environment (personal harness, not a published npm package).
+
+### M14.3 Conditional Glob Rules — rule discovery: init-time scan over per-read scan
+
+- **Decision** — Discover and parse all rule files once at plugin init (`loadRules` called in plugin factory). Rules are held in memory for the session lifetime.
+- **Options considered** — (1) Per-read scan — re-reads `rules/` on every file read; correct if rules change mid-session but high I/O cost. (2) Init-time scan — reads once; changes to rule files require harness restart to take effect, which is acceptable for a configuration artifact.
+- **Rationale** — Rule files are configuration, not data. They change infrequently and deliberately. Init-time scanning trades mid-session mutability (not needed) for zero per-read overhead (always desirable).
