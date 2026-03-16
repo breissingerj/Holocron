@@ -3,7 +3,7 @@
 ## Available Templates
 
 ```
-~/.claude/Templates/Evals/
+$HOLOCRON_DIR/tools/templates/Evals/
 ├── Judge.hbs       # Configurable LLM-as-Judge prompts
 ├── Rubric.hbs      # Evaluation criteria definitions
 ├── TestCase.hbs    # Test case specifications
@@ -18,7 +18,7 @@
 Use the JUDGE template for custom evaluation:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Judge.hbs \
   -d $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/judge-config.yaml \
   -o $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/judge-prompt.md
@@ -55,7 +55,7 @@ output:
 Use the RUBRIC template for scoring criteria:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Rubric.hbs \
   -d $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/rubric.yaml \
   -o $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/rubric.md

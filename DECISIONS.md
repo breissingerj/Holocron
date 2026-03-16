@@ -44,7 +44,7 @@ Each entry has:
 **Decision:** Voice config lives in `VoiceServer/config.json` (or `$HOLOCRON_VOICE_CONFIG`) rather than inside a settings.json file.
 
 **Options considered:**
-- Read from `~/.opencode/settings.json` — mirrors PAI's `~/.claude/settings.json` pattern but ties config to a specific harness
+- Read from `~/.opencode/settings.json` — mirrors PAI's `~/.config/opencode/opencode.json` pattern but ties config to a specific harness
 - Read from `~/.holocron/config.json` — harness-agnostic but adds another dotfolder
 - Read from `VoiceServer/config.json` local to the repo — self-contained, ships with sensible defaults via `config.json.example`, overridable via env var
 
@@ -216,3 +216,19 @@ Each entry has:
 - **Decision** — Added `claude-code` to the `HARNESSES` map in `install.sh` targeting `~/.config/Claude`, and added a `link_file` block to symlink `instructions/AGENTS.md` to `~/.config/Claude/AGENTS.md`.
 - **Options considered** — (1) Keep Claude Code unsupported and maintain a separate manual copy of AGENTS.md. (2) Create a separate `install-claude-code.sh` script. (3) Add it directly to the existing `HARNESSES` map alongside opencode.
 - **Rationale** — Claude Code reads its global instruction file from `~/.config/Claude/AGENTS.md` and injects it into every session via the system prompt. Without this symlink, Holocron's behavioral rules (execution modes, algorithm reference, memory location rules) are not loaded when using Claude Code. Adding it to the existing harness map keeps install.sh as the single source of truth for all harness targets — consistent with the harness-agnostic design principle.
+
+---
+
+## 2026-03-16
+
+### Remove stale "Claude Code" references from skills
+
+- **Decision** — Corrected all skill files that incorrectly attributed OpenCode-native tools and behaviors to Claude Code. Updated 9 files across BrightData, Recon, AudioEditor, Browser, Delegation, and Evals skills. Renamed `parseClaudeCodeTranscript` → `parseOpenCodeTranscript` in TranscriptCapture.ts. Did NOT change references in DECISIONS.md, README.md, MEMORY_CONTRACT.md, or install.sh, which legitimately discuss Claude Code as one of multiple supported harnesses.
+- **Options considered** — (1) Change every occurrence of "Claude Code" including the legitimate multi-harness mentions. (2) Change only the incorrect skill-level references that imply OpenCode tools/behaviors belong to Claude Code.
+- **Rationale** — The stale references mislead the agent about which harness it is running on, potentially causing incorrect tool invocations (e.g., `claude --chrome` does not exist in OpenCode). References describing Claude Code as a supported harness alongside OpenCode are accurate and intentional — those were preserved.
+
+### Replace stale `~/.claude` paths with correct OpenCode/Holocron equivalents
+
+- **Decision** — Replaced all `~/.claude/*` path references across 41 files with their correct equivalents based on the following mapping: `~/.claude/History/research/` → `$HOLOCRON_MEMORY_DIR/RESEARCH/`, `~/.claude/History/learnings/` → `$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/`, `~/.claude/History/Backups/` → `$HOLOCRON_MEMORY_DIR/BACKUPS/`, `~/.claude/agents/` → `~/.config/opencode/agents/`, `~/.claude/MCPs/` → `$HOLOCRON_DIR/tools/MCPs/`, `~/.claude/Plugins/` → `~/.config/opencode/plugins/`, `~/.claude/filesystem-mcps/` → `$HOLOCRON_DIR/tools/filesystem-mcps/`, `~/.claude/Bin/` → `$HOLOCRON_DIR/tools/bin/`, `~/.claude/Templates/` → `$HOLOCRON_DIR/tools/templates/`, `~/.claude/Skills/` → `$HOLOCRON_DIR/skills/`, `~/.claude/commands/` → `~/.config/opencode/commands/`, `~/.claude/settings.json` → `~/.config/opencode/opencode.json`, `~/.claude/CLAUDE.md` → `~/.config/opencode/AGENTS.md`. Also updated `osint-api-tools.py` to prefer `$HOLOCRON_DIR` env var over legacy `$PAI_DIR` fallback.
+- **Options considered** — (1) Leave paths as `~/.claude` and document that users must symlink. (2) Replace with `$HOLOCRON_DIR` / `$HOLOCRON_MEMORY_DIR` / `~/.config/opencode` per path type.
+- **Rationale** — Skills are instructions given to the agent at runtime. A path like `~/.claude/agents/` points to a directory that does not exist on an OpenCode setup — the agent would fail to find or create the referenced files. Using `$HOLOCRON_DIR`, `$HOLOCRON_MEMORY_DIR`, and `~/.config/opencode` gives the agent the correct locations per Holocron's actual directory contract (see `MEMORY_CONTRACT.md`). The `filesystem-mcps/` and `tools/bin/` paths are not yet ported to Holocron; using `$HOLOCRON_DIR/tools/` as the target establishes where they should live when ported.

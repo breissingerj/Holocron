@@ -140,7 +140,7 @@ Results stored in:
 Use Report template:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Report.hbs \
   -d Results/<use-case>/models/<run-id>/summary.yaml \
   -o Results/<use-case>/models/<run-id>/report.md

@@ -250,7 +250,7 @@ $HOLOCRON_MEMORY_DIR/WORK/$(jq -r '.work_dir' $HOLOCRON_MEMORY_DIR/STATE/current
   phase4-vetting.md
   phase5-report.md
 
-~/.claude/History/research/YYYY-MM/[company]-due-diligence/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM/[company]-due-diligence/
   comprehensive-report.md
   risk-assessment.md
   metadata.json

@@ -40,7 +40,7 @@ Add one or more commands to an existing CLI without breaking existing functional
 
 ```bash
 # Find CLI location
-ls -la ~/.claude/Bin/[cli-name]/
+ls -la $HOLOCRON_DIR/tools/bin/[cli-name]/
 # or
 ls -la ~/Projects/[project]/
 ```

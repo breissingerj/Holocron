@@ -11,28 +11,28 @@ Successfully migrated 4 research commands to the research skill's workflows dire
 ## Files Migrated
 
 ### 1. Claude WebSearch Research
-- **Source:** `~/.claude/commands/perform-claude-research.md`
+- **Source:** `~/.config/opencode/commands/perform-claude-research.md`
 - **Destination:** `$HOLOCRON_DIR/skills/Research/Workflows/ClaudeResearch.md`
 - **Size:** 3.6K
 - **Description:** Intelligent query decomposition with Claude's WebSearch tool (free, no API keys)
 - **Triggers:** "claude research", "use websearch", "claude only"
 
 ### 2. Perplexity API Research
-- **Source:** `~/.claude/commands/perform-perplexity-research.md`
+- **Source:** `~/.config/opencode/commands/perform-perplexity-research.md`
 - **Destination:** `$HOLOCRON_DIR/skills/Research/Workflows/PerplexityResearch.md`
 - **Size:** 8.1K
 - **Description:** Fast web search with query decomposition via Perplexity API
 - **Triggers:** "perplexity research", "use perplexity", "sonar"
 
 ### 3. Interview Preparation
-- **Source:** `~/.claude/commands/perform-interview-research.md`
+- **Source:** `~/.config/opencode/commands/perform-interview-research.md`
 - **Destination:** `$HOLOCRON_DIR/skills/Research/Workflows/InterviewResearch.md`
 - **Size:** 4.4K
 - **Description:** Tyler Cowen-style interview prep with Shannon surprise principle
 - **Triggers:** "interview research", "prepare interview questions", "sponsored interview"
 
 ### 4. AI Trends Analysis
-- **Source:** `~/.claude/commands/analyze-ai-trends.md`
+- **Source:** `~/.config/opencode/commands/analyze-ai-trends.md`
 - **Destination:** `$HOLOCRON_DIR/skills/Research/Workflows/AnalyzeAiTrends.md`
 - **Size:** 3.0K
 - **Description:** Deep trend analysis across historical AI news logs
@@ -83,7 +83,7 @@ Each workflow has:
 
 ✅ **ALL ORIGINALS PRESERVED**
 
-The original command files remain in `~/.claude/commands/`:
+The original command files remain in `~/.config/opencode/commands/`:
 - `perform-claude-research.md` ✓
 - `perform-perplexity-research.md` ✓
 - `perform-interview-research.md` ✓

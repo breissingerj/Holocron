@@ -247,7 +247,7 @@ For tasks requiring AI decision-making about what to do next. Both agents use `p
 - Structured user story validation with defined steps and assertions
 - Parallel test execution (one UIReviewer per story)
 
-**Agent definitions:** `~/.claude/agents/BrowserAgent.md` and `~/.claude/agents/UIReviewer.md`
+**Agent definitions:** `~/.config/opencode/agents/BrowserAgent.md` and `~/.config/opencode/agents/UIReviewer.md`
 
 **Usage:**
 
@@ -281,7 +281,7 @@ Task(subagent_type="BrowserAgent", prompt="Check http://localhost:3000/page2")
 
 For tasks requiring your logged-in browser state, extensions, or cookies.
 
-**How it works:** Claude Code's `--chrome` flag connects to your actual Chrome browser. Single session, not parallelizable, but has access to all your cookies, sessions, and extensions.
+**How it works:** Connects to your actual Chrome browser via CDP (Chrome DevTools Protocol). Single session, not parallelizable, but has access to all your cookies, sessions, and extensions.
 
 **When to use:**
 - Sites requiring login you can't easily replicate (SSO, 2FA)
@@ -291,8 +291,8 @@ For tasks requiring your logged-in browser state, extensions, or cookies.
 
 **Usage:**
 ```bash
-# Proper way: launch Claude Code with Chrome integration
-claude --chrome
+# Launch Chrome with remote debugging for CDP connection
+google-chrome --remote-debugging-port=9222
 ```
 
 **Mid-session workaround** (when you need headed Chrome without restarting):

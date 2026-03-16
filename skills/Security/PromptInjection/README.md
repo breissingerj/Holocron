@@ -190,7 +190,7 @@ browser network-logs /api/
 13. Indirect Prompt Injection Attacks
 
 **All research saved to:**
-`~/.claude/History/research/2025-11-07_*prompt-injection*.md`
+`$HOLOCRON_MEMORY_DIR/RESEARCH/2025-11-07_*prompt-injection*.md`
 
 ### Source Materials
 

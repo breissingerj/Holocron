@@ -155,7 +155,7 @@ Generated CLIs follow PAI standards:
 ### Repository Placement
 
 Generated CLIs go to:
-- `~/.claude/Bin/[cli-name]/` - Personal CLIs (like llcli)
+- `$HOLOCRON_DIR/tools/bin/[cli-name]/` - Personal CLIs (like llcli)
 - `~/Projects/[project-name]/` - Project-specific CLIs
 - `${PROJECTS_DIR}/PAI/Examples/clis/` - Example CLIs (PUBLIC repo)
 
@@ -197,7 +197,7 @@ Every generated CLI follows:
 
 **Generated Structure:**
 ```
-~/.claude/Bin/ghcli/
+$HOLOCRON_DIR/tools/bin/ghcli/
 ├── ghcli.ts              # 350 lines, complete implementation
 ├── package.json          # Bun + TypeScript
 ├── tsconfig.json         # Strict mode
@@ -223,7 +223,7 @@ ghcli --help
 
 **Generated Structure:**
 ```
-~/.claude/Bin/md2html/
+$HOLOCRON_DIR/tools/bin/md2html/
 ├── md2html.ts
 ├── package.json
 ├── README.md
@@ -246,7 +246,7 @@ md2html extract-frontmatter post.md
 
 **Generated Structure:**
 ```
-~/.claude/Bin/data-cli/
+$HOLOCRON_DIR/tools/bin/data-cli/
 ├── data-cli.ts           # Commander.js with subcommands
 ├── package.json
 ├── README.md

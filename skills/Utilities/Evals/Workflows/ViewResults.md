@@ -83,7 +83,7 @@ bun run $HOLOCRON_DIR/skills/Utilities/Evals/EvalServer/cli.ts report \
 
 ```bash
 # Render with template
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Report.hbs \
   -d $HOLOCRON_DIR/skills/Utilities/Evals/Results/<use-case>/<run-id>/results.yaml \
   -o $HOLOCRON_DIR/skills/Utilities/Evals/Results/<use-case>/<run-id>/report.md

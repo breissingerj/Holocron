@@ -47,10 +47,10 @@ Identify what's wrong:
 ## Step 3: Backup
 
 ```bash
-cp -r $HOLOCRON_DIR/skills/[skill-name]/ ~/.claude/History/Backups/[skill-name]-backup-$(date +%Y%m%d)/
+cp -r $HOLOCRON_DIR/skills/[skill-name]/ $HOLOCRON_MEMORY_DIR/BACKUPS/[skill-name]-backup-$(date +%Y%m%d)/
 ```
 
-**Note:** Backups go to `~/.claude/History/Backups/`, NEVER inside skill directories.
+**Note:** Backups go to `$HOLOCRON_MEMORY_DIR/BACKUPS/`, NEVER inside skill directories.
 
 ---
 

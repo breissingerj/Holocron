@@ -264,8 +264,8 @@ for (const ip of ips) {
 ### For Active Recon
 Requires **security MCP profile**:
 ```bash
-~/.claude/MCPs/swap-mcp security
-# Restart Claude Code
+$HOLOCRON_DIR/tools/MCPs/swap-mcp security
+# Restart OpenCode
 ```
 
 **Security profile includes:**

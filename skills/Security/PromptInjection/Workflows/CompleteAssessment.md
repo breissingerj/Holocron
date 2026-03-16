@@ -96,7 +96,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Save to:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-recon/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-recon/
 ├── attack-surface-map.md
 ├── api-endpoints.md
 ├── injection-points.md
@@ -118,7 +118,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Document findings in:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-direct-injection/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-direct-injection/
 ├── findings.md
 ├── successful-payloads.md
 ├── poc-screenshots/
@@ -140,7 +140,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Document findings in:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-indirect-injection/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-indirect-injection/
 ├── findings.md
 ├── poisoned-documents/
 ├── test-web-pages/
@@ -161,7 +161,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Document full conversations:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-multistage/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-multistage/
 ├── attack-chain-1-transcript.md
 ├── attack-chain-2-transcript.md
 ├── successful-patterns.md
@@ -194,7 +194,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Document in:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-defenses/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-defenses/
 ├── defense-evaluation.md
 ├── effective-controls.md
 └── defense-gaps.md
@@ -286,7 +286,7 @@ Execute a full end-to-end prompt injection security assessment incorporating all
 
 **Deliverables:**
 ```
-~/.claude/History/research/YYYY-MM-DD_[client]-final-report/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[client]-final-report/
 ├── executive-summary.md
 ├── full-technical-report.md
 ├── findings-by-severity.md

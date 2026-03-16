@@ -164,10 +164,10 @@ bun run $HOLOCRON_DIR/skills/Utilities/Prompting/Tools/RenderTemplate.ts \
 If anything breaks, rollback to v2.5.0:
 
 ```bash
-cd ~/.claude
+cd $HOLOCRON_DIR
 git checkout v2.5.0
 # Or to just undo templating:
-rm -rf Templates/
+rm -rf tools/templates/
 git checkout v2.5.0 -- PAI/Prompting.md
 ```
 
@@ -305,6 +305,6 @@ This system is based on research from:
 ## Related Documentation
 
 - `$HOLOCRON_DIR/Prompting.md` (Templating section)
-- `~/.claude/History/research/2025-12/2025-12-09-templating-system-research.md`
-- `~/.claude/History/learnings/2025-12/2025-12-09-021700_LEARNING_complete-templating-system-and-evals-integration.md`
+- `$HOLOCRON_MEMORY_DIR/RESEARCH/2025-12/2025-12-09-templating-system-research.md`
+- `$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/2025-12/2025-12-09-021700_LEARNING_complete-templating-system-and-evals-integration.md`
 - `$HOLOCRON_DIR/skills/Utilities/Evals/SKILL.md`

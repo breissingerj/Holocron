@@ -86,7 +86,7 @@ foreach ($harness in $Harnesses.Keys) {
 Write-Host "Harness config files"
 
 # OpenCode reads AGENTS.md from %APPDATA%\opencode\AGENTS.md as its primary
-# global instruction file (takes precedence over ~/.claude/CLAUDE.md fallback).
+# global instruction file (takes precedence over ~/.config/opencode/AGENTS.md fallback).
 if ($Harnesses.ContainsKey("opencode")) {
   $OpenCodeConfig = "$env:APPDATA\opencode"
   New-Item -ItemType Directory -Force -Path $OpenCodeConfig | Out-Null

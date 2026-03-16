@@ -47,18 +47,18 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 5 — Skills & Commands ✅
 *Domain-specific capabilities and slash commands that give the agent leverage.*
 
-- Port PAI skill files from `~/.claude/skills/` into `skills/` ✅
+- Port PAI skill files from `$HOLOCRON_DIR/skills/` into `skills/` ✅
 - Adapt `USE WHEN` frontmatter for OpenCode's skill loading model ✅
-- Substitute PAI-specific paths (`~/.claude/PAI/` → `$HOLOCRON_DIR/`, `~/.claude/MEMORY/` → `$HOLOCRON_MEMORY_DIR/`) ✅
+- Substitute PAI-specific paths (`$HOLOCRON_DIR/` → `$HOLOCRON_DIR/`, `$HOLOCRON_MEMORY_DIR/` → `$HOLOCRON_MEMORY_DIR/`) ✅
 - Remove `PAI/USER/SKILLCUSTOMIZATIONS` loading blocks (no Holocron equivalent yet) ✅
 
 **Skills ported (11):** acli, ContentAnalysis, Investigation, mermaid, op-1password, playwright-cli, Research, Scraping, Security, Thinking, Utilities
 
-**Skills removed post-port:** Media (Art + Remotion) — removed in commit `5f850b7`'s follow-up; not needed yet. Source is intact at `~/.claude/skills/Media/` and can be re-ported from there when media creation workflows are needed.
+**Skills removed post-port:** Media (Art + Remotion) — removed in commit `5f850b7`'s follow-up; not needed yet. Source is intact at `$HOLOCRON_DIR/skills/Media/` and can be re-ported from there when media creation workflows are needed.
 
 **Skills deferred (PAI-specific):** Telos (private data repo dependency), USMetrics (FRED/EIA API tooling), Agents (PAI agent persona system)
 
-**Deferred to later milestone:** Slash commands (`/commit`, `/review-pr`) — no source commands in `~/.claude/commands/`; build from scratch when workflow patterns are established
+**Deferred to later milestone:** Slash commands (`/commit`, `/review-pr`) — no source commands in `~/.config/opencode/commands/`; build from scratch when workflow patterns are established
 
 ---
 
