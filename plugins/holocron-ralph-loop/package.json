@@ -1,0 +1,21 @@
+{
+  "name": "holocron-ralph-loop",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test tests"
+  },
+  "keywords": [
+    "opencode",
+    "plugin"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Ralph Loop — detects incomplete work in assistant responses and injects a continuation prompt",
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.2.26",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

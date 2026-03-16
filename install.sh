@@ -64,6 +64,47 @@ else
   mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/SIGNALS"
   mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES"
   echo "  ✓  Memory directories scaffolded"
+
+  # ── Settings file ─────────────────────────────────────────────────────────
+  # Write a default holocron.settings.json only if one does not already exist.
+  # This file controls feature flags (e.g. ralph_loop.enabled) and lives in
+  # the private memory repo so it is personal and backed up.
+  SETTINGS_DIR="$HOLOCRON_MEMORY_DIR/settings"
+  SETTINGS_FILE="$SETTINGS_DIR/holocron.settings.json"
+  mkdir -p "$SETTINGS_DIR"
+  if [[ ! -f "$SETTINGS_FILE" ]]; then
+    cat > "$SETTINGS_FILE" <<'EOF'
+{
+  "ralph_loop": {
+    "enabled": true
+  }
+}
+EOF
+    echo "  ✓  Settings scaffolded → $SETTINGS_FILE"
+  else
+    echo "  ✓  Settings already exist → $SETTINGS_FILE"
+  fi
+fi
+echo ""
+
+# ── Plugin dependencies ───────────────────────────────────────────────────────
+# Install npm/bun dependencies for each plugin that has a package.json.
+# Plugins are loaded by OpenCode directly from source (Bun TS runtime), so no
+# build step is needed — but node_modules must be present for type resolution.
+
+echo "Plugin dependencies"
+if command -v bun &>/dev/null; then
+  for plugin_dir in "$HOLOCRON_DIR/plugins"/*/; do
+    if [[ -f "$plugin_dir/package.json" ]]; then
+      plugin_name="$(basename "$plugin_dir")"
+      echo "  Installing $plugin_name..."
+      (cd "$plugin_dir" && bun install --silent 2>&1 | tail -1)
+      echo "  ✓  $plugin_name"
+    fi
+  done
+else
+  echo "  ⚠  bun not found — skipping plugin dependency install"
+  echo "     Install bun (https://bun.sh) and re-run install.sh"
 fi
 echo ""
 

@@ -5,11 +5,12 @@
   "workspaces": [
     "plugins/holocron-prd",
     "plugins/holocron-context-loader",
-    "plugins/holocron-learning-capture"
+    "plugins/holocron-learning-capture",
+    "plugins/holocron-ralph-loop"
   ],
   "scripts": {
-    "test": "bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests",
-    "test:watch": "bun test --watch plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests"
+    "test": "bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests",
+    "test:watch": "bun test --watch plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
