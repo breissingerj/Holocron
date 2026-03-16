@@ -105,7 +105,7 @@ Task(subagent_type="UIReviewer", prompt="
 # Primary tool: playwright-cli (@playwright/cli)
 # Fallback: bunx playwright (one-shot screenshots/PDFs)
 # Agents: BrowserAgent, UIReviewer (both use playwright-cli internally)
-# Headed mode: claude --chrome (Claude Code Chrome integration)
+# Headed mode: Chrome via CDP (google-chrome --remote-debugging-port=9222)
 # Orchestration: ReviewStories (parallel story validation), Automate (recipe templates)
 # Custom code: NONE
 ```

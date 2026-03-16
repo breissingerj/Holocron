@@ -368,7 +368,7 @@ Reports saved to:
 # Switch to security profile
 ~/.claude/MCPs/swap-mcp security
 
-# Restart Claude Code to apply
+# Restart OpenCode to apply
 # Then run active reconnaissance
 ```
 

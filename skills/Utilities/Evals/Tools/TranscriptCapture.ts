@@ -128,16 +128,16 @@ export class TranscriptCapture {
 }
 
 /**
- * Parse a Claude Code session transcript into our format
+ * Parse an OpenCode session transcript into our format
  */
-export function parseClaudeCodeTranscript(
+export function parseOpenCodeTranscript(
   sessionLog: string,
   taskId: string,
   trialId: string
 ): Transcript {
   const capture = new TranscriptCapture(taskId, trialId);
 
-  // Parse JSONL format (Claude Code history format)
+  // Parse JSONL format (OpenCode session history format)
   const lines = sessionLog.trim().split('\n').filter(Boolean);
 
   for (const line of lines) {
@@ -207,7 +207,7 @@ if (import.meta.main) {
   if (command === 'parse' && args[0]) {
     const file = Bun.file(args[0]);
     const content = await file.text();
-    const transcript = parseClaudeCodeTranscript(content, 'test-task', 'trial-1');
+    const transcript = parseOpenCodeTranscript(content, 'test-task', 'trial-1');
     console.log(JSON.stringify(transcript, null, 2));
   } else {
     console.log('Usage: TranscriptCapture.ts parse <session-log-file>');

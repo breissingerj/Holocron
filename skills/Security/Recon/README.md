@@ -265,7 +265,7 @@ for (const ip of ips) {
 Requires **security MCP profile**:
 ```bash
 ~/.claude/MCPs/swap-mcp security
-# Restart Claude Code
+# Restart OpenCode
 ```
 
 **Security profile includes:**

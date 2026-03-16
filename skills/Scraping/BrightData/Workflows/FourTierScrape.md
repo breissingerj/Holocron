@@ -34,7 +34,7 @@ Running **FourTierScrape** in **BrightData**...
 
 ### Step 1: Tier 1 - WebFetch (Fast & Simple)
 
-**Description:** Attempt to fetch URL using Claude Code's built-in WebFetch tool
+**Description:** Attempt to fetch URL using OpenCode's built-in WebFetch tool
 
 **Actions:**
 ```

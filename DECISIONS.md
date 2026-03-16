@@ -216,3 +216,13 @@ Each entry has:
 - **Decision** — Added `claude-code` to the `HARNESSES` map in `install.sh` targeting `~/.config/Claude`, and added a `link_file` block to symlink `instructions/AGENTS.md` to `~/.config/Claude/AGENTS.md`.
 - **Options considered** — (1) Keep Claude Code unsupported and maintain a separate manual copy of AGENTS.md. (2) Create a separate `install-claude-code.sh` script. (3) Add it directly to the existing `HARNESSES` map alongside opencode.
 - **Rationale** — Claude Code reads its global instruction file from `~/.config/Claude/AGENTS.md` and injects it into every session via the system prompt. Without this symlink, Holocron's behavioral rules (execution modes, algorithm reference, memory location rules) are not loaded when using Claude Code. Adding it to the existing harness map keeps install.sh as the single source of truth for all harness targets — consistent with the harness-agnostic design principle.
+
+---
+
+## 2026-03-16
+
+### Remove stale "Claude Code" references from skills
+
+- **Decision** — Corrected all skill files that incorrectly attributed OpenCode-native tools and behaviors to Claude Code. Updated 9 files across BrightData, Recon, AudioEditor, Browser, Delegation, and Evals skills. Renamed `parseClaudeCodeTranscript` → `parseOpenCodeTranscript` in TranscriptCapture.ts. Did NOT change references in DECISIONS.md, README.md, MEMORY_CONTRACT.md, or install.sh, which legitimately discuss Claude Code as one of multiple supported harnesses.
+- **Options considered** — (1) Change every occurrence of "Claude Code" including the legitimate multi-harness mentions. (2) Change only the incorrect skill-level references that imply OpenCode tools/behaviors belong to Claude Code.
+- **Rationale** — The stale references mislead the agent about which harness it is running on, potentially causing incorrect tool invocations (e.g., `claude --chrome` does not exist in OpenCode). References describing Claude Code as a supported harness alongside OpenCode are accurate and intentional — those were preserved.
