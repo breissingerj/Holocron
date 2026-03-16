@@ -87,6 +87,52 @@ $Harnesses["claude-code"] = "$env:USERPROFILE\.claude"
 
 ---
 
+## Voice notifications
+
+Agent phase announcements and notifications are spoken aloud via `scripts/voice.sh`. The script reads a volume level (0–4) from `$HOLOCRON_MEMORY_DIR/STATE/volume.level` and either stays silent, sends a desktop notification, or speaks the message.
+
+### TTS backend: kokoro-fastapi
+
+Voice is powered by [kokoro-fastapi](https://github.com/remsky/kokoro-fastapi) running locally via Docker — a high-quality neural TTS server with an OpenAI-compatible API. No API key required.
+
+**Start the server:**
+```bash
+docker run --rm -d -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:v0.2.1
+```
+
+The first run downloads the image (~1.5GB). The container exposes an OpenAI-compatible endpoint at `http://localhost:8880/v1/audio/speech`.
+
+**Test it:**
+```bash
+curl -s -X POST http://localhost:8880/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{"model":"kokoro","input":"Hello from Kokoro.","voice":"bm_daniel"}' \
+  --output /tmp/test.mp3 && afplay /tmp/test.mp3
+```
+
+**Default voice:** `bm_daniel`. Override with `HOLOCRON_KOKORO_VOICE`:
+```bash
+export HOLOCRON_KOKORO_VOICE="af_heart"
+```
+
+**Available voices:** `af_heart`, `af_bella`, `af_nova`, `af_sky`, `am_adam`, `am_echo`, `bf_emma`, `bm_daniel`, `bm_george`
+
+**Fallback:** if the Docker container is not running, `voice.sh` falls back to macOS `say` automatically.
+
+### Volume control
+
+```bash
+vol 0   # silent — no TTS, no notifications
+vol 1   # quiet  — notifications only
+vol 2   # chime  — notifications with sound
+vol 3   # focused — TTS on final message only
+vol 4   # full   — TTS everywhere (default)
+```
+
+Add `vol()` to your shell by appending to `~/.zshrc` (see Setup below), or run `bun tools/ToggleMute.ts [0-4]` directly.
+
+---
+
 ## Inspiration
 
 - [Personal AI Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure) by Daniel Miessler — the foundational framework this is built on top of
