@@ -250,3 +250,19 @@ Each entry has:
 - **Decision** — Use a sentinel string `HOLOCRON_RALPH_LOOP` embedded in the continuation prompt. If the completed text contains the sentinel, skip re-triggering.
 - **Options considered** — (1) Module-level boolean flag `lastWasRalphLoop` — unreliable across async turns; race conditions possible. (2) Per-session message ID tracking — requires stateful map, complex cleanup. (3) Sentinel in the injected prompt text — the continuation prompt itself contains the sentinel, so the next `text.complete` scan will detect it and skip. Zero shared state required.
 - **Rationale** — The sentinel approach is stateless, deterministic, and self-documenting. The continuation prompt being scanned for incomplete work will always contain `HOLOCRON_RALPH_LOOP`, so the guard is guaranteed to fire correctly without any timing or state management concerns.
+
+---
+
+## 2026-03-16
+
+### M14.2 Hierarchical AGENTS.md — hook strategy: `tool.execute.after` over `tool.execute.before`
+
+- **Decision** — Use `tool.execute.after` (appending to `output.output`) instead of `tool.execute.before` with `noReply: true` injection.
+- **Options considered** — (1) `tool.execute.before` with `noReply: true` — the ROADMAP described this, but `noReply` does not exist in the OpenCode Plugin SDK `Hooks` interface as of v1.2.26; `tool.execute.before` only exposes mutable `output.args`. (2) `experimental.chat.system.transform` — adds content to the system prompt on every request, not scoped to when specific files are read; would inject all discovered AGENTS.md globally rather than on-demand. (3) `tool.execute.after` with `output.output` mutation — the tool result string that the model sees; appending AGENTS.md content here gives the model the rules as part of the read result, exactly when it reads from that directory.
+- **Rationale** — `tool.execute.after` output mutation is the correct semantic equivalent of `noReply: true` context injection: the content appears in the model's context as a tool result, not as a user message, with zero TUI visibility. It is on-demand (fires only when files are read) and file-scoped (only for the specific directory tree being accessed). The SDK surface confirms `output.output` is a mutable string in the `tool.execute.after` signature.
+
+### M14.2 Hierarchical AGENTS.md — deduplication scope: session-level Set
+
+- **Decision** — Use a module-level `Set<string>` keyed by absolute AGENTS.md path. Each unique path is injected at most once per session lifetime.
+- **Options considered** — (1) Per-call dedup (no memory) — re-injects on every file read from the same directory; high token cost for busy sessions. (2) TTL-based cache — adds complexity without clear benefit; AGENTS.md content rarely changes mid-session. (3) Session-level Set — simple, zero overhead, correct: AGENTS.md for a directory is injected the first time the agent touches that directory, then never again.
+- **Rationale** — Session-level dedup matches the expected UX: the agent learns the rules for a directory once, keeps them in context, and is not spammed with re-injections. The Set is cleared implicitly by process restart (new session = fresh process for plugins loaded by OpenCode).
