@@ -65,7 +65,7 @@ output:
 ### Step 3: Render Judge Prompt
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Judge.hbs \
   -d $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/judge-config.yaml \
   -o $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/judge-prompt.md \

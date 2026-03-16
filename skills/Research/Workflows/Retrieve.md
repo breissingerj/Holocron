@@ -420,7 +420,7 @@ mcp__Apify__apify-slash-rag-web-browser({
 
 2. **History (Permanent Archive):**
 
-   - Move to `~/.claude/History/research/YYYY-MM-DD_[description]/` when complete
+   - Move to `$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM-DD_[description]/` when complete
    - Include: `README.md`, final extracted content, metadata
    - Archive for future reference and reuse
 
@@ -448,7 +448,7 @@ $HOLOCRON_MEMORY_DIR/WORK/20260111-172408_retrieve-react19-docs/
 
 **History (permanent archive):**
 ```
-~/.claude/History/research/2025-10-26_react19-documentation/
+$HOLOCRON_MEMORY_DIR/RESEARCH/2025-10-26_react19-documentation/
 ├── README.md (retrieval documentation)
 ├── content.md (final extracted content)
 ├── metadata.json (sources, layers used, timestamps)

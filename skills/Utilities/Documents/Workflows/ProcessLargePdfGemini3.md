@@ -659,7 +659,7 @@ cat raw.json | sed 's/```json//g' | sed 's/```//g' | jq '.' > clean.json
 - For traditional PDF extraction (text-only), see `$HOLOCRON_DIR/skills/documents/pdf/SKILL.md`
 - For PDF form filling, see `$HOLOCRON_DIR/skills/documents/pdf/forms.md`
 - For parser integration, see `$HOLOCRON_DIR/skills/parser/SKILL.md`
-- For newsletter database schema, see `~/.claude/Context/databases/newsletter/schema.sql`
+- For newsletter database schema, see `$HOLOCRON_MEMORY_DIR/context/databases/newsletter/schema.sql`
 
 ## Summary
 

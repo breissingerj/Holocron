@@ -247,7 +247,7 @@ For tasks requiring AI decision-making about what to do next. Both agents use `p
 - Structured user story validation with defined steps and assertions
 - Parallel test execution (one UIReviewer per story)
 
-**Agent definitions:** `~/.claude/agents/BrowserAgent.md` and `~/.claude/agents/UIReviewer.md`
+**Agent definitions:** `~/.config/opencode/agents/BrowserAgent.md` and `~/.config/opencode/agents/UIReviewer.md`
 
 **Usage:**
 

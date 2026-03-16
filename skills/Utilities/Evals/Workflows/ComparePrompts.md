@@ -302,7 +302,7 @@ focus: "depth"
 For detailed comparison setup, use the Comparison template:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $HOLOCRON_DIR/tools/templates/Tools/RenderTemplate.ts \
   -t Evals/Comparison.hbs \
   -d $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/comparisons/<name>.yaml \
   -o $HOLOCRON_DIR/skills/Utilities/Evals/UseCases/<name>/comparisons/<name>-setup.md \

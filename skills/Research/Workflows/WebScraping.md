@@ -69,5 +69,5 @@ This provides access to:
 - Don't overwhelm servers
 
 ## Supplementary Resources
-For advanced scraping: `read ~/.claude/docs/web-scraping-advanced.md`
-For MCP tools: `read ~/.claude/docs/mcp-servers-reference.md`
+For advanced scraping: `read $HOLOCRON_DIR/docs/web-scraping-advanced.md`
+For MCP tools: `read $HOLOCRON_DIR/docs/mcp-servers-reference.md`

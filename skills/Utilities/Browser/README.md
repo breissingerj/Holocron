@@ -68,11 +68,11 @@ Zero custom code — no TypeScript wrappers, no custom classes. Everything uses 
 | `Workflows/ReviewStories.md` | Orchestrator: fan out stories to parallel UIReviewers |
 | `Workflows/Automate.md` | Template engine: load and execute recipes |
 | `Workflows/Update.md` | Version check and verification workflow |
-| `~/.claude/agents/BrowserAgent.md` | AI-driven browser agent definition |
-| `~/.claude/agents/UIReviewer.md` | User story validation agent definition |
+| `~/.config/opencode/agents/BrowserAgent.md` | AI-driven browser agent definition |
+| `~/.config/opencode/agents/UIReviewer.md` | User story validation agent definition |
 
 ## Related
 
-- [BrowserAgent](~/.claude/agents/BrowserAgent.md)
-- [UIReviewer](~/.claude/agents/UIReviewer.md)
+- [BrowserAgent](~/.config/opencode/agents/BrowserAgent.md)
+- [UIReviewer](~/.config/opencode/agents/UIReviewer.md)
 - [Playwright CLI docs](https://playwright.dev)

@@ -257,7 +257,7 @@ $HOLOCRON_MEMORY_DIR/WORK/$(jq -r '.work_dir' $HOLOCRON_MEMORY_DIR/STATE/current
 ### Archived Reports
 
 ```
-~/.claude/History/research/YYYY-MM/[target]-osint/
+$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM/[target]-osint/
   README.md
   comprehensive-report.md
   executive-summary.md

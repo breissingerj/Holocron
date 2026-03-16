@@ -145,4 +145,4 @@ See `Workflows/DeepInvestigation.md` for full workflow details.
 - All iterative work artifacts go in the current work item directory
 - This ties research artifacts to the work item for learning and context
 
-**History (permanent):** `~/.claude/History/research/YYYY-MM/YYYY-MM-DD_[topic]/`
+**History (permanent):** `$HOLOCRON_MEMORY_DIR/RESEARCH/YYYY-MM/YYYY-MM-DD_[topic]/`

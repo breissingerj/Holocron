@@ -644,7 +644,7 @@ cd "$OUTPUT_DIR"
 echo "[*] Phase 1: Initial Discovery"
 browser navigate "$TARGET_URL" > initial_nav.json
 browser screenshot
-cp "$(find ~/.claude/Plugins/marketplaces/browser-tools/agent/browser_screenshots -type f -name '*.png' | tail -1)" initial_page.png
+cp "$(find ~/.config/opencode/plugins/browser-tools/screenshots -type f -name '*.png' | tail -1)" initial_page.png
 
 # Phase 2: DOM Extraction
 echo "[*] Phase 2: DOM Extraction"
@@ -691,7 +691,7 @@ browser console-logs error > console_errors.json
 # Phase 10: Final Screenshot
 echo "[*] Phase 10: Final State Capture"
 browser screenshot
-cp "$(find ~/.claude/Plugins/marketplaces/browser-tools/agent/browser_screenshots -type f -name '*.png' | tail -1)" final_page.png
+cp "$(find ~/.config/opencode/plugins/browser-tools/screenshots -type f -name '*.png' | tail -1)" final_page.png
 
 # Cleanup
 echo "[*] Phase 11: Cleanup"

@@ -107,7 +107,7 @@ SCAN_FILE=$HOLOCRON_MEMORY_DIR/WORK/${WORK_DIR}/$(date +%Y-%m-%d)_nmap-scan.txt
 MASSCAN_FILE=$HOLOCRON_MEMORY_DIR/WORK/${WORK_DIR}/$(date +%Y-%m-%d)_masscan.json
 
 # Or combined multi-tool archive from history
-SCAN_DIR=~/.claude/History/security/scans/2025-11-target-recon/
+SCAN_DIR=$HOLOCRON_MEMORY_DIR/RESEARCH/security/scans/2025-11-target-recon/
 ```
 
 **Load scan data:**

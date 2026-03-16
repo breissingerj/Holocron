@@ -228,7 +228,7 @@ ASN and BGP reconnaissance (performed inline using WHOIS, IPInfo, and public BGP
 **MCP Tools** (security profile required)
 - `httpx` - HTTP probing and technology detection
 - `naabu` - Port scanning
-- Note: Requires security MCP profile (`~/.claude/MCPs/swap-mcp security`)
+- Note: Requires security MCP profile (`$HOLOCRON_DIR/tools/MCPs/swap-mcp security`)
 
 ### Future Tool Integration
 
@@ -366,7 +366,7 @@ Reports saved to:
 **For active recon:** Requires security MCP profile
 ```bash
 # Switch to security profile
-~/.claude/MCPs/swap-mcp security
+$HOLOCRON_DIR/tools/MCPs/swap-mcp security
 
 # Restart OpenCode to apply
 # Then run active reconnaissance
