@@ -288,3 +288,13 @@ Each entry has:
 - **Decision** — Discover and parse all rule files once at plugin init (`loadRules` called in plugin factory). Rules are held in memory for the session lifetime.
 - **Options considered** — (1) Per-read scan — re-reads `rules/` on every file read; correct if rules change mid-session but high I/O cost. (2) Init-time scan — reads once; changes to rule files require harness restart to take effect, which is acceptable for a configuration artifact.
 - **Rationale** — Rule files are configuration, not data. They change infrequently and deliberately. Init-time scanning trades mid-session mutability (not needed) for zero per-read overhead (always desirable).
+
+---
+
+## 2026-03-16 (Voice)
+
+### Voice notifications — macOS `say` replacing ElevenLabs VoiceServer
+
+- **Decision** — Replace the ElevenLabs VoiceServer (localhost:8888) with a direct `say` invocation in `scripts/voice.sh`. No server process, no API key, no quota.
+- **Options considered** — (1) ElevenLabs VoiceServer — high quality but quota-limited (exhausted at 3 credits), cloud-dependent, requires a running server process. (2) mlx-audio / Kokoro-82M — near-ElevenLabs quality, fully local, but Python 3.13 + spacy dependency conflicts prevented clean installation. (3) macOS `say` — built-in, zero setup, zero cost, instant latency, works offline; voice quality is lower (~6/10 with Samantha) but sufficient for notification-style announcements.
+- **Rationale** — The VoiceServer added operational complexity (LaunchAgent, port 8888, API key management) for a notification use case that doesn't require high fidelity. `say` is always available, cannot fail due to quota or network, and the script becomes a single self-contained bash file. Voice can be overridden per-machine via `$HOLOCRON_SAY_VOICE`.
