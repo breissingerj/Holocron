@@ -221,3 +221,12 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 - Write unit tests for `holocron-context-loader` covering `buildContextBlock` extraction logic ✅ _(`plugins/holocron-context-loader/tests/index.test.ts` — buildContextBlock, getMostRecentPRD; required promoting to a proper package)_
 - Create integration tests or bash-test validators for `scripts/voice.sh` and install scripts _(deferred — lower value than plugin tests)_
 - Establish a GitHub Actions CI pipeline to run `npm run test` against all commits ✅ _(`.github/workflows/ci.yml` — ubuntu-latest, Node 20, push + PR on main)_
+
+---
+
+## Milestone 14 — Context Injection Upgrades (OMO Cherry-Picks)
+*Three high-leverage features from Oh My OpenCode (OMO) that provide massive autonomy and surgical context injection without requiring a multi-model orchestration engine.*
+
+- **The "Ralph Loop" (Session Continuation Enforcer):** Write a plugin that hooks into `session.idle`. When the agent goes idle, scan the last assistant message for incomplete markdown checkboxes (`- [ ]`) or `pending`/`in_progress` keywords. If found, silently inject a continuation prompt (`client.session.prompt(...)`) to force the agent to finish all tasks before stopping.
+- **Hierarchical Context (`AGENTS.md` Injection):** Write a plugin that hooks into `tool.execute.before` for the `read` tool. When a file is read, walk up its directory tree looking for local `AGENTS.md` files. Inject any found files into the context window using `noReply: true`, giving the agent directory-specific rules only when it actually looks at that directory.
+- **Conditional Glob Rules:** Write a plugin that hooks into `tool.execute.before` for the `read` tool. Read rule files from `.opencode/rules/*.md` (or a Holocron equivalent) that contain YAML frontmatter with a `globs:` array. When the read file's path matches a glob, silently inject that rule file into the context using `noReply: true`. Allows highly modular, file-type-specific rules (e.g., strict React component standards) without bloating the root system prompt.
