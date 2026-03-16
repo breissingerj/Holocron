@@ -6,11 +6,12 @@
     "plugins/holocron-prd",
     "plugins/holocron-context-loader",
     "plugins/holocron-learning-capture",
-    "plugins/holocron-ralph-loop"
+    "plugins/holocron-ralph-loop",
+    "plugins/holocron-agents-loader"
   ],
   "scripts": {
-    "test": "bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests",
-    "test:watch": "bun test --watch plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests"
+    "test": "bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests plugins/holocron-agents-loader/tests",
+    "test:watch": "bun test --watch plugins/holocron-prd/tests plugins/holocron-context-loader/tests plugins/holocron-learning-capture/tests plugins/holocron-ralph-loop/tests plugins/holocron-agents-loader/tests"
   },
   "devDependencies": {
     "@types/node": "^22.0.0"
