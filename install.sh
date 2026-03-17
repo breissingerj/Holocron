@@ -12,10 +12,11 @@ echo ""
 
 # ── Harness targets ──────────────────────────────────────────────────────────
 # Add new harnesses here as they become supported.
+#
+# opencode  — granular: individual subdirs are symlinked into ~/.config/opencode
 
 declare -A HARNESSES
 HARNESSES["opencode"]="$HOME/.config/opencode"
-HARNESSES["claude-code"]="$HOME/.config/Claude"
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,7 @@ echo ""
 
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
+# opencode: granular — symlink individual subdirs into ~/.config/opencode
 DIRS=("skills" "commands" "agents" "plugins" "instructions" "scripts")
 
 for harness in "${!HARNESSES[@]}"; do
@@ -121,6 +123,7 @@ for harness in "${!HARNESSES[@]}"; do
   done
   echo ""
 done
+
 
 # ── Harness-specific file symlinks ───────────────────────────────────────────
 # Some harnesses read specific files from locations outside the main harness
@@ -141,11 +144,6 @@ if [[ -n "${HARNESSES[opencode]+_}" ]]; then
   fi
 fi
 
-# Claude Code reads AGENTS.md from ~/.config/Claude/AGENTS.md as its global
-# instruction file (injected into every session via the system prompt).
-if [[ -n "${HARNESSES[claude-code]+_}" ]]; then
-  link_file "$HOLOCRON_DIR/instructions/AGENTS.md" "${HARNESSES[claude-code]}/AGENTS.md" "claude-code/AGENTS.md"
-fi
 echo ""
 
 echo "Done. Restart your agent harness to pick up the new config."

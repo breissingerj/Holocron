@@ -14,6 +14,16 @@ Each entry has:
 
 ---
 
+## 2026-03-16
+
+### claude-code harness uses whole-dir symlink instead of granular per-dir symlinks
+
+- **Decision** — `~/.config/Claude` is now a single symlink pointing directly to the Holocron repo root, replacing the previous real directory that contained individual symlinks for each subdir (skills, commands, agents, etc.).
+- **Options considered** — Keep the real directory with granular per-dir symlinks (old approach); replace with a single top-level dir symlink (chosen).
+- **Rationale** — The granular approach required keeping the list of symlinked dirs in sync with the repo structure. A single top-level symlink means any new dir added to the Holocron repo is automatically visible to Claude Code without any install.sh changes. Accepted tradeoff: any files Claude Code writes into `~/.config/Claude` will land in the Holocron repo, which is acceptable since that repo is already the source of truth for this config.
+
+---
+
 ## 2026-03-15
 
 ### Simple Memory Plugin OpenCode Entry Point
@@ -304,3 +314,11 @@ Each entry has:
 - **Decision** — Replace macOS `say` with [kokoro-fastapi](https://github.com/remsky/kokoro-fastapi) running in Docker at `localhost:8880`. Default voice: `bm_daniel`. `say` retained as automatic fallback when Docker is not running.
 - **Options considered** — (1) Keep `say` — zero setup but voice quality (~6/10) was unsatisfactory. (2) Google Cloud TTS — 1M chars/month free, good quality, but adds cloud dependency and API key management. (3) kokoro-fastapi (Docker) — fully local, no API key, OpenAI-compatible REST endpoint, near-ElevenLabs quality (~8.5/10), single `docker run` to start. Sidesteps the Python 3.13/spacy dependency issue that blocked the direct pip install approach.
 - **Rationale** — Docker isolates all dependency complexity. One command starts a persistent local server with no API key, no quota, and no cloud round-trip. The OpenAI-compatible endpoint (`POST /v1/audio/speech`) is a clean, standard interface. The `say` fallback ensures voice.sh never hard-fails when the container is not running.
+
+## 2026-03-17
+
+### Remove Claude Code harness support
+
+- **Decision** — Removed the `claude-code` harness configuration from `install.sh`.
+- **Options considered** — Keep it, or remove it entirely.
+- **Rationale** — The user explicitly requested removing the handling for the Claude Code harness entirely.
