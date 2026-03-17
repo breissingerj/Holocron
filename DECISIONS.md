@@ -331,6 +331,14 @@ Each entry has:
 
 ## 2026-03-17
 
+### holocron-path-corrector — corrective plugin for opencode-anthropic-auth path corruption
+
+- **Decision** — Added `plugins/holocron-path-corrector` plugin that hooks `experimental.chat.system.transform` and rewrites `~/.config/Claude/` → `~/.config/opencode/` in all system prompt text blocks for the `anthropic` provider.
+- **Options considered** — (1) Patch `~/.cache/opencode/node_modules/opencode-anthropic-auth/index.mjs` directly — fast but overwritten on every `opencode` update. (2) Symlink `~/.config/Claude/AGENTS.md` — makes reads not fail but doesn't fix the model's path assumptions in context. (3) Corrective `experimental.chat.system.transform` plugin that runs after the auth plugin — durable, survives updates, fixes the root problem.
+- **Rationale** — User plugins load after built-in plugins, so our hook fires after the auth plugin's `opencode→Claude` replacement, undoing the path corruption before the prompt reaches the model. The symlink approach was ruled out because it only addresses file-not-found errors, not the corrupted path reasoning the model carries in context.
+
+---
+
 ### Add proactive Fabric pattern check to Algorithm CAPABILITY SELECTION
 
 - **Decision** — Added a step 3 to the CAPABILITY SELECTION methodology in `algorithm.md` instructing the AI to scan `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for a matching pattern before selecting capabilities. Also added a guidance bullet: "Check Fabric patterns first — before writing any extraction, summarization, analysis, or review logic inline."
