@@ -24,9 +24,9 @@ _kokoro="http://localhost:8880/v1/audio/speech"
   # Desktop notification (terminal-notifier if available, otherwise silent)
   if command -v /opt/homebrew/bin/terminal-notifier &>/dev/null; then
     if [ -f "$_icon" ]; then
-      /opt/homebrew/bin/terminal-notifier -title "PAI" -message "$_msg" -appIcon "$_icon" -sound default &>/dev/null &
+      /opt/homebrew/bin/terminal-notifier -title "Holocron" -message "$_msg" -appIcon "$_icon" -sound default &>/dev/null &
     else
-      /opt/homebrew/bin/terminal-notifier -title "PAI" -message "$_msg" -sound default &>/dev/null &
+      /opt/homebrew/bin/terminal-notifier -title "Holocron" -message "$_msg" -sound default &>/dev/null &
     fi
   fi
 

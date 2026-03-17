@@ -322,3 +322,9 @@ Each entry has:
 - **Decision** — Removed the `claude-code` harness configuration from `install.sh`.
 - **Options considered** — Keep it, or remove it entirely.
 - **Rationale** — The user explicitly requested removing the handling for the Claude Code harness entirely.
+
+### Remove PAI/ directory; migrate to Holocron/ namespace
+
+- **Decision** — Deleted the `PAI/` directory from `holocron-context` entirely. Moved all content into `Holocron/` (docs, Algorithm versions, SKILL.md, ACTIONS/, PIPELINES/, FLOWS/) and `Holocron/Tools/` (Inference.ts, TranscriptParser.ts, VolumeLevel.ts, IntegrityMaintenance.ts). Moved `Inference.ts` into `Holocron/tools/` in this repo so Evals graders import from `../../../../../tools/Inference` — self-contained within the Holocron repo. Updated all hook imports, path constants, agent files, memory files, and `setup.sh`.
+- **Options considered** — (1) Rename `PAI/` to `system/` — less churn but still a legacy name. (2) Delete without moving — would break all hook imports. (3) Migrate to `Holocron/` — clean, aligns with the project's own identity.
+- **Rationale** — `PAI/` was an upstream artifact from Daniel Miessler's Personal AI Infrastructure repo. Holocron is its own project; naming everything after PAI added confusion about what's upstream vs. local. All active functionality is now under the `Holocron/` namespace with no cross-repo import dependencies.

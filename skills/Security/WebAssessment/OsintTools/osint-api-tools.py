@@ -23,7 +23,7 @@ Usage:
 Requirements:
     pip install shodan requests python-dotenv
 
-Environment Variables (add to ${PAI_DIR}/.env):
+Environment Variables (add to ${HOLOCRON_DIR}/.env):
     SHODAN_API_KEY=your_key_here
     DEHASHED_API_KEY=your_key_here
     DEHASHED_EMAIL=your_email_here
@@ -55,7 +55,7 @@ except ImportError:
 
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.expanduser(os.environ.get("HOLOCRON_DIR", os.environ.get("PAI_DIR", "~/.config/opencode")) + "/.env"))
+    load_dotenv(os.path.expanduser(os.environ.get("HOLOCRON_DIR", os.environ.get("HOLOCRON_CONFIG_DIR", "~/.config/opencode")) + "/.env"))
 except ImportError:
     print("Warning: 'python-dotenv' not installed. Falling back to os.environ", file=sys.stderr)
 
@@ -166,7 +166,7 @@ class ShodanClient:
 
         if not self.api_key:
             raise APIKeyMissingError(
-                "Shodan API key not found. Set SHODAN_API_KEY in ${PAI_DIR}/.env",
+                "Shodan API key not found. Set SHODAN_API_KEY in ${HOLOCRON_DIR}/.env",
                 service="Shodan"
             )
 
@@ -307,13 +307,13 @@ class DehashedClient:
 
         if not self.api_key:
             raise APIKeyMissingError(
-                "Dehashed API key not found. Set DEHASHED_API_KEY in ${PAI_DIR}/.env",
+                "Dehashed API key not found. Set DEHASHED_API_KEY in ${HOLOCRON_DIR}/.env",
                 service="Dehashed"
             )
 
         if not self.email:
             raise APIKeyMissingError(
-                "Dehashed email not found. Set DEHASHED_EMAIL in ${PAI_DIR}/.env",
+                "Dehashed email not found. Set DEHASHED_EMAIL in ${HOLOCRON_DIR}/.env",
                 service="Dehashed"
             )
 
@@ -479,7 +479,7 @@ class OSINTIndustriesClient:
 
         if not self.api_key:
             raise APIKeyMissingError(
-                "OSINT Industries API key not found. Set OSINT_INDUSTRIES_API_KEY in ${PAI_DIR}/.env",
+                "OSINT Industries API key not found. Set OSINT_INDUSTRIES_API_KEY in ${HOLOCRON_DIR}/.env",
                 service="OSINT Industries"
             )
 

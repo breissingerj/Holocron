@@ -23,9 +23,10 @@ import { homedir } from "os";
 // ============================================================================
 
 function loadEnv(): void {
-  const envPath = process.env.PAI_CONFIG_DIR
-    ? resolve(process.env.PAI_CONFIG_DIR, ".env")
-    : resolve(process.env.HOLOCRON_CONFIG_DIR || resolve(homedir(), ".config/opencode"), ".env");
+  const envPath = resolve(
+    process.env.HOLOCRON_CONFIG_DIR || process.env.HOLOCRON_DIR || resolve(homedir(), ".config/opencode"),
+    ".env"
+  );
   try {
     const content = readFileSync(envPath, "utf-8");
     for (const line of content.split("\n")) {
