@@ -215,7 +215,7 @@ Q: Why not use MCP?
 A: 90-98% token savings, faster execution, better control.
 
 Q: What if script fails?
-A: Check `APIFY_TOKEN` in `${PAI_DIR}/.env`, verify network, check Apify status.
+A: Check `APIFY_TOKEN` in `${HOLOCRON_MEMORY_DIR}/.env`, verify network, check Apify status.
 
 Q: Can I add new actors?
 A: Yes! Follow `STANDARDS.md` pattern, hardcode actor ID, filter in code.

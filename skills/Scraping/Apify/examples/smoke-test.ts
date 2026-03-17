@@ -13,7 +13,7 @@ async function main() {
 
   if (!process.env.APIFY_TOKEN && !process.env.APIFY_API_KEY) {
     console.error('❌ APIFY_TOKEN or APIFY_API_KEY not set in environment')
-    console.error('   Add to ${PAI_DIR}/.env: APIFY_TOKEN=apify_api_xxxxx')
+    console.error('   Add to ${HOLOCRON_MEMORY_DIR}/.env: APIFY_TOKEN=apify_api_xxxxx')
     console.error('   Or: APIFY_API_KEY=apify_api_xxxxx\n')
     process.exit(1)
   }

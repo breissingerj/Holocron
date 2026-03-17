@@ -16,13 +16,13 @@ import { basename, dirname, join, resolve } from "path";
 import { homedir } from "os";
 
 // ============================================================================
-// Environment Loading — keys from ~/.config/PAI/.env
+// Environment Loading — keys from ~/.config/opencode/.env
 // ============================================================================
 
 function loadEnv(): void {
   const envPath = process.env.PAI_CONFIG_DIR
     ? resolve(process.env.PAI_CONFIG_DIR, ".env")
-    : resolve(homedir(), ".config/PAI/.env");
+    : resolve(process.env.HOLOCRON_CONFIG_DIR || resolve(homedir(), ".config/opencode"), ".env");
   try {
     const content = readFileSync(envPath, "utf-8");
     for (const line of content.split("\n")) {
@@ -81,7 +81,7 @@ if (!existsSync(inputFile)) {
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) {
-  console.error("ANTHROPIC_API_KEY not found. Set it in ~/.config/PAI/.env");
+  console.error("ANTHROPIC_API_KEY not found. Set it in ~/.config/opencode/.env");
   process.exit(1);
 }
 

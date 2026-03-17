@@ -32,7 +32,7 @@ bun install  # Using bun (preferred)
 ```
 
 ### Configuration
-Configure API keys in `${PAI_DIR}/.env`:
+Configure API keys in `${HOLOCRON_MEMORY_DIR}/.env`:
 ```bash
 HACKERONE_API_KEY=your_key_here
 BUGCROWD_API_KEY=your_key_here
@@ -211,7 +211,7 @@ export async function awsRecon(domains: string[]) {
 Configure notifications for new programs:
 
 ```bash
-# In ${PAI_DIR}/.env
+# In ${HOLOCRON_MEMORY_DIR}/.env
 SLACK_WEBHOOK_URL=your_webhook
 DISCORD_WEBHOOK_URL=your_webhook
 ```
