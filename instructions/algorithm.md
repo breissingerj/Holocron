@@ -196,8 +196,9 @@ SELECTION METHODOLOGY:
 
 1. Fully understand the task from the reverse engineering step.
 2. Review skills available in `~/.config/opencode/skills/` — read SKILL.md files to understand USE WHEN triggers.
-3. Consult the **Platform Capabilities** table below for harness-native capabilities beyond skills.
-4. SELECT capabilities across BOTH sources.
+3. **Check for a matching Fabric pattern** — scan `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for a pattern that fits the task intent (e.g., `review_code`, `extract_wisdom`, `analyze_terraform_plan`, `create_threat_model`). If a match exists, prefer it over ad-hoc execution — patterns are battle-tested, structured, and faster to invoke than building equivalent logic inline.
+4. Consult the **Platform Capabilities** table below for harness-native capabilities beyond skills.
+5. SELECT capabilities across ALL sources.
 
 PLATFORM CAPABILITIES (consider alongside skills):
 
@@ -220,7 +221,8 @@ GUIDANCE:
 
 - Use the **Plan agent** for any review, audit, or analysis task — it enforces read-only by design.
 - **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
-- Use **skills** for any domain-specific workflow — check `~/.opencode/skills/` before building logic inline.
+- Use **skills** for any domain-specific workflow — check `~/.config/opencode/skills/` before building logic inline.
+- **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
 - Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
 - Verify **websearch** availability before selecting — requires OpenCode hosted plan. Use **webfetch** as the reliable fallback for specific URLs.

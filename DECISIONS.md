@@ -328,3 +328,11 @@ Each entry has:
 - **Decision** — Deleted the `PAI/` directory from `holocron-context` entirely. Moved all content into `Holocron/` (docs, Algorithm versions, SKILL.md, ACTIONS/, PIPELINES/, FLOWS/) and `Holocron/Tools/` (Inference.ts, TranscriptParser.ts, VolumeLevel.ts, IntegrityMaintenance.ts). Moved `Inference.ts` into `Holocron/tools/` in this repo so Evals graders import from `../../../../../tools/Inference` — self-contained within the Holocron repo. Updated all hook imports, path constants, agent files, memory files, and `setup.sh`.
 - **Options considered** — (1) Rename `PAI/` to `system/` — less churn but still a legacy name. (2) Delete without moving — would break all hook imports. (3) Migrate to `Holocron/` — clean, aligns with the project's own identity.
 - **Rationale** — `PAI/` was an upstream artifact from Daniel Miessler's Personal AI Infrastructure repo. Holocron is its own project; naming everything after PAI added confusion about what's upstream vs. local. All active functionality is now under the `Holocron/` namespace with no cross-repo import dependencies.
+
+## 2026-03-17
+
+### Add proactive Fabric pattern check to Algorithm CAPABILITY SELECTION
+
+- **Decision** — Added a step 3 to the CAPABILITY SELECTION methodology in `algorithm.md` instructing the AI to scan `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for a matching pattern before selecting capabilities. Also added a guidance bullet: "Check Fabric patterns first — before writing any extraction, summarization, analysis, or review logic inline."
+- **Options considered** — (1) Leave Fabric as purely reactive (user must ask explicitly). (2) Add a proactive check in CAPABILITY SELECTION. (3) Create a dedicated pre-task Fabric scan phase.
+- **Rationale** — Fabric's 240+ patterns are battle-tested, structured, and faster than ad-hoc execution. The PR review session demonstrated the gap: the `review_code` pattern existed but was never surfaced until the user specifically invoked it. Adding the check to CAPABILITY SELECTION ensures patterns are considered on every task without requiring a separate phase or user prompt.
