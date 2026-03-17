@@ -146,13 +146,4 @@ fi
 
 echo ""
 
-# ── Patch opencode-anthropic-auth ────────────────────────────────────────────
-# The built-in opencode-anthropic-auth plugin has a blanket /opencode/gi regex
-# that corrupts filesystem paths in the system prompt. Apply a local patch to
-# narrow the regex. Re-run install.sh after every `brew upgrade opencode`.
-
-echo "Patching opencode-anthropic-auth"
-bash "$HOLOCRON_DIR/scripts/patch-anthropic-auth.sh"
-echo ""
-
 echo "Done. Restart your agent harness to pick up the new config."
