@@ -32,7 +32,7 @@ All workflows support three execution tiers:
 
 ## World Model Storage
 
-Models are stored at: `$PAI_DIR/MEMORY/RESEARCH/WorldModels/`
+Models are stored at: `${HOLOCRON_MEMORY_DIR}/MEMORY/RESEARCH/WorldModels/`
 
 | File | Horizon |
 |------|---------|

@@ -596,7 +596,7 @@ if [ $# -eq 0 ]; then
 fi
 
 URLS=("$@")
-SKILL_DIR="$HOME/.claude/skills/parser"
+SKILL_DIR="${HOLOCRON_MEMORY_DIR}/skills/Utilities/Parser"
 OUTPUT_DIR="$SKILL_DIR/output"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
@@ -659,7 +659,7 @@ if (!rawEntitiesPath) {
   process.exit(1);
 }
 
-const entityIndexPath = `${process.env.HOME}/.claude/skills/parser/entity-index.json`;
+const entityIndexPath = `${process.env.HOLOCRON_MEMORY_DIR}/skills/Utilities/Parser/entity-index.json`;
 const entityIndex = JSON.parse(fs.readFileSync(entityIndexPath, 'utf-8'));
 
 const rawEntities = JSON.parse(fs.readFileSync(rawEntitiesPath, 'utf-8'));
@@ -675,7 +675,7 @@ fs.writeFileSync(entityIndexPath, JSON.stringify(entityIndex, null, 2));
 // Save processed articles
 processedArticles.forEach((article: any, index: number) => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-  const filename = `${process.env.HOME}/.claude/skills/parser/output/${timestamp}_batch-${index + 1}.json`;
+  const filename = `${process.env.HOLOCRON_MEMORY_DIR}/skills/Utilities/Parser/output/${timestamp}_batch-${index + 1}.json`;
   fs.writeFileSync(filename, JSON.stringify(article, null, 2));
   console.log(`Saved: ${filename}`);
 });

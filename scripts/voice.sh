@@ -17,7 +17,7 @@ _msg="${1:-}"
 _mem_dir="${HOLOCRON_MEMORY_DIR:-$HOME/.holocron/memory}"
 _vol=$(cat "$_mem_dir/STATE/volume.level" 2>/dev/null || echo "4")
 _voice="${HOLOCRON_KOKORO_VOICE:-bm_daniel}"
-_icon="$HOME/.claude/assets/HK_face_logo.png"
+_icon="${HOLOCRON_MEMORY_DIR:-$HOME/Projects/personalProjects/holocron-context}/assets/HK_face_logo.png"
 _kokoro="http://localhost:8880/v1/audio/speech"
 
 [ "$_vol" -ge "2" ] && {
