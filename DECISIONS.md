@@ -14,6 +14,34 @@ Each entry has:
 
 ---
 
+## 2026-03-18
+
+### /reflect command as slash command prompt template (not script or plugin)
+
+- **Decision** — implement reflect as `commands/reflect.md` — an OpenCode slash command prompt template
+- **Options considered** — (1) standalone bash script called manually, (2) OpenCode plugin triggered on a scheduled or manual hook, (3) slash command prompt template
+- **Rationale** — slash command gives the agent full tool access (bash, file editing, gh CLI) and explicit user-triggered execution. A plugin would need an explicit invocation mechanism anyway. A bare script can't synthesize signal meaning — the LLM reasoning capability is essential for thematic clustering and deciding what rises above noise.
+
+### snapshot-before-apply ordering in /reflect
+
+- **Decision** — copy all signal files to `LEARNING/PROCESSED/YYYY-MM-DD_HH-MM-SS/` BEFORE applying any repo changes
+- **Options considered** — (1) apply changes first, then archive, (2) archive first then apply (chosen), (3) delete in-place as part of apply
+- **Rationale** — crash-safety. If the agent fails mid-apply, signals are preserved in the snapshot and can be re-read. Clearing original files happens only after PRs are successfully created. PROCESSED/ snapshots are immutable and never deleted — they are the permanent audit trail.
+
+### threshold for promoting signals to applied changes
+
+- **Decision** — apply a signal pattern only if rating ≤ 5 OR the same pattern recurs in ≥ 3 separate sessions
+- **Options considered** — (1) apply all signals regardless of confidence, (2) apply only explicit user corrections, (3) threshold-based (chosen)
+- **Rationale** — implicit sentiment detection (correction keywords → rating 3) is noisy. A single implicit 3/10 on an isolated incident should not become a permanent behavioral rule. The threshold reduces noise while still catching real patterns. Human review via PR is the final gate.
+
+### two separate PRs (one per repo) in /reflect
+
+- **Decision** — create one PR in `holocron-context` for memory changes and one PR in `Holocron` for system/algorithm changes
+- **Options considered** — (1) single combined PR in one repo, (2) separate PRs per repo (chosen)
+- **Rationale** — the two repos have different reviewers, merge cadences, and risk profiles. Memory changes (preferences, opinions) are lower risk and can be merged quickly. System changes (algorithm.md, steering-rules.md) warrant more careful review. Keeping them separate allows independent merge decisions.
+
+---
+
 ## 2026-03-16
 
 ### claude-code harness uses whole-dir symlink instead of granular per-dir symlinks

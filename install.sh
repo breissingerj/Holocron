@@ -64,6 +64,7 @@ else
   mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS"
   mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/SIGNALS"
   mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES"
+  mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED"
   echo "  ✓  Memory directories scaffolded"
 
   # ── Settings file ─────────────────────────────────────────────────────────
