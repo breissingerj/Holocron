@@ -115,7 +115,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
   - Learning write trigger on ratings ≤ 4 ✅ _(writes `.md` to `LEARNING/CAPTURES/YYYY-MM/`)_
 - Port Algorithm reflection JSONL format ✅ _(already live in LEARN phase bash echo; `LEARNING/REFLECTIONS/` scaffolded in M7)_
 - Validate signals accumulate across sessions ✅ _(verified live: `3/10` message produced correct JSONL entry and `.md` capture)_
-- **Develop mechanism to apply learnings back to agent/memory structure** _(deferred — requires human review workflow; captured in DECISIONS.md for future milestone)_
+- **Develop mechanism to apply learnings back to agent/memory structure** ✅ _(`/reflect` command — `commands/reflect.md`. Reads SIGNALS/, REFLECTIONS/, CAPTURES/; synthesizes by theme with rating ≤ 5 or ≥ 3 recurrence threshold; snapshots to LEARNING/PROCESSED/ before apply; writes changes to both repos on feature branches; opens PRs for human review.)_
 - `install.sh` scaffolds `LEARNING/SIGNALS/` and `LEARNING/CAPTURES/` ✅
 - `MEMORY_CONTRACT.md` updated with new paths ✅
 - 21 unit tests, all passing ✅
