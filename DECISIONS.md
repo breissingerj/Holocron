@@ -333,6 +333,17 @@ Each entry has:
 
 ### Add proactive Fabric pattern check to Algorithm CAPABILITY SELECTION
 
+
 - **Decision** — Added a step 3 to the CAPABILITY SELECTION methodology in `algorithm.md` instructing the AI to scan `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for a matching pattern before selecting capabilities. Also added a guidance bullet: "Check Fabric patterns first — before writing any extraction, summarization, analysis, or review logic inline."
 - **Options considered** — (1) Leave Fabric as purely reactive (user must ask explicitly). (2) Add a proactive check in CAPABILITY SELECTION. (3) Create a dedicated pre-task Fabric scan phase.
 - **Rationale** — Fabric's 240+ patterns are battle-tested, structured, and faster than ad-hoc execution. The PR review session demonstrated the gap: the `review_code` pattern existed but was never surfaced until the user specifically invoked it. Adding the check to CAPABILITY SELECTION ensures patterns are considered on every task without requiring a separate phase or user prompt.
+
+---
+
+## 2026-03-18
+
+### PM subagent — markdown file location: Holocron/agents/ (symlinked) over opencode.json inline
+
+- **Decision** — Created the PM subagent as `Holocron/agents/pm.md`, which resolves via the existing broken symlink `~/.config/opencode/agents/ → Holocron/agents/`. Created the `Holocron/agents/` directory to fix the symlink.
+- **Options considered** — (1) Inline agent definition in `~/.config/opencode/opencode.json` — works but buries the prompt in JSON, harder to read/edit, not version-controlled in Holocron. (2) Markdown file in `~/.config/opencode/agents/` directly — the directory is a symlink to `Holocron/agents/`, so writing there IS writing to the Holocron repo; markdown format is the idiomatic OpenCode approach.
+- **Rationale** — Markdown agent files are the recommended OpenCode format (named file = named agent), self-documenting, diff-friendly, and version-controlled in Holocron automatically. The symlink already establishes `Holocron/agents/` as the canonical location — creating the directory and writing the file there is the zero-friction path.
