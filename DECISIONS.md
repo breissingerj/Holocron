@@ -16,6 +16,12 @@ Each entry has:
 
 ## 2026-03-19
 
+### Move Agents skill to Holocron config repo
+
+- **Decision** — Moved the entire `Agents` skill directory from `holocron-context/skills/` (private memory repo) to `Holocron/skills/` (public config repo). Reverted the `${HOLOCRON_MEMORY_DIR}` paths in the agent definitions to standard `~/.config/opencode/skills/` paths.
+- **Options considered** — (1) Leave `Agents` skill in the private repo and keep `${HOLOCRON_MEMORY_DIR}` paths in public agent definitions; (2) Move it to the public repo so the entire Agent System (definitions + context + composition tools) is cohesive.
+- **Rationale** — The agent definitions (`Holocron/agents/*.md`) were made public, but their required context files and composition tools (`Agents` skill) were left private. This broke them for any clean install, as `install.sh` wouldn't symlink the private skill. By moving the `Agents` skill into the public repo, the entire system is cohesive and uses standard `~/.config/opencode/` paths. The only private information was in `ProductManagerContext.md` (which referenced Lahzo), but since `ProductManager.md` was already moved to the public repo, moving its context file matches the visibility level.
+
 ### Fix agent frontmatter fields to match opencode schema
 
 - **Decision** — Converted all 15 agent files from Claude Code frontmatter schema to opencode schema: `model: sonnet` → `model: anthropic/claude-sonnet-4-5`; `permissions: allow: [...]` → `permission: {edit: allow, bash: allow, webfetch: allow}`; removed `isolation: worktree`. Kept `voiceId`, `voice`, `persona` as Holocron-custom fields (opencode ignores them, Holocron plugins/scripts read them).
