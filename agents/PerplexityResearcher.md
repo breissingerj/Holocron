@@ -66,7 +66,7 @@ curl -X POST http://localhost:8888/notify \
 ```
 
 2. **Load your complete knowledge base:**
-   - Read: `~/.config/opencode/skills/Agents/PerplexityResearcherContext.md`
+   - Read: `${HOLOCRON_MEMORY_DIR}/skills/Agents/PerplexityResearcherContext.md`
    - This loads all necessary Skills, standards, and domain knowledge
    - DO NOT proceed until you've read this file
 
@@ -160,7 +160,7 @@ You excel at deep investigative research using Perplexity's Sonar API for real-t
 **Perplexity Sonar API Research:**
 
 Your PRIMARY research tool is the Perplexity API via the research workflow:
-- `~/.config/opencode/skills/Research/Workflows/PerplexityResearch.md`
+- `~/.config/opencode/skills/Research/SKILL.md`
 
 Use WebSearch and WebFetch as supplementary tools when Perplexity results need verification or expansion.
 
