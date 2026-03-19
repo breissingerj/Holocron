@@ -14,6 +14,22 @@ Each entry has:
 
 ---
 
+## 2026-03-19
+
+### Fix agent frontmatter fields to match opencode schema
+
+- **Decision** — Converted all 15 agent files from Claude Code frontmatter schema to opencode schema: `model: sonnet` → `model: anthropic/claude-sonnet-4-5`; `permissions: allow: [...]` → `permission: {edit: allow, bash: allow, webfetch: allow}`; removed `isolation: worktree`. Kept `voiceId`, `voice`, `persona` as Holocron-custom fields (opencode ignores them, Holocron plugins/scripts read them).
+- **Options considered** — (1) Remove permissions entirely and rely on global defaults; (2) Map each old tool entry individually to opencode tool names; (3) Flat allow-all via `permission: {edit: allow, bash: allow, webfetch: allow}`.
+- **Rationale** — These are named work agents, not sandboxed reviewers — full tool access is correct. Opencode's `permission` field only gates `edit`, `bash`, and `webfetch`; all other tools (`glob`, `grep`, MCP, etc.) are always available. Flat allow-all is accurate and idiomatic. The `isolation: worktree` field is Claude Code-specific and has no equivalent in opencode.
+
+### Move named agents from holocron-context to Holocron
+
+- **Decision** — Moved all 15 agent files from `holocron-context/agents/` into `Holocron/agents/`. Replaced the slim `pm.md` stub with the full `ProductManager.md` (richer persona, permissions, voice, full workflow).
+- **Options considered** — (1) Keep agents in private memory repo and add a second symlink; (2) Move to Holocron (public repo); (3) Keep status quo (agents invisible to harness).
+- **Rationale** — The harness symlink resolves `~/.config/opencode/agents` → `Holocron/agents/`. Agent persona definitions (name, voice ID, model, permissions) are not secrets. Sensitive content (personal knowledge, context files like `EngineerContext.md`) stays in the private `holocron-context/skills/Agents/` directory. The split is: _who you are_ (public, Holocron) vs _what you know_ (private, holocron-context). The slim `pm.md` stub was superseded by `ProductManager.md` — no value in keeping both.
+
+---
+
 ## 2026-03-18
 
 ### /reflect command as slash command prompt template (not script or plugin)
