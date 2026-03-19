@@ -24,6 +24,10 @@ Correct: Decompose: (1) update content, (2) fix links, (3) anti-criterion: no Ch
 Bad: "Clean up cruft" → delete 15 files including backups without asking.
 Correct: List candidates, ask approval first with context about consequences.
 
+**Check Fabric patterns before writing logic inline.** For any extraction, summarization, analysis, review, or transformation task, scan `~/.config/Claude/skills/Utilities/Fabric/Patterns/` first. If a matching pattern exists, invoke it via the Fabric skill — patterns are battle-tested and faster than building equivalent logic from scratch. Use `suggest_pattern` if unsure which pattern fits.
+Bad: User asks for a code review → write ad-hoc review logic inline.
+Correct: Check Fabric patterns → find `review_code` → invoke it via the Fabric skill.
+
 **Read before modifying.** Understand existing code, imports, and patterns first.
 Bad: Add rate limiting without reading existing middleware → break session management.
 Correct: Read handler, imports, patterns, then integrate.
