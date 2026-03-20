@@ -451,7 +451,7 @@ PAI actions and pipelines run in two environments with identical behavior:
 3. **Service Bindings** — Pipeline Workers call action Workers internally, not over the public internet
 4. **Defense in Depth** — Auth validated at pipeline AND at each action Worker
 
-**Full documentation:** `PAI/ACTIONS/README.md`, `PAI/PIPELINES/README.md`
+**Full documentation:** `docs/ACTIONS/README.md`, `docs/PIPELINES/README.md`
 **Source code:** `${PROJECTS_DIR}/arbol/`
 
 ---

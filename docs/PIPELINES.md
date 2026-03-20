@@ -83,7 +83,7 @@ The pipeline worker calls each action in sequence via service bindings, passing 
 
 ### PIPELINE.md Format (Local)
 
-Local pipeline definitions live in `$HOLOCRON_MEMORY_DIR/PAI/PIPELINES/[Domain]_[Pipeline-Name]/PIPELINE.md`
+Local pipeline definitions live in `$HOLOCRON_DIR/docs/PIPELINES/[Domain]_[Pipeline-Name]/PIPELINE.md`
 
 ```markdown
 # [Pipeline_Name] Pipeline
@@ -106,7 +106,7 @@ Local pipeline definitions live in `$HOLOCRON_MEMORY_DIR/PAI/PIPELINES/[Domain]_
 ### Naming Convention
 
 ```
-$HOLOCRON_MEMORY_DIR/PAI/PIPELINES/
+$HOLOCRON_DIR/docs/PIPELINES/
 ├── Blog_Publish-Post/          # Domain_Action-Format
 │   └── PIPELINE.md
 ├── Newsletter_Full-Cycle/
@@ -159,10 +159,10 @@ Map out the complete workflow:
 ### Step 2: Create Pipeline Directory
 
 ```bash
-mkdir -p $HOLOCRON_MEMORY_DIR/PAI/PIPELINES/[Domain]_[Pipeline-Name]
+mkdir -p $HOLOCRON_DIR/docs/PIPELINES/[Domain]_[Pipeline-Name]
 # PIPELINE-TEMPLATE.md is planned but not yet created
 # For now, copy an existing pipeline and modify it
-cp $HOLOCRON_MEMORY_DIR/PAI/PIPELINES/Blog_Publish-Post/PIPELINE.md $HOLOCRON_MEMORY_DIR/PAI/PIPELINES/[Domain]_[Pipeline-Name]/PIPELINE.md
+cp $HOLOCRON_DIR/docs/PIPELINES/Blog_Publish-Post/PIPELINE.md $HOLOCRON_DIR/docs/PIPELINES/[Domain]_[Pipeline-Name]/PIPELINE.md
 ```
 
 ### Step 3: Define Overview Table
@@ -249,10 +249,10 @@ Actions should not be tightly coupled to a specific pipeline. Design them to wor
 
 ## Related Documentation
 
-- **Actions:** `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS.md`
-- **Flows:** `$HOLOCRON_MEMORY_DIR/PAI/FLOWS.md`
-- **Architecture:** `$HOLOCRON_MEMORY_DIR/PAI/PAISYSTEMARCHITECTURE.md`
-- **Detailed README:** `$HOLOCRON_MEMORY_DIR/PAI/PIPELINES/README.md`
+- **Actions:** `$HOLOCRON_DIR/docs/ACTIONS.md`
+- **Flows:** `$HOLOCRON_DIR/docs/FLOWS.md`
+- **Architecture:** `$HOLOCRON_DIR/docs/PAISYSTEMARCHITECTURE.md`
+- **Detailed README:** `$HOLOCRON_DIR/docs/PIPELINES/README.md`
 - **Source code:** `~/Projects/arbol/`
 
 ---

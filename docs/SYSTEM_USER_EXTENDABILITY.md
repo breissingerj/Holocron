@@ -42,7 +42,7 @@ When PAI needs configuration, it follows a cascading lookup:
 ### Security System
 
 ```
-PAI/PAISECURITYSYSTEM/         # SYSTEM tier (base)
+docs/PAISECURITYSYSTEM/         # SYSTEM tier (base)
 ├── README.md                          # Overview
 ├── ARCHITECTURE.md                    # Security layers
 ├── HOOKS.md                           # Hook documentation
@@ -56,12 +56,12 @@ Holocron/USER/PAISECURITYSYSTEM/                # USER tier (personal)
 └── ...
 ```
 
-The SecurityValidator hook checks `Holocron/USER/PAISECURITYSYSTEM/patterns.yaml` first, falling back to `PAI/PAISECURITYSYSTEM/patterns.example.yaml`.
+The SecurityValidator hook checks `Holocron/USER/PAISECURITYSYSTEM/patterns.yaml` first, falling back to `docs/PAISECURITYSYSTEM/patterns.example.yaml`.
 
 ### Response Format
 
 ```
-PAI/RESPONSEFORMAT.md         # SYSTEM tier (base format rules)
+docs/RESPONSEFORMAT.md         # SYSTEM tier (base format rules)
 Holocron/USER/RESPONSEFORMAT.md    # USER tier (personal overrides)
 ```
 

@@ -90,7 +90,7 @@ Flows run as **Cloudflare Workers** in the [Arbol project](~/Projects/arbol/). T
 
 ## Flow Registry
 
-Local flow definitions are tracked in `$HOLOCRON_MEMORY_DIR/PAI/FLOWS/flow-index.json`:
+Local flow definitions are tracked in `$HOLOCRON_DIR/docs/FLOWS/flow-index.json`:
 
 ```json
 {
@@ -433,10 +433,10 @@ async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
 
 ## Related Documentation
 
-- **Actions:** `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS.md` *(planned)*
-- **Pipelines:** `$HOLOCRON_MEMORY_DIR/PAI/PIPELINES.md`
-- **Architecture:** `$HOLOCRON_MEMORY_DIR/PAI/PAISYSTEMARCHITECTURE.md`
-- **Detailed README:** `$HOLOCRON_MEMORY_DIR/PAI/FLOWS/README.md`
+- **Actions:** `$HOLOCRON_DIR/docs/ACTIONS.md` *(planned)*
+- **Pipelines:** `$HOLOCRON_DIR/docs/PIPELINES.md`
+- **Architecture:** `$HOLOCRON_DIR/docs/PAISYSTEMARCHITECTURE.md`
+- **Detailed README:** `$HOLOCRON_DIR/docs/FLOWS/README.md`
 - **Source code:** `~/Projects/arbol/`
 
 ---

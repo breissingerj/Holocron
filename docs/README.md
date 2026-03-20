@@ -6,7 +6,7 @@ PAI is a general problem-solving system that magnifies human capabilities. It ru
 
 **CLAUDE.md** is the master config — generated from `CLAUDE.md.template` via `BuildCLAUDE.ts`. It defines execution modes, The Algorithm, and the context routing table. Claude Code loads it natively every session. A SessionStart hook keeps it fresh automatically.
 
-**This directory (`PAI/`)** contains all system documentation, tools, user context, and the SKILL.md that defines PAI as a skill. The rest of the system lives alongside it under `$HOLOCRON_MEMORY_DIR/` (hooks, skills, settings, memory).
+**This directory (`docs/`)** contains all system documentation, tools, user context, and the SKILL.md that defines PAI as a skill. The rest of the system lives alongside it under `$HOLOCRON_MEMORY_DIR/` (hooks, skills, settings, memory).
 
 ## Directory Structure
 
@@ -18,7 +18,7 @@ $HOLOCRON_MEMORY_DIR/
   hooks/                       # Event lifecycle hooks (21+)
   skills/                      # 12 categories, 49 skills — each with SKILL.md
   MEMORY/                      # Persistent memory (work, learning, relationship, state)
-  PAI/                         # This directory — system docs + tools + user context
+  docs/                        # This directory — system docs + tools + user context
     Algorithm/                 # Versioned algorithm files + LATEST pointer
 ```
 
@@ -42,7 +42,7 @@ Persistent storage across sessions:
 - **WISDOM/** — Domain knowledge frames that compound over time
 
 ### Tools (`Tools/`)
-TypeScript utilities in `PAI/Tools/`: `BuildCLAUDE.ts` (generate CLAUDE.md from template), `Inference.ts` (AI calls), `GenerateSkillIndex.ts`, `SessionProgress.ts`, `Banner.ts`, and more.
+TypeScript utilities in `tools/`: `BuildCLAUDE.ts` (generate CLAUDE.md from template), `Inference.ts` (AI calls), `GenerateSkillIndex.ts`, `SessionProgress.ts`, `Banner.ts`, and more.
 
 ### Agents (`PAIAGENTSYSTEM.md`)
 14 specialized agent types (Algorithm, Engineer, Architect, Designer, Researcher variants). Custom agents via the Agents skill. Agent teams for coordinated multi-agent work.
@@ -79,7 +79,7 @@ All other documentation loads on-demand based on the routing table in CLAUDE.md.
 
 | Target | Source | Builder | Trigger |
 |--------|--------|---------|---------|
-| `CLAUDE.md` | `CLAUDE.md.template` + `settings.json` + `PAI/Algorithm/LATEST` | `bun PAI/Tools/BuildCLAUDE.ts` | SessionStart hook + manual |
+| `CLAUDE.md` | `CLAUDE.md.template` + `settings.json` + `PAI/Algorithm/LATEST` | `bun tools/BuildCLAUDE.ts` | SessionStart hook + manual |
 
 ## Extending PAI
 

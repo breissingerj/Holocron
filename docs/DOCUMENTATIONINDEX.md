@@ -13,7 +13,7 @@ extracted_from: SKILL.md (context loading section)
 
 ## 📚 Documentation Index & Route Triggers
 
-**All documentation files are in `$HOLOCRON_MEMORY_DIR/PAI/` with USER/ subdirectory for personal overrides. Read these files when you need deeper context.**
+**All documentation files are in `$HOLOCRON_DIR/docs/` with USER/ subdirectory for personal overrides. Read these files when you need deeper context.**
 
 **Core Architecture & Philosophy:**
 - `PAISYSTEMARCHITECTURE.md` - System architecture and philosophy, foundational principles (CLI-First, Deterministic Code, Prompts Wrap Code) | ⭐ PRIMARY REFERENCE | Triggers: "system architecture", "how does the system work", "system principles"

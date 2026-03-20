@@ -122,7 +122,7 @@ Actions declare what they need in `action.json` under `requires`. The runner inj
 
 ```bash
 # Run a single action
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 bun lib/runner.v2.ts run A_YOUR_ACTION --input '{"content": "Your text here"}'
 
 # Run via pipeline runner

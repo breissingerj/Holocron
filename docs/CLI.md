@@ -13,7 +13,7 @@ Both tools use `bun` as their runtime.
 
 ## The Algorithm CLI
 
-**Location:** `$HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts`
+**Location:** `$HOLOCRON_DIR/tools/algorithm.ts`
 
 The Algorithm CLI executes the PAI Algorithm (Observe → Think → Plan → Build → Execute → Verify → Learn) against PRD files. It supports two modes: autonomous loop execution (no human needed) and interactive sessions (human-in-the-loop).
 
@@ -21,13 +21,13 @@ The Algorithm CLI executes the PAI Algorithm (Observe → Think → Plan → Bui
 
 ```bash
 # Run the Algorithm in autonomous loop mode
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m loop -p <PRD-path> -n 20
+bun $HOLOCRON_DIR/tools/algorithm.ts -m loop -p <PRD-path> -n 20
 
 # Run in interactive mode (launches a claude session with PRD context)
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m interactive -p <PRD-path>
+bun $HOLOCRON_DIR/tools/algorithm.ts -m interactive -p <PRD-path>
 
 # Check status of all PRDs
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts status
+bun $HOLOCRON_DIR/tools/algorithm.ts status
 ```
 
 ### Usage
@@ -64,13 +64,13 @@ Loop mode runs the Algorithm iteratively without human interaction. Each iterati
 
 ```bash
 # Basic loop — single agent, up to 128 iterations
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m loop -p PRD-20260213-auth.md
+bun $HOLOCRON_DIR/tools/algorithm.ts -m loop -p PRD-20260213-auth.md
 
 # Fast loop — 20 max iterations
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m loop -p PRD-20260213-auth.md -n 20
+bun $HOLOCRON_DIR/tools/algorithm.ts -m loop -p PRD-20260213-auth.md -n 20
 
 # Parallel loop — 4 agents working on different criteria simultaneously
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m loop -p PRD-20260213-auth.md -n 20 -a 4
+bun $HOLOCRON_DIR/tools/algorithm.ts -m loop -p PRD-20260213-auth.md -n 20 -a 4
 ```
 
 **Parallel agents (`-a N`):** When N > 1, the CLI partitions failing criteria across N agents. Each agent receives exactly one criterion and operates as a focused worker. The CLI uses domain-aware partitioning — criteria from the same domain (e.g., `ISC-AUTH-1`, `ISC-AUTH-2`) are assigned to the same agent to avoid conflicts. After all agents complete, the parent process reconciles results into the PRD.
@@ -91,7 +91,7 @@ bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m loop -p PRD-20260213-auth.md 
 Interactive mode launches a full `claude` session with the PRD context pre-loaded. You work with Claude directly to make progress on criteria.
 
 ```bash
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts -m interactive -p PRD-20260213-feature.md
+bun $HOLOCRON_DIR/tools/algorithm.ts -m interactive -p PRD-20260213-feature.md
 ```
 
 This opens an interactive Claude session with:
@@ -104,19 +104,19 @@ This opens an interactive Claude session with:
 
 ```bash
 # Show all PRDs and their status
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts status
+bun $HOLOCRON_DIR/tools/algorithm.ts status
 
 # Show status of a specific PRD
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts status -p PRD-20260213-auth
+bun $HOLOCRON_DIR/tools/algorithm.ts status -p PRD-20260213-auth
 
 # Pause a running loop (loop checks between iterations)
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts pause -p PRD-20260213-auth
+bun $HOLOCRON_DIR/tools/algorithm.ts pause -p PRD-20260213-auth
 
 # Resume a paused loop
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts resume -p PRD-20260213-auth
+bun $HOLOCRON_DIR/tools/algorithm.ts resume -p PRD-20260213-auth
 
 # Stop a loop permanently
-bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts stop -p PRD-20260213-auth
+bun $HOLOCRON_DIR/tools/algorithm.ts stop -p PRD-20260213-auth
 ```
 
 ### PRD Resolution
@@ -186,14 +186,14 @@ Loop mode displays a live progress dashboard:
 
 ## The Arbol CLI (pai)
 
-**Location:** `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS/pai.ts`
+**Location:** `$HOLOCRON_DIR/docs/ACTIONS/pai.ts`
 
 The Arbol CLI (`pai`) provides a unified interface for running actions and pipelines locally. It supports JSON input via arguments, stdin piping, and UNIX-style action composition.
 
 ### Quick Start
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 
 # Run an action with inline JSON
 bun pai.ts action A_EXAMPLE_SUMMARIZE --input '{"content": "Your text here"}'
@@ -266,12 +266,12 @@ bun pai.ts action A_EXAMPLE_SUMMARIZE --input '{"content": "test"}' -v
 
 ## The Arbol Runner (Low-Level)
 
-**Location:** `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS/lib/runner.v2.ts`
+**Location:** `$HOLOCRON_DIR/docs/ACTIONS/lib/runner.v2.ts`
 
 The runner is the lower-level engine that the `pai` CLI and pipeline runner both use. You can call it directly:
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 
 # Run an action (input as JSON argument)
 bun lib/runner.v2.ts run A_EXAMPLE_SUMMARIZE '{"content": "Your text here"}'
@@ -301,12 +301,12 @@ bun lib/runner.v2.ts list
 
 ## The Pipeline Runner
 
-**Location:** `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS/lib/pipeline-runner.ts`
+**Location:** `$HOLOCRON_DIR/docs/ACTIONS/lib/pipeline-runner.ts`
 
 The pipeline runner loads YAML pipeline definitions and chains actions sequentially.
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 
 # Run a pipeline with named parameters
 bun lib/pipeline-runner.ts run P_EXAMPLE_SUMMARIZE_AND_FORMAT --content "Your text here"
@@ -351,14 +351,14 @@ For convenience, add aliases to your shell configuration (`.zshrc`, `.bashrc`):
 
 ```bash
 # The Algorithm CLI
-alias algorithm="bun $HOLOCRON_MEMORY_DIR/PAI/Tools/algorithm.ts"
+alias algorithm="bun $HOLOCRON_DIR/tools/algorithm.ts"
 
 # The Arbol CLI
-alias pai="bun $HOLOCRON_MEMORY_DIR/PAI/ACTIONS/pai.ts"
+alias pai="bun $HOLOCRON_DIR/docs/ACTIONS/pai.ts"
 
 # Runners (optional — pai CLI wraps these)
-alias arbol-run="bun $HOLOCRON_MEMORY_DIR/PAI/ACTIONS/lib/runner.v2.ts"
-alias arbol-pipe="bun $HOLOCRON_MEMORY_DIR/PAI/ACTIONS/lib/pipeline-runner.ts"
+alias arbol-run="bun $HOLOCRON_DIR/docs/ACTIONS/lib/runner.v2.ts"
+alias arbol-pipe="bun $HOLOCRON_DIR/docs/ACTIONS/lib/pipeline-runner.ts"
 ```
 
 Then use:
