@@ -4,6 +4,28 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ---
 
+## 2026-03-19
+
+### Add /compound command for solution card extraction
+
+- **Decision** — Added `commands/compound.md` as a new slash command that extracts solved problems into searchable markdown cards written to `$HOLOCRON_MEMORY_DIR/RESEARCH/solutions/{category}/`.
+- **Options considered** — (1) Add a Compound step inline to the Algorithm's LEARN phase — keeps it in one file but couples two separate concerns (reflection vs. solution documentation). (2) Add as a workflow inside the existing Algorithm or Research skill — possible but slash commands are more discoverable and invokable ad hoc. (3) Standalone command — most flexible, opt-in, matches the compound engineering article's philosophy that compounding is a separate explicit step after the work is done.
+- **Rationale** — The article's insight is that most developers skip the compound step because it's not a named, explicit action. Making it a slash command gives it the same weight as `/reflect` — something you consciously run, not a passive side effect. Solution cards in `RESEARCH/solutions/` are optimized for future retrieval, unlike PRDs which are tracking artifacts.
+
+### Add CONFIDENCE CHECK to VERIFY phase (Extended+ effort)
+
+- **Decision** — Added a `🔍 CONFIDENCE CHECK` block to the VERIFY phase of `algorithm.md`, mandatory for Extended+ effort. It requires answering: hardest decision made, alternatives rejected, least confident part of the output.
+- **Options considered** — (1) Add as a LEARN phase reflection question — already asked in generic form, but fires after delivery not before. (2) Add to every effort level — creates overhead on simple tasks where the answers are obvious. (3) Extended+ only in VERIFY — surfaces weak spots before the user sees the output, scoped to work complex enough to have real judgment calls.
+- **Rationale** — The compound engineering article's three questions ("What was the hardest decision?", "What alternatives did you reject?", "What are you least confident about?") are specifically useful as a pre-delivery review, not a post-session retrospective. Placing them in VERIFY for Extended+ effort means they run when stakes are high enough to justify the overhead, and they surface issues while there's still time to fix them.
+
+### Add work_type field to algorithm reflection JSONL
+
+- **Decision** — Added `work_type` as a required field to the LEARN phase JSONL schema with four valid values: `feature`, `system_improvement`, `research`, `debugging`.
+- **Options considered** — (1) Derive work type automatically from task description via inference — fragile and adds latency. (2) Add as an optional field — optional fields get skipped; a required field creates the data needed to track the 50/50 balance. (3) Required field with four enum values — explicit, low-friction to fill in, queryable.
+- **Rationale** — The compound engineering "50/50 rule" (half time on features, half on system improvement) can't be tracked without tagging work sessions by type. The `work_type` field makes this data available in `algorithm-reflections.jsonl` for future analysis via `/reflect` or a dedicated balance report. Four values are enough to distinguish the relevant categories without over-engineering the taxonomy.
+
+---
+
 ## Format
 
 Each entry has:

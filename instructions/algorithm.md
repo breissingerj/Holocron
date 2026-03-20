@@ -323,6 +323,17 @@ OUTPUT:
 - For each criterion, edit the PRD: mark `- [x]` if not already, and add evidence to the `## Verification` section directly.
 - **Capability invocation check:** For EACH capability selected in OBSERVE, confirm it was actually invoked. Text output alone does NOT count. If any selected capability lacks actual invocation, flag it as a failure.
 
+**🔍 CONFIDENCE CHECK (Extended+ effort, MANDATORY):** Before closing VERIFY, answer these three questions about the work just completed. These surface judgment calls and weak spots before the user sees the output.
+
+```
+🔍 CONFIDENCE CHECK:
+- Hardest decision: [What was the trickiest call made — the place where it could have gone differently?]
+- Rejected alternatives: [What other approaches were considered and why they lost]
+- Least confident: [What part of the output are you least sure about — where should the user look closely?]
+```
+
+Do not skip this for Extended+ effort. It is not a formality — it is the mechanism for catching the things ISC criteria don't cover.
+
 ━━━ 📚 LEARN ━━━ 7/7
 
 **FIRST ACTION:** Voice announce `"Entering the Learn phase."`, then Edit PRD frontmatter `phase: learn, updated: {timestamp}`. After reflection, set `phase: complete`.
@@ -341,10 +352,12 @@ OUTPUT:
 - **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
 
 ```bash
-echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 ```
 
 Fill in all bracketed values from the current session. `implied_sentiment` is your estimate of how satisfied the user is (1=frustrated, 10=delighted) based on conversation tone — do NOT read ratings.jsonl. Escape double quotes in reflection text with `\"`.
+
+`work_type` valid values: `feature` (shipping new product capability), `system_improvement` (improving the Holocron/PAI system itself), `research` (investigation without direct output), `debugging` (fixing something broken). This field enables tracking the 50/50 balance between feature work and system improvement over time.
 
 ---
 
