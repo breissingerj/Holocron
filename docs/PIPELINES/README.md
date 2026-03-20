@@ -48,7 +48,7 @@ Input → Action 1 → Action 2 → ... → Action N → Output
 ## Running Locally
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 bun lib/pipeline-runner.ts run P_YOUR_PIPELINE --input '{"content": "Your text here"}'
 ```
 
@@ -145,7 +145,7 @@ All referenced actions must exist as `A_` directories under `../ACTIONS/`. Each 
 ### 3. Test Locally
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 bun lib/pipeline-runner.ts run P_YOUR_PIPELINE --input '{"key": "value"}'
 ```
 

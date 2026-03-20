@@ -590,7 +590,7 @@ AI should orchestrate deterministic tools, not replace them with ad-hoc promptin
 
 ## Related Documentation
 
-- **Architecture**: `$HOLOCRON_MEMORY_DIR/PAI/PAISYSTEMARCHITECTURE.md`
+- **Architecture**: `$HOLOCRON_DIR/docs/PAISYSTEMARCHITECTURE.md`
 
 ---
 

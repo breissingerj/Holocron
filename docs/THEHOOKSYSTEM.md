@@ -33,7 +33,7 @@ Claude Code supports the following hook events:
 ### 1. **SessionStart**
 **When:** Claude Code session begins (new conversation)
 **Use Cases:**
-- Load PAI context from `PAI/SKILL.md`
+- Load PAI context from `docs/SKILL.md`
 - Initialize session state
 - Capture session metadata
 
@@ -154,20 +154,20 @@ Claude Code supports the following hook events:
 - Low ratings (<6) auto-capture as learning opportunities
 - Writes to `$HOLOCRON_MEMORY_DIR/SIGNALS/ratings.jsonl`
 - Uses shared libraries: `hooks/lib/learning-utils.ts`, `hooks/lib/time.ts`
-- **Inference:** `import { inference } from '../PAI/Tools/Inference'` → `inference({ level: 'fast', expectJson: true })`
+- **Inference:** `import { inference } from '../tools/Inference'` → `inference({ level: 'fast', expectJson: true })`
 
 **UpdateTabTitle.hook.ts** - Tab Title + Working State
 - Updates Kitty terminal tab title with task summary + `…` suffix
 - Sets tab to **orange background** (working state)
 - Announces via voice server with context-appropriate gerund
 - See `TERMINALTABS.md` for full state system documentation
-- **Inference:** `import { inference } from '../PAI/Tools/Inference'` → `inference({ level: 'fast' })`
+- **Inference:** `import { inference } from '../tools/Inference'` → `inference({ level: 'fast' })`
 
 **SessionAutoName.hook.ts** - Automatic Session Naming
 - Infers a short descriptive name for the session from the first substantive prompt
 - Updates `MEMORY/STATE/session-names.json` with the session ID → name mapping
 - Used by the startup banner and session management tools
-- **Inference:** `import { inference } from '../PAI/Tools/Inference'` → `inference({ level: 'fast' })`
+- **Inference:** `import { inference } from '../tools/Inference'` → `inference({ level: 'fast' })`
 
 ---
 
@@ -603,7 +603,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 - 🧠 Brain - AI inference in progress (Haiku/Sonnet thinking)
 - ⚙️ Gear - Processing/working state
 
-**Full Documentation:** See `$HOLOCRON_MEMORY_DIR/PAI/TERMINALTABS.md`
+**Full Documentation:** See `$HOLOCRON_DIR/docs/TERMINALTABS.md`
 
 ---
 
@@ -825,7 +825,7 @@ setTimeout(() => {
 
 **Check:**
 1. Is voice server running? `curl http://localhost:8888/health`
-2. Is voice_id correct? See `PAI/SKILL.md` for mappings
+2. Is voice_id correct? See `docs/SKILL.md` for mappings
 3. Is message format correct? `{"message":"...", "voice_id":"...", "title":"..."}`
 4. Is ElevenLabs API key in `${HOLOCRON_MEMORY_DIR}/.env`?
 
@@ -933,7 +933,7 @@ grep '"type":"user"' $HOLOCRON_MEMORY_DIR/projects/-Users-username--claude/*.jso
 ### Context Loading Issues (SessionStart)
 
 **Check:**
-1. Does `$HOLOCRON_MEMORY_DIR/PAI/SKILL.md` exist?
+1. Does `$HOLOCRON_DIR/docs/SKILL.md` exist?
 2. Is `LoadContext.hook.ts` executable?
 3. Is `HOLOCRON_MEMORY_DIR` env variable set correctly?
 
@@ -1069,7 +1069,7 @@ Hooks in same event execute **sequentially** in order defined in settings.json:
 
 - **Voice System:** `$HOLOCRON_MEMORY_DIR/VoiceServer/SKILL.md`
 - **Agent System:** `~/.config/opencode/skills/Agents/SKILL.md`
-- **History/Memory:** `$HOLOCRON_MEMORY_DIR/PAI/MEMORYSYSTEM.md`
+- **History/Memory:** `$HOLOCRON_DIR/docs/MEMORYSYSTEM.md`
 
 ---
 
@@ -1135,8 +1135,8 @@ $HOLOCRON_MEMORY_DIR/STATE/              Runtime state
 $HOLOCRON_MEMORY_DIR/STATE/events.jsonl  Unified event log (append-only)
 
 INFERENCE TOOL (for hooks needing AI):
-Path: $HOLOCRON_MEMORY_DIR/PAI/Tools/Inference.ts
-Import: import { inference } from '../PAI/Tools/Inference'
+Path: $HOLOCRON_DIR/tools/Inference.ts
+Import: import { inference } from '../tools/Inference'
 Levels: fast (haiku/15s) | standard (sonnet/30s) | smart (opus/90s)
 
 TAB STATE SYSTEM:
@@ -1205,11 +1205,11 @@ const principal = getPrincipal();  // { name, pronunciation, timezone }
 
 **Used by:** handlers/VoiceNotification.ts, RatingCapture, handlers/TabState.ts
 
-### `PAI/Tools/Inference.ts`
+### `tools/Inference.ts`
 Unified AI inference with three run levels.
 
 ```typescript
-import { inference } from '../PAI/Tools/Inference';
+import { inference } from '../tools/Inference';
 
 // Fast (Haiku) - quick tasks, 15s timeout
 const result = await inference({

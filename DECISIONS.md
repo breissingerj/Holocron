@@ -436,3 +436,11 @@ Each entry has:
 - **Decision** — Reflect workflow updates holocron-context repo directly on `main`
 - **Options considered** — Open PRs for both memory repo and system repo, or commit to main for memory and open PR for system
 - **Rationale** — Personal memory contexts are less strict and do not need a PR review process before taking effect. The System repo still goes through a PR for human review.
+
+## 2026-03-20
+
+### Deduplication of framework documentation files
+
+- **Decision** — Deleted duplicate framework documentation files (`.md`) from `holocron-context/Holocron/` and updated all internal path references in `Holocron/docs/` to point to `$HOLOCRON_DIR/docs/` or `tools/` instead of `PAI/`. Overwrote `holocron-context/Holocron/README.md` to establish strict separation of concerns.
+- **Options considered** — (1) Keep documentation in both repositories. (2) Define `holocron-context` as the sole source of truth. (3) Enforce `Holocron` as the stateless framework codebase and `holocron-context` as the stateful memory repo.
+- **Rationale** — Mixing framework code into the context repository creates a split-brain architecture. By removing duplicate static documentation and tools from the context repo, we ensure there is only one source of truth for the system's framework, preventing divergence and broken paths for ALGORITHM tools.

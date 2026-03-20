@@ -140,4 +140,4 @@ Key design choices:
 - **Checkboxes over EARS/BDD**: Simpler to parse, write, and verify. ISC pattern proven over 48 PRDs.
 - **YAML frontmatter over JSON**: Universal standard (Jekyll, Hugo, Astro, Kiro, spec-kit all use it).
 - **Convention-based sections**: Sections appear when needed, not as empty boilerplate.
-- **Reference file pattern**: This spec lives at `$HOLOCRON_MEMORY_DIR/PAI/PRDFORMAT.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.
+- **Reference file pattern**: This spec lives at `$HOLOCRON_DIR/docs/PRDFORMAT.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.

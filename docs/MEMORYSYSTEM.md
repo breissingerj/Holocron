@@ -317,7 +317,7 @@ ls -lt $HOLOCRON_MEMORY_DIR/LEARNING/FAILURES/$(date +%Y-%m)/ 2>/dev/null | head
 cat $HOLOCRON_MEMORY_DIR/LEARNING/FAILURES/2026-01/*/CONTEXT.md | head -100
 
 # Migrate historical low ratings to FAILURES
-bun run $HOLOCRON_MEMORY_DIR/PAI/Tools/FailureCapture.ts --migrate
+bun run $HOLOCRON_DIR/tools/FailureCapture.ts --migrate
 ```
 
 ### Check multi-session progress
@@ -328,10 +328,10 @@ ls $HOLOCRON_MEMORY_DIR/STATE/progress/
 ### Run harvesting tools
 ```bash
 # Harvest learnings from recent sessions
-bun run $HOLOCRON_MEMORY_DIR/PAI/Tools/SessionHarvester.ts --recent 10
+bun run $HOLOCRON_DIR/tools/SessionHarvester.ts --recent 10
 
 # Generate pattern synthesis
-bun run $HOLOCRON_MEMORY_DIR/PAI/Tools/LearningPatternSynthesis.ts --week
+bun run $HOLOCRON_DIR/tools/LearningPatternSynthesis.ts --week
 ```
 
 ---

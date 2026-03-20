@@ -88,7 +88,7 @@ Actions run in two environments with identical behavior:
 
 ## Action Structure
 
-Each action is a flat directory under `$HOLOCRON_MEMORY_DIR/PAI/ACTIONS/`:
+Each action is a flat directory under `$HOLOCRON_DIR/docs/ACTIONS/`:
 
 ```
 A_LABEL_AND_RATE/
@@ -195,7 +195,7 @@ const capabilities = {
 ### Local Execution
 
 ```bash
-cd $HOLOCRON_MEMORY_DIR/PAI/ACTIONS
+cd $HOLOCRON_DIR/docs/ACTIONS
 
 # Run a single action
 bun lib/runner.v2.ts run A_LABEL_AND_RATE --input '{"content": "Your text here"}'
@@ -389,9 +389,9 @@ Same input should produce same output (for LLM actions, use temperature 0).
 
 ## Related Documentation
 
-- **Pipelines:** `$HOLOCRON_MEMORY_DIR/PAI/PIPELINES.md`
-- **Flows:** `$HOLOCRON_MEMORY_DIR/PAI/FLOWS.md`
-- **Architecture:** `$HOLOCRON_MEMORY_DIR/PAI/PAISYSTEMARCHITECTURE.md`
+- **Pipelines:** `$HOLOCRON_DIR/docs/PIPELINES.md`
+- **Flows:** `$HOLOCRON_DIR/docs/FLOWS.md`
+- **Architecture:** `$HOLOCRON_DIR/docs/PAISYSTEMARCHITECTURE.md`
 - **Personal Actions:** `$HOLOCRON_MEMORY_DIR/Holocron/USER/ACTIONS/`
 - **Source code:** `~/Projects/arbol/`
 

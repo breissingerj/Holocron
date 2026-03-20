@@ -250,7 +250,7 @@ science_cycle_time: meso
    Running the **WorkflowName** workflow in the **SkillName** skill to ACTION...
    ```
 
-**Full documentation:** `$HOLOCRON_MEMORY_DIR/PAI/THENOTIFICATIONSYSTEM.md`
+**Full documentation:** `$HOLOCRON_DIR/docs/THENOTIFICATIONSYSTEM.md`
 
 ## Workflow Routing
 
@@ -461,7 +461,7 @@ Use dynamic loading for skills with:
 
 Don't bother for:
 - ❌ Simple skills (< 50 lines total)
-- ❌ Pure utility wrappers (use PAI/TOOLS.md instead)
+- ❌ Pure utility wrappers (use docs/TOOLS.md instead)
 - ❌ Skills that are already minimal
 
 ---
@@ -609,7 +609,7 @@ Complete blog workflow.
    Running the **WorkflowName** workflow in the **Blogging** skill to ACTION...
    ```
 
-**Full documentation:** `$HOLOCRON_MEMORY_DIR/PAI/THENOTIFICATIONSYSTEM.md`
+**Full documentation:** `$HOLOCRON_DIR/docs/THENOTIFICATIONSYSTEM.md`
 
 ## Core Paths
 
@@ -829,7 +829,7 @@ bun ToolName.ts \
 \`\`\`
 ```
 
-**See:** `$HOLOCRON_MEMORY_DIR/PAI/CLIFIRSTARCHITECTURE.md` (Workflow-to-Tool Integration section)
+**See:** `$HOLOCRON_DIR/docs/CLIFIRSTARCHITECTURE.md` (Workflow-to-Tool Integration section)
 
 ---
 
@@ -934,7 +934,7 @@ bun Generate.ts \
 4. **Value flags**: `--flag <value>` for choices
 5. **Composable**: Flags should combine logically
 
-**See:** `$HOLOCRON_MEMORY_DIR/PAI/CLIFIRSTARCHITECTURE.md` (Configuration Flags section) for full documentation
+**See:** `$HOLOCRON_DIR/docs/CLIFIRSTARCHITECTURE.md` (Configuration Flags section) for full documentation
 
 ### Tool Structure
 
