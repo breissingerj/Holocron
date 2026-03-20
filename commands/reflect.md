@@ -166,6 +166,13 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
    > "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl"
    # Remove processed capture files (already in snapshot)
    rm -rf "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/"*/
+   
+   # Clean up old PRDs in WORK/ that have been processed for learnings
+   grep -h -o '"prd_id":"[^"]*"' "$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/"*/algorithm-reflections.jsonl "$SNAPSHOT_DIR/algorithm-reflections.jsonl" 2>/dev/null | cut -d'"' -f4 | sort -u | while read -r prd; do
+     if [ -n "$prd" ] && [ -d "$HOLOCRON_MEMORY_DIR/WORK/$prd" ]; then
+       rm -rf "$HOLOCRON_MEMORY_DIR/WORK/$prd"
+     fi
+   done
    ```
 
 2. Open PR in `holocron-context` repo (if memory branch was pushed):
