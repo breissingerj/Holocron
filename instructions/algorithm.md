@@ -312,6 +312,8 @@ OUTPUT:
 **FIRST ACTION:** Voice announce `"Entering the Execute phase."`, then Edit PRD frontmatter `phase: execute, updated: {timestamp}`. Perform the work.
 
 — Execute the work.
+- **Code Modification Strategy:** When programmatically modifying complex TypeScript/JavaScript, use AST parsing tools (e.g., ts-morph, babel) instead of regex or string replacements to avoid injecting syntax errors.
+  <!-- reflect: applied from signals 2026-03-20T19:05:32Z, 2026-03-20T19:33:05Z — rating avg 9 -->
 - As each criterion is satisfied, IMMEDIATELY edit the PRD directly: change `- [ ]` to `- [x]`, update frontmatter `progress:` field. Do NOT wait for VERIFY — update the moment a criterion passes. This is the AI's responsibility — no plugin will do it for you.
 
 ━━━ ✅ VERIFY ━━━ 6/7

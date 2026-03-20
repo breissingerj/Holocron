@@ -419,3 +419,20 @@ Each entry has:
 - **Decision** — Created the PM subagent as `Holocron/agents/pm.md`, which resolves via the existing broken symlink `~/.config/opencode/agents/ → Holocron/agents/`. Created the `Holocron/agents/` directory to fix the symlink.
 - **Options considered** — (1) Inline agent definition in `~/.config/opencode/opencode.json` — works but buries the prompt in JSON, harder to read/edit, not version-controlled in Holocron. (2) Markdown file in `~/.config/opencode/agents/` directly — the directory is a symlink to `Holocron/agents/`, so writing there IS writing to the Holocron repo; markdown format is the idiomatic OpenCode approach.
 - **Rationale** — Markdown agent files are the recommended OpenCode format (named file = named agent), self-documenting, diff-friendly, and version-controlled in Holocron automatically. The symlink already establishes `Holocron/agents/` as the canonical location — creating the directory and writing the file there is the zero-friction path.
+
+---
+
+## 2026-03-20
+
+### /reflect command — strict PRD cleanup by algorithm-reflections mapping
+
+- **Decision** — Added cleanup logic to Phase 6 of `commands/reflect.md` that deletes old PRD directories in `$HOLOCRON_MEMORY_DIR/WORK/`, but strictly filters them by extracting the `prd_id` values from all processed `algorithm-reflections.jsonl` files (current and archived).
+- **Options considered** — (1) Blindly delete all `WORK/` directories older than a certain time or older than the `/reflect` run. (2) Strictly map "processed for learnings" to PRDs that generated an `algorithm-reflections.jsonl` entry.
+- **Rationale** — Blind deletion would wipe out PRDs from failed sessions, aborted runs, or NATIVE mode tasks that never triggered the learning hook. By grepping the `prd_id` directly from the processed learning JSONL files, the cleanup exactly targets PRDs that successfully passed the "Learn" phase and had their insights synthesized. This safely garbage-collects the successful session folders cluttering `WORK/` while preserving artifacts from aborted sessions that might still be needed for debugging or resumption.
+## 2026-03-20
+
+### Reflect command push behavior
+
+- **Decision** — Reflect workflow updates holocron-context repo directly on `main`
+- **Options considered** — Open PRs for both memory repo and system repo, or commit to main for memory and open PR for system
+- **Rationale** — Personal memory contexts are less strict and do not need a PR review process before taking effect. The System repo still goes through a PR for human review.

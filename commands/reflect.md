@@ -92,12 +92,11 @@ Only proceed if PHASE 3 snapshot was confirmed.
 
 If there are memory/behavioral/preference changes to apply:
 
-1. Switch to the memory repo and create a feature branch:
+1. Switch to the memory repo:
    ```bash
    cd $HOLOCRON_MEMORY_DIR
    gh auth switch --user breissingerj 2>/dev/null || true
    git checkout main && git pull
-   git checkout -b "reflect/$REFLECT_TS"
    ```
 
 2. Apply each "Apply" item from the synthesis table to the correct file:
@@ -109,12 +108,12 @@ If there are memory/behavioral/preference changes to apply:
 3. For EVERY change, add a source annotation comment in the file using this format:
    `<!-- reflect: applied from signals {TIMESTAMP_1}, {TIMESTAMP_2} — rating avg {N} -->`
 
-4. Commit the changes:
+4. Commit the changes and push directly to main:
    ```bash
    cd $HOLOCRON_MEMORY_DIR
    git add -A
    git commit -m "reflect($REFLECT_TS): apply learning signals to memory"
-   git push -u origin "reflect/$REFLECT_TS"
+   git push origin main
    ```
 
 If no memory changes are needed, skip to PHASE 5.
@@ -166,32 +165,18 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
    > "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl"
    # Remove processed capture files (already in snapshot)
    rm -rf "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/"*/
+   
+   # Clean up old PRDs in WORK/ that have been processed for learnings
+   grep -h -o '"prd_id":"[^"]*"' "$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/"*/algorithm-reflections.jsonl "$SNAPSHOT_DIR/algorithm-reflections.jsonl" 2>/dev/null | cut -d'"' -f4 | sort -u | while read -r prd; do
+     if [ -n "$prd" ] && [ -d "$HOLOCRON_MEMORY_DIR/WORK/$prd" ]; then
+       rm -rf "$HOLOCRON_MEMORY_DIR/WORK/$prd"
+     fi
+   done
    ```
 
-2. Open PR in `holocron-context` repo (if memory branch was pushed):
+2. Output memory repo push success (if memory changes were pushed):
    ```bash
-   cd $HOLOCRON_MEMORY_DIR
-   gh pr create \
-     --title "reflect($REFLECT_TS): apply learning signals to memory" \
-     --body "$(cat <<EOF
-   ## Reflect Run: $REFLECT_TS
-
-   Applied learning signals from Holocron Reflect workflow.
-
-   ### Signal Summary
-   <!-- Insert synthesis table from PHASE 2 here -->
-
-   ### Changes Applied
-   <!-- List each file changed and the reason -->
-
-   ### Source Signals
-   Snapshot: \`LEARNING/PROCESSED/$REFLECT_TS/\`
-
-   **Review these changes before merging.** Each item is sourced from real session signals but requires human judgment to confirm it should be a permanent rule.
-   EOF
-   )" \
-     --base main \
-     --head "reflect/$REFLECT_TS"
+   echo "Memory changes pushed directly to main."
    ```
 
 3. Open PR in `Holocron` repo (if system branch was pushed):
@@ -237,7 +222,7 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
 
 ## RULES (non-negotiable)
 
-- Never commit or push directly to `main` in either repo
+- Never commit or push directly to `main` in the Holocron system repo (it is OK for the holocron-context repo)
 - Never delete snapshot contents — PROCESSED/ is permanent
 - Never apply a pattern that appears in only 1 session unless it's an explicit preference correction
 - If synthesis produces zero actionable items, still create the snapshot and report clearly
