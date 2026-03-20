@@ -295,6 +295,9 @@ OUTPUT:
 - **Pre-flight Checks**: Always preemptively check existing test coverage/blocks and target environment state (e.g., symlinks) before executing edits or manual commands.
   <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-10T12:25, 2026-03-16T15:38, 2026-03-17T16:20 — rating avg N/A -->
 
+- **Pre-compute Diffs & Dependencies**: Before executing multi-file refactors, structural migrations, or complex git merges, script an exact diff or dependency tree analysis (e.g., via `gh pr diff`, AST parsers, or `rsync --dry-run`) to build a safe migration plan rather than executing direct shell replacements.
+  <!-- reflect: applied from signals 2026-03-19T12:00:00Z, 2026-03-19T13:30:00Z, 2026-03-20T13:43:00Z — rating avg N/A -->
+
 - **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context` with technical approach and key decisions.
 
 ━━━ 🔨 BUILD ━━━ 4/7
