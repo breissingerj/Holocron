@@ -226,6 +226,10 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
    📦 Signals archived: LEARNING/PROCESSED/$REFLECT_TS/
    🔀 PRs opened: [list PR URLs]
    📋 Applied N changes across M files
+   
+   ### Work Applied Summary
+   - **[File path]**: [Brief description of the rule/change applied]
+   
    ⏭️  Original signal files cleared — ready for next reflect run
    ```
 
