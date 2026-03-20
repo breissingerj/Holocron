@@ -145,6 +145,11 @@ The effort level defaults to `standard` here and gets refined later in OBSERVE a
 
 **FIRST ACTION:** Voice announce `"Entering the Observe phase."`, then Edit PRD frontmatter `updated: {timestamp}`. Then thinking-only, no tool calls except context recovery (read/search <=34s)
 
+- **Prioritize Official Specs**: Check official documentation (via WebFetch) and official type definitions upfront before attempting to guess or infer API contracts, webhooks, or resources.
+  <!-- reflect: applied from signals 2026-03-11T00:10, 2026-03-15T16:32, 2026-03-16T18:25, 2026-03-18T13:35 — rating avg N/A -->
+- **Check Conventions**: Always explicitly check for and read repository convention files (like `CLAUDE.md` or `CHANGELOG.md`) before making assumptions about testing frameworks or structural formats.
+  <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-16T14:38, 2026-03-18T14:32 — rating avg N/A -->
+
 - REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
 OUTPUT:
@@ -221,6 +226,8 @@ GUIDANCE:
 
 - Use the **Plan agent** for any review, audit, or analysis task — it enforces read-only by design.
 - **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
+- **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
+  <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
 - Use **skills** for any domain-specific workflow — check `~/.config/opencode/skills/` before building logic inline.
 - **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
@@ -284,6 +291,9 @@ OUTPUT:
 📐 PLANNING:
 
 [Prerequisite validation. Update ISC in PRD if necessary. Reanalyze CAPABILITIES to see if any need to be added.]
+
+- **Pre-flight Checks**: Always preemptively check existing test coverage/blocks and target environment state (e.g., symlinks) before executing edits or manual commands.
+  <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-10T12:25, 2026-03-16T15:38, 2026-03-17T16:20 — rating avg N/A -->
 
 - **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context` with technical approach and key decisions.
 
