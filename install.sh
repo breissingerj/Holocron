@@ -172,6 +172,10 @@ link_dir "$HOLOCRON_DIR/agents/claude"  "$CLAUDE_DIR/agents"   "claude/agents"
 link_file "$HOLOCRON_DIR/config/claude/settings.json" "$CLAUDE_DIR/settings.json" "claude/settings.json"
 link_file "$HOLOCRON_DIR/config/claude/CLAUDE.md"     "$CLAUDE_DIR/CLAUDE.md"     "claude/CLAUDE.md"
 
+# Claude-specific instructions and scripts (harness-split from OpenCode equivalents)
+link_dir "$HOLOCRON_DIR/config/claude/instructions" "$CLAUDE_DIR/instructions" "claude/instructions"
+link_dir "$HOLOCRON_DIR/config/claude/scripts"      "$CLAUDE_DIR/scripts"      "claude/scripts"
+
 echo ""
 
 echo "Done. Restart your agent harness to pick up the new config."

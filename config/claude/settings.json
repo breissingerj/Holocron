@@ -14,6 +14,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/KittyEnvPersist.hook.ts"
+          },
+          {
+            "type": "command",
             "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/LoadContext.hook.ts"
           }
         ]
@@ -37,6 +41,24 @@
             "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SecurityValidator.hook.ts"
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SkillGuard.hook.ts"
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SetQuestionTab.hook.ts"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -45,6 +67,16 @@
           {
             "type": "command",
             "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/RatingCapture.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SessionAutoName.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/UpdateTabTitle.hook.ts",
             "async": true
           }
         ]
@@ -56,12 +88,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/prd-sync.sh",
+            "command": "bash ~/.claude/scripts/hooks/prd-sync.sh",
             "async": true
           },
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/memory-feed.sh",
+            "command": "bash ~/.claude/scripts/hooks/memory-feed.sh",
             "async": true
           }
         ]
@@ -71,8 +103,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/glob-rules.sh",
+            "command": "bash ~/.claude/scripts/hooks/glob-rules.sh",
             "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/QuestionAnswered.hook.ts"
           }
         ]
       }
@@ -82,7 +123,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/stop-guard.sh"
+            "command": "bash ~/.claude/scripts/hooks/stop-guard.sh"
           },
           {
             "type": "command",
@@ -91,8 +132,47 @@
           },
           {
             "type": "command",
-            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/WorkCompletionLearning.hook.ts",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/VoiceCompletion.hook.ts",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/DocIntegrity.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/ResponseTabReset.hook.ts",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/WorkCompletionLearning.hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/RelationshipMemory.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/IntegrityCheck.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/UpdateCounts.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SessionCleanup.hook.ts"
           }
         ]
       }
@@ -102,7 +182,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/session-start.sh"
+            "command": "bash ~/.claude/scripts/hooks/session-start.sh"
           }
         ]
       }

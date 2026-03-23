@@ -6,6 +6,15 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ## 2026-03-23
 
+### Known issue: RelationshipMemory and IntegrityCheck may be no-ops on SessionEnd
+
+- **Issue** — `RelationshipMemory.hook.ts` and `IntegrityCheck.hook.ts` both require a `transcript_path` in the hook input payload to do meaningful work. Both are now wired to `SessionEnd` in `config/claude/settings.json`. It is unconfirmed whether Claude Code's `SessionEnd` event provides `transcript_path` in its stdin payload (the payload shape for `SessionEnd` has not been empirically tested).
+- **Current behavior** — Both hooks handle a missing or empty `transcript_path` gracefully: they log a warning and exit 0. So they are safe but potentially no-ops on `SessionEnd` if the transcript is not provided.
+- **To resolve** — Run a test session, check hook stderr output for `[RelationshipMemory] No transcript path, exiting` or `[IntegrityCheck] No transcript path`. If confirmed no-op, two options: (1) accept the limitation and remove from `SessionEnd` wiring; (2) rewrite the hooks to read from an alternative source (e.g., the WORK/ PRD or STATE/ files) when `transcript_path` is absent.
+- **Rationale for keeping them wired** — The hooks exit safely if transcript is missing. Wiring them now means they will work automatically if Claude Code adds `transcript_path` to the `SessionEnd` payload in a future version, or when a workaround is implemented.
+
+---
+
 ### Refactored agents/ into opencode/ and claude/ subdirectories
 
 - **Decision** — Split `agents/` into `agents/opencode/` (existing 15 agents, opencode schema) and `agents/claude/` (new 15 agents, Claude Code schema). Updated `install.sh` to symlink each harness to its own subdir: `~/.config/opencode/agents → agents/opencode/`, `~/.claude/agents → agents/claude/`. Added dual-maintenance rule to `VERIFY_AGENTS.md`.
