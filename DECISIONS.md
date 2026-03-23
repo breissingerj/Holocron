@@ -6,6 +6,16 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ## 2026-03-23
 
+### Claude CLI config files versioned in Holocron repo, symlinked from ~/.claude/
+
+- **Decision** — `config/claude/settings.json` and `config/claude/CLAUDE.md` live in the Holocron repo under `config/claude/` and are symlinked from `~/.claude/settings.json` and `~/.claude/CLAUDE.md`. Hook scripts live in `scripts/hooks/` (already in the repo) and are symlinked from `~/.config/opencode/scripts/hooks`.
+- **Options considered** — (1) Write `settings.json` and `CLAUDE.md` directly to `~/.claude/` with no repo copy — easy but unversioned, lost on machine wipe. (2) Copy them to the repo and document that you must manually re-copy on change — fragile. (3) Store in repo, symlink from `~/.claude/` — single source of truth, version-controlled, zero-friction.
+- **Rationale** — Symlinks make the repo the source of truth with zero maintenance overhead. Any edit in the repo is immediately live; any edit via a tool that follows the symlink is also versioned. Consistent with the existing pattern where `~/.config/Claude → ~/.config/opencode` already makes the entire opencode config dir available to Claude CLI.
+
+---
+
+## 2026-03-23
+
 ### Claude CLI dual-harness compatibility plan approach
 
 - **Decision** — Created `docs/CLAUDE_CLI_COMPATIBILITY.md` as the compatibility plan. Shell hook scripts will live in `scripts/hooks/` (version-controlled in this repo, accessible via the existing symlink from both harnesses). Claude CLI config lives in `~/.claude/settings.json` and `~/.claude/CLAUDE.md` (outside the repo — user-scope config). No TypeScript plugins are modified or deleted.
