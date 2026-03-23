@@ -16,14 +16,34 @@
 | Component | Where it lives | Status |
 |-----------|---------------|--------|
 | System instructions (`AGENTS.md`) | `~/.config/Claude/` → symlink | Works — Claude CLI reads `AGENTS.md` as equivalent to `CLAUDE.md` |
-| Agent definitions | `~/.config/Claude/agents/` → symlink | Works — identical format |
+| Algorithm + steering rules | `~/.config/Claude/instructions/algorithm.md`, `steering-rules.md` | Works — loaded via `@` import in `AGENTS.md` |
+| Agent definitions (subagents) | `~/.config/Claude/agents/*.md` → symlink | Works — identical `.md` frontmatter format; Claude CLI spawns via `Task` tool |
 | Slash commands | `~/.config/Claude/commands/` → symlink | Works — `!cmd`, `$ARGUMENTS`, `@file` all work |
-| Skills | `~/.config/Claude/skills/` → symlink | Works — Claude CLI's skill system reads these |
+| Skills | `~/.config/Claude/skills/` → symlink | Works — all 16 skill directories including `Agents/` context files |
 | Voice script (`voice.sh`) | `scripts/voice.sh` | Works — pure bash, no harness dependency |
 | `HOLOCRON_MEMORY_DIR` env var | Shell environment | Works — available in any shell session |
 | Linear MCP server | `~/.claude.json` `mcpServers` | Works — already configured at the user level |
+| Memory files (`MEMORY.md`, `IDENTITY.md`) | `$HOLOCRON_MEMORY_DIR/memory/` | Works — read by hook scripts and imported in `CLAUDE.md` |
 
 **Do not touch the symlink.** Everything in this table is free.
+
+### Algorithm & Steering Rules
+
+`AGENTS.md` (the root instruction file) uses `@` imports to load `instructions/algorithm.md` and `instructions/steering-rules.md`. Because `~/.config/Claude` is symlinked to `~/.config/opencode`, Claude CLI resolves these imports from the same files OpenCode uses. No duplication. If you update either instructions file, both harnesses pick up the change automatically on next session start.
+
+### Subagents
+
+All 16 agent definition files (`agents/*.md`) are read by both harnesses via the symlink. Claude CLI spawns subagents using the `Task` tool — the same mechanism OpenCode uses. The agent persona frontmatter (`model`, `description`, `permission`) is identical in both harnesses. The `Agents` skill (`skills/Agents/`) contains context files referenced by agent definitions; these are also accessed via the symlink.
+
+One difference: OpenCode's `holocron-agents-loader` plugin injects local `AGENTS.md` files into tool output when a file is read from a directory. Claude CLI replicates this natively. No action required.
+
+### Skills
+
+All 16 skill directories are accessible to Claude CLI via the symlink. Skill invocation (loading `SKILL.md` and following the workflow) is harness-agnostic — both harnesses use the same `USE WHEN` frontmatter to decide when to load a skill. No action required.
+
+### Commands
+
+`/reflect` and `/compound` work in Claude CLI via the symlink. Both use `!cmd` shell injection and `$ARGUMENTS` substitution, which Claude CLI supports natively.
 
 ---
 
@@ -33,14 +53,16 @@ Holocron has six OpenCode TypeScript plugins that have no direct equivalent in C
 
 ### OpenCode Plugin → Claude CLI Hook Event Mapping
 
-| OpenCode hook | Claude CLI equivalent | Confidence |
-|---|---|---|
-| `session.created` + `tui.prompt.append` | `SessionStart` → `additionalContext` in hookSpecificOutput | High |
-| `tool.execute.after` on `edit`/`write` | `PostToolUse` with `matcher: "Write\|Edit"` | High (PAI uses `PRDSync.hook.ts` this way) |
-| `tool.execute.after` on `read` | `PostToolUse` with `matcher: "Read"` | High (PAI uses `SecurityValidator.hook.ts` on Read) |
-| `chat.message` | `UserPromptSubmit` — stdin JSON has `prompt` field | High (PAI uses `RatingCapture.hook.ts` this way) |
-| `file.edited` event | `PostToolUse` with `matcher: "Write\|Edit"` | High |
-| `experimental.text.complete` + `tui.submitPrompt` | **No equivalent** — cannot fully port | Confirmed limitation |
+| OpenCode plugin | OpenCode hook | Claude CLI equivalent | Status |
+|---|---|---|---|
+| `holocron-context-loader` | `session.created` + `tui.prompt.append` | `SessionStart` → `additionalContext` + `CLAUDE.md` imports | Portable |
+| `holocron-prd` | `tool.execute.after` on `edit`/`write` | `PostToolUse` matcher `Write\|Edit` | Portable |
+| `holocron-agents-loader` | `tool.execute.after` on `read` | Native Claude CLI behavior | Already covered |
+| `holocron-learning-capture` | `chat.message` | `UserPromptSubmit` — stdin `.prompt` field | Portable |
+| `holocron-memory-feed` | `file.edited` event | `PostToolUse` matcher `Write\|Edit` (second hook) | Portable |
+| `holocron-ralph-loop` | `experimental.text.complete` + `tui.submitPrompt` | `Stop` hook (PRD-state only — partial) | Partial |
+| `holocron-glob-rules` | `tool.execute.after` on `read` | `PostToolUse` matcher `Read` — shell glob matching | Portable |
+| `opencode-claude-auth` | Auth plugin — OpenCode-specific | Not applicable | OpenCode-only |
 
 ---
 
@@ -63,6 +85,7 @@ scripts/hooks/
   prd-sync.sh                                    ← New (Claude CLI equivalent of tool.execute.after on edit/write)
   memory-feed.sh                                 ← New (Claude CLI equivalent of file.edited)
   stop-guard.sh                                  ← New (partial Claude CLI equivalent of Ralph Loop)
+  glob-rules.sh                                  ← New (Claude CLI equivalent of holocron-glob-rules)
 ```
 
 > These shell scripts are **Claude CLI-only additions**. The OpenCode TypeScript plugins continue to run unchanged when using OpenCode. Both automation layers coexist — each harness runs its own against the same `$HOLOCRON_MEMORY_DIR`.
@@ -131,6 +154,16 @@ This is the only Claude CLI-specific config file required. It injects `HOLOCRON_
           {
             "type": "command",
             "command": "bash ~/.config/opencode/scripts/hooks/memory-feed.sh",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.config/opencode/scripts/hooks/glob-rules.sh",
             "async": true
           }
         ]
@@ -486,7 +519,95 @@ exit 0
 
 ---
 
-### 8. `holocron-agents-loader` — No Work Required
+### 8. `scripts/hooks/glob-rules.sh` — Conditional Glob Rules
+
+> **DUAL-MAINTENANCE:** Keep in sync with `plugins/holocron-glob-rules/src/index.ts`. The rules directory path (`.opencode/rules/*.md`), the frontmatter `globs:` field name, and the dedup behavior (inject once per file per session) must match between both files.
+
+**Claude CLI equivalent of:** `tool.execute.after` on `read` in `holocron-glob-rules` (OpenCode plugin unchanged)  
+**Claude CLI hook:** `PostToolUse`, `matcher: "Read"`, `async: true`
+
+The OpenCode plugin reads `.opencode/rules/*.md` files at init, then appends matching rule bodies to file-read tool output when a file's path matches a rule's `globs:` pattern. The Claude CLI equivalent uses the same rule directory and the same `globs:` frontmatter field, but performs glob matching in bash using `extglob` or a simple `case` pattern, and writes the rule content to a session-scoped temp file to track deduplication.
+
+**Stdin schema** (same as other PostToolUse hooks):
+```json
+{
+  "session_id": "...",
+  "tool_name": "Read",
+  "tool_input": { "file_path": "/path/to/file" },
+  "hook_event_name": "PostToolUse"
+}
+```
+
+**Script sketch** (full implementation deferred — lower priority than the five core hooks):
+```bash
+#!/usr/bin/env bash
+# Apply conditional glob rules when a file is read
+# Equivalent to holocron-glob-rules TypeScript plugin
+
+input=$(cat)
+file_path=$(echo "$input" | jq -r '.tool_input.file_path // ""')
+session_id=$(echo "$input" | jq -r '.session_id // "unknown"')
+[ -z "$file_path" ] && exit 0
+
+rules_dir="$(pwd)/.opencode/rules"
+[ ! -d "$rules_dir" ] && exit 0
+
+dedup_file="/tmp/holocron-glob-rules-${session_id}.seen"
+
+for rule_file in "$rules_dir"/*.md; do
+  [ -f "$rule_file" ] || continue
+
+  # Extract globs: field from YAML frontmatter
+  globs=$(awk '/^---/{n++; next} n==1 && /^globs:/{gsub(/^globs: */,""); print; exit}' "$rule_file")
+  [ -z "$globs" ] && continue
+
+  # Check if file_path matches any glob (simplified — extend for full glob support)
+  matched=false
+  for pattern in $globs; do
+    pattern="${pattern//[\[\]]/}"  # strip YAML list brackets if present
+    case "$file_path" in
+      $pattern) matched=true; break ;;
+    esac
+  done
+
+  "$matched" || continue
+
+  # Dedup: skip if this rule was already injected this session
+  rule_key="${rule_file}:${session_id}"
+  grep -qF "$rule_key" "$dedup_file" 2>/dev/null && continue
+  echo "$rule_key" >> "$dedup_file"
+
+  # Output rule body (strip frontmatter)
+  awk '/^---/{n++; next} n>=2{print}' "$rule_file"
+done
+
+exit 0
+```
+
+> **Note:** The glob-rules hook output appended to stdout is visible to Claude CLI as additional tool context, matching the OpenCode plugin's `output.output` mutation behavior.
+
+**Effort:** 45 minutes.
+
+---
+
+### 9. `opencode-claude-auth` — OpenCode-Only, No Action Required
+
+This plugin is registered in `opencode.json` and handles authentication for Claude models within OpenCode. Claude CLI manages its own authentication natively via `~/.claude/` credentials — it does not use or need this plugin. No equivalent is needed.
+
+---
+
+### 10. Context Compaction — Partial Gap
+
+**OpenCode:** `experimental.session.compacting` hook in `holocron-context-loader` re-injects memory context when OpenCode compacts the context window.  
+**Claude CLI:** `PreCompact` hook exists but is not yet configured. Without it, memory context injected at `SessionStart` may be lost after a context compaction in a long session.
+
+**Mitigation:** `CLAUDE.md` `@` imports are re-evaluated on each compaction by Claude CLI natively — `MEMORY.md` and `AGENTS.md` survive compaction without a hook. The active PRD summary from `session-start.sh` does not survive compaction.
+
+**Future work:** Add a `PreCompact` hook entry to `~/.claude/settings.json` that re-runs `session-start.sh` to re-inject the active PRD context after compaction.
+
+---
+
+### 11. `holocron-agents-loader` — No Work Required
 
 > **DUAL-MAINTENANCE (monitor only):** No shell script to maintain. If `plugins/holocron-agents-loader/src/index.ts` changes its walk depth, dedup logic, or the files it looks for (currently `AGENTS.md`), verify that Claude CLI's native hierarchical loading behavior still covers the same scope. No code change required unless Claude CLI's native behavior diverges.
 
@@ -510,6 +631,7 @@ These are the file pairs that implement the **same logical behavior** across bot
 | PRD frontmatter → work.json sync | `plugins/holocron-prd/src/index.ts` | `scripts/hooks/prd-sync.sh` | Fields written to `STATE/work.json` and the frontmatter keys parsed must stay identical. |
 | Memory write feed log | `plugins/holocron-memory-feed.ts` | `scripts/hooks/memory-feed.sh` | Path classification labels (`WORK`, `SIGNAL`, etc.) and log format (`/tmp/holocron-memory-feed.log`) must match so `scripts/memory-feed.sh` renders both harnesses identically. |
 | Incomplete-work continuation | `plugins/holocron-ralph-loop/src/index.ts` | `scripts/hooks/stop-guard.sh` | **Asymmetric by design** — the Ralph Loop scans live response text; the stop-guard only checks PRD state. These will never be identical. Only sync PRD phase names and checkbox pattern (`- [ ]`) if those change. |
+| Conditional glob rules | `plugins/holocron-glob-rules/src/index.ts` | `scripts/hooks/glob-rules.sh` | Rules directory (`.opencode/rules/`), `globs:` frontmatter field name, and dedup behavior (once per file per session) must match. If a new frontmatter field is added to rule files, update both. |
 | Hierarchical context injection | `plugins/holocron-agents-loader/src/index.ts` | Native Claude CLI behavior | No shell script. If the OpenCode plugin's walk depth, dedup logic, or AGENTS.md path changes, verify Claude CLI's native behavior still covers it. |
 
 ### How to apply a logic change
@@ -567,11 +689,15 @@ Both read from `~/.config/opencode/` (via the symlink). Both read from and write
 | 5 | Write `session-start.sh` | 30 min | Active work context injection |
 | 6 | Write `stop-guard.sh` | 30 min | Weak Ralph Loop approximation |
 | 7 | Write `memory-feed.sh` | 20 min | Live feed sidebar |
+| 8 | Write `glob-rules.sh` | 45 min | Conditional file rules in Claude CLI |
+| 9 | Add `PreCompact` hook to re-inject active PRD | 15 min | Context survival after compaction |
 | — | Agents loader | 0 min | Native Claude CLI behavior |
+| — | `opencode-claude-auth` | 0 min | OpenCode-only, no equivalent needed |
 | — | MCP (linear) | 0 min | Already configured in `~/.claude.json` |
-| — | All instruction/skill/command files | 0 min | Already shared via symlink |
+| — | Algorithm, steering rules | 0 min | Already shared via `AGENTS.md` `@` imports |
+| — | Skills, subagents, commands | 0 min | Already shared via symlink |
 
-**Total estimated effort: ~3.5 hours for full parity.**
+**Total estimated effort: ~4.5 hours for full parity.**
 
 ---
 
