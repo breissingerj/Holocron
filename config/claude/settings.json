@@ -66,6 +66,16 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.config/opencode/scripts/hooks/session-start.sh"
+          }
+        ]
+      }
     ]
   },
   "enableAllProjectMcpServers": true,
