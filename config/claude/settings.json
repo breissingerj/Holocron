@@ -14,7 +14,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/session-start.sh"
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/LoadContext.hook.ts"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/AgentExecutionGuard.hook.ts"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/SecurityValidator.hook.ts"
           }
         ]
       }
@@ -24,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ~/.config/opencode/scripts/hooks/learning-capture.sh",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/RatingCapture.hook.ts",
             "async": true
           }
         ]
@@ -63,6 +83,16 @@
           {
             "type": "command",
             "command": "bash ~/.config/opencode/scripts/hooks/stop-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/LastResponseCache.hook.ts",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "/Users/jbreissinger/.bun/bin/bun run /Users/jbreissinger/Projects/personalProjects/holocron-context/hooks/WorkCompletionLearning.hook.ts",
+            "async": true
           }
         ]
       }

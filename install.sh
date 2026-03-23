@@ -113,7 +113,8 @@ echo ""
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
 # opencode: granular — symlink individual subdirs into ~/.config/opencode
-DIRS=("skills" "commands" "agents" "plugins" "instructions" "scripts")
+# agents is harness-specific: opencode reads agents/opencode/, Claude CLI reads agents/claude/
+DIRS=("skills" "commands" "plugins" "instructions" "scripts")
 
 for harness in "${!HARNESSES[@]}"; do
   target="${HARNESSES[$harness]}"
@@ -122,6 +123,8 @@ for harness in "${!HARNESSES[@]}"; do
   for dir in "${DIRS[@]}"; do
     link_dir "$HOLOCRON_DIR/$dir" "$target/$dir" "$dir"
   done
+  # opencode agents: point at agents/opencode/ (opencode-schema frontmatter)
+  link_dir "$HOLOCRON_DIR/agents/opencode" "$target/agents" "agents (opencode)"
   echo ""
 done
 
@@ -148,11 +151,11 @@ fi
 echo ""
 
 # ── Claude CLI harness symlinks ───────────────────────────────────────────────
-# Claude CLI reads from ~/.claude/ directly — the ~/.config/Claude → ~/.config/opencode
-# symlink does NOT cover ~/.claude/commands/ or ~/.claude/skills/. These must be
-# symlinked explicitly. Skills and commands are read from the Holocron repo source.
+# Claude CLI reads from ~/.claude/ directly. Skills, commands, agents, settings, and
+# CLAUDE.md are all symlinked explicitly from their Holocron source locations.
 #
-# Claude CLI skill discovery: ~/.claude/skills/<name>/SKILL.md (personal skills)
+# Claude CLI agent discovery: ~/.claude/agents/<name>.md (Claude-schema frontmatter)
+# Claude CLI skill discovery: ~/.claude/skills/<name>/SKILL.md
 # Claude CLI command discovery: ~/.claude/commands/<name>.md
 
 echo "Claude CLI harness (~/.claude/)"
@@ -160,8 +163,10 @@ CLAUDE_DIR="$HOME/.claude"
 mkdir -p "$CLAUDE_DIR"
 
 # commands/ and skills/ — point directly at Holocron source
-link_dir "$HOLOCRON_DIR/commands" "$CLAUDE_DIR/commands" "claude/commands"
-link_dir "$HOLOCRON_DIR/skills"   "$CLAUDE_DIR/skills"   "claude/skills"
+link_dir "$HOLOCRON_DIR/commands"       "$CLAUDE_DIR/commands" "claude/commands"
+link_dir "$HOLOCRON_DIR/skills"         "$CLAUDE_DIR/skills"   "claude/skills"
+# agents/ — point at agents/claude/ (Claude Code schema frontmatter)
+link_dir "$HOLOCRON_DIR/agents/claude"  "$CLAUDE_DIR/agents"   "claude/agents"
 
 # settings.json and CLAUDE.md — versioned in config/claude/, symlinked here
 link_file "$HOLOCRON_DIR/config/claude/settings.json" "$CLAUDE_DIR/settings.json" "claude/settings.json"
