@@ -149,6 +149,8 @@ The effort level defaults to `standard` here and gets refined later in OBSERVE a
   <!-- reflect: applied from signals 2026-03-11T00:10, 2026-03-15T16:32, 2026-03-16T18:25, 2026-03-18T13:35 — rating avg N/A -->
 - **Check Conventions**: Always explicitly check for and read repository convention files (like `CLAUDE.md` or `CHANGELOG.md`) before making assumptions about testing frameworks or structural formats.
   <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-16T14:38, 2026-03-18T14:32 — rating avg N/A -->
+- **Front-Load Scripted Discovery**: Before attempting incremental manual exploration, run a comprehensive grep sweep or targeted script to map the problem space upfront. For file trees, path integrity checks, or pattern detection (e.g., corrupt characters, missing files, broken references), write a targeted scan at the START of OBSERVE rather than discovering issues one-by-one during BUILD/EXECUTE.
+  <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-20T19:50, 2026-03-20T20:21, 2026-03-23T20:45 — rating avg N/A -->
 
 - REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
@@ -228,6 +230,8 @@ GUIDANCE:
 - **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
   <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
+- **Invoke Research/Task agents for validation**: When verifying file locations, dependency existence, API contracts, or external state, explicitly select and invoke Research skill or parallel Task agents in OBSERVE rather than reverting to manual sequential grep/read probing during BUILD.
+  <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-23T09:30, 2026-03-23T12:57, 2026-03-23T20:45 — rating avg N/A -->
 - Use **skills** for any domain-specific workflow — check `~/.config/opencode/skills/` before building logic inline.
 - **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.

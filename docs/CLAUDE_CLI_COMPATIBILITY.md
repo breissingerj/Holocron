@@ -1,53 +1,50 @@
 # Claude CLI Compatibility Plan
 
-> **Status:** Planning — not yet implemented  
+> **Status:** Implemented  
 > **Goal:** Make Holocron work in both OpenCode and Claude CLI (Claude Code) with zero switching friction
 
 ---
 
 ## The Core Insight
 
-`~/.config/Claude` is already a symlink pointing to `~/.config/opencode`. Claude CLI already reads your `AGENTS.md`, `agents/`, `commands/`, and `skills/` from the same directory OpenCode uses. The instruction layer is **already shared**. The only gap is the automation layer: OpenCode uses a TypeScript plugin API; Claude CLI uses shell-based hooks in `settings.json`.
+Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subdirectory. Its config root is `~/.claude/`. All Holocron components are wired into `~/.claude/` explicitly via `install.sh` symlinks and a versioned `CLAUDE.md` + `settings.json` in `Holocron/config/claude/`. There is no shared directory between the two harnesses — each harness has its own wiring that points at the same Holocron source files.
+
+> **Note:** A `~/.config/claude → ~/.config/opencode` symlink existed historically but was removed (2026-03-23) because Claude CLI never reads from that path. See `DECISIONS.md` for rationale.
 
 ---
 
-## What Already Works in Claude CLI (Zero Work Required)
+## What Works in Claude CLI
 
-| Component | Where it lives | Status |
-|-----------|---------------|--------|
-| System instructions (`AGENTS.md`) | `~/.config/Claude/` → symlink | Works — Claude CLI reads `AGENTS.md` as equivalent to `CLAUDE.md` |
-| Algorithm + steering rules | `~/.config/Claude/instructions/algorithm.md`, `steering-rules.md` | Works — loaded via `@` import in `AGENTS.md` |
-| Agent definitions (subagents) | `~/.config/Claude/agents/*.md` → symlink | Works — identical `.md` frontmatter format; Claude CLI spawns via `Task` tool |
-| Slash commands | `~/.claude/commands/` → symlink to `Holocron/commands/` | Works — requires explicit symlink via `install.sh`; `~/.config/Claude` symlink does **not** cover `~/.claude/commands/` |
-| Skills | `~/.claude/skills/` → symlink to `Holocron/skills/` | Works — requires explicit symlink via `install.sh`; Claude CLI reads `~/.claude/skills/<name>/SKILL.md`, not `~/.config/opencode/skills/` |
-| Voice script (`voice.sh`) | `scripts/voice.sh` | Works — pure bash, no harness dependency |
-| `HOLOCRON_MEMORY_DIR` env var | Shell environment | Works — available in any shell session |
-| Linear MCP server | `~/.claude.json` `mcpServers` | Works — already configured at the user level |
-| Memory files (`MEMORY.md`, `IDENTITY.md`) | `$HOLOCRON_MEMORY_DIR/memory/` | Works — read by hook scripts and imported in `CLAUDE.md` |
-
-**Do not touch the symlink.** Everything in this table is free.
+| Component | Where Claude CLI reads it | How it gets there |
+|-----------|--------------------------|-------------------|
+| System instructions (`AGENTS.md`) | `~/.claude/CLAUDE.md` via `@` import | Symlink: `~/.claude/CLAUDE.md → Holocron/config/claude/CLAUDE.md` |
+| Algorithm + steering rules | `~/.config/opencode/instructions/` | Resolved via `@` import in `AGENTS.md`; path uses `~/.config/opencode` (opencode's dir, not Claude's) |
+| Memory (`MEMORY.md`) | `$HOLOCRON_MEMORY_DIR/memory/MEMORY.md` | `@` import in `CLAUDE.md`; path hardcoded to memory repo |
+| Slash commands | `~/.claude/commands/` | Symlink: `~/.claude/commands → Holocron/commands/` |
+| Skills | `~/.claude/skills/` | Symlink: `~/.claude/skills → Holocron/skills/` |
+| Subagents | `~/.claude/agents/` | Symlink: `~/.claude/agents → agents/claude/` — 15 Claude Code schema agents, kept in behavioral sync with `agents/opencode/` |
+| Hook scripts | `~/.config/opencode/scripts/hooks/` | Symlink via opencode install; referenced by absolute path in `settings.json` |
+| `HOLOCRON_MEMORY_DIR` env var | `~/.claude/settings.json` `env` block | Symlink: `~/.claude/settings.json → Holocron/config/claude/settings.json` |
+| Linear MCP server | `~/.claude/settings.json` `enabledMcpjsonServers` | Same settings.json symlink |
+| Voice script (`voice.sh`) | `~/.config/opencode/scripts/voice.sh` | Works — pure bash, no harness dependency |
 
 ### Algorithm & Steering Rules
 
-`AGENTS.md` (the root instruction file) uses `@` imports to load `instructions/algorithm.md` and `instructions/steering-rules.md`. Because `~/.config/Claude` is symlinked to `~/.config/opencode`, Claude CLI resolves these imports from the same files OpenCode uses. No duplication. If you update either instructions file, both harnesses pick up the change automatically on next session start.
+`AGENTS.md` uses `@` imports to load `instructions/algorithm.md` and `instructions/steering-rules.md`. The import paths reference `~/.config/opencode/instructions/` — opencode's config directory, not Claude CLI's. This works because the files are accessed via their absolute symlink targets at read time, not via any Claude CLI config discovery mechanism.
 
 ### Subagents
 
-All 16 agent definition files (`agents/*.md`) are read by both harnesses via the symlink. Claude CLI spawns subagents using the `Task` tool — the same mechanism OpenCode uses. The agent persona frontmatter (`model`, `description`, `permission`) is identical in both harnesses. The `Agents` skill (`skills/Agents/`) contains context files referenced by agent definitions; these are also accessed via the symlink.
+Claude CLI reads user subagents from `~/.claude/agents/`. Holocron maintains a parallel set of Claude Code schema agent files at `agents/claude/`, symlinked from `~/.claude/agents/` via `install.sh`. All 15 agents are present.
 
-One difference: OpenCode's `holocron-agents-loader` plugin injects local `AGENTS.md` files into tool output when a file is read from a directory. Claude CLI replicates this natively. No action required.
+The two directories (`agents/opencode/` and `agents/claude/`) are kept in behavioral sync — same `name`, `description`, and body content. Only the frontmatter differs: opencode agents carry `color`, `voiceId`, `voice`, `persona`, and `permission`; Claude Code agents use `model`, `tools`, and optionally `skills`. See `agents/VERIFY_AGENTS.md` for the dual-maintenance rule.
 
 ### Skills
 
-Claude CLI reads personal skills from `~/.claude/skills/<name>/SKILL.md`. Holocron's skills already use this exact directory structure (`skills/<name>/SKILL.md`), so a single symlink `~/.claude/skills → Holocron/skills/` exposes all skills to Claude CLI. This symlink is created by `install.sh`. The `USE WHEN` description frontmatter works identically in both harnesses.
-
-> **Note:** The `~/.config/Claude → ~/.config/opencode` symlink does **not** help here. Claude CLI resolves skills from `~/.claude/skills/`, not from `~/.config/Claude/skills/`.
+Claude CLI reads personal skills from `~/.claude/skills/<name>/SKILL.md`. The symlink `~/.claude/skills → Holocron/skills/` exposes all skills. This symlink is created by `install.sh`.
 
 ### Commands
 
-`/reflect` and `/compound` work in Claude CLI once `~/.claude/commands/` is symlinked to `Holocron/commands/`. Both use `!cmd` shell injection and `$ARGUMENTS` substitution, which Claude CLI supports natively. This symlink is created by `install.sh`.
-
-> **Note:** The `~/.config/Claude → ~/.config/opencode` symlink does **not** help here. Claude CLI resolves commands from `~/.claude/commands/`, not from `~/.config/Claude/commands/`.
+`/reflect` and `/compound` work once `~/.claude/commands/` is symlinked to `Holocron/commands/`. Both use `!cmd` shell injection and `$ARGUMENTS` substitution, which Claude CLI supports natively. This symlink is created by `install.sh`.
 
 ---
 
@@ -102,8 +99,9 @@ scripts/hooks/
 ~/.config/opencode/agents/           ← Untouched
 ~/.config/opencode/commands/         ← Untouched
 ~/.config/opencode/skills/           ← Untouched
-~/.config/Claude → ~/.config/opencode  ← Symlink untouched
 ```
+
+> **Note:** `~/.config/claude` was a symlink to `~/.config/opencode` that was removed 2026-03-23. Claude CLI does not read from `~/.config/` paths; all Claude CLI wiring goes through `~/.claude/`.
 
 ---
 
@@ -678,32 +676,34 @@ opencode   # Full TypeScript plugin automation
 claude     # Shell hook automation
 ```
 
-Both read from `~/.config/opencode/` (via the symlink). Both read from and write to `$HOLOCRON_MEMORY_DIR`. The only behavioral difference is the Ralph Loop — OpenCode has the full live-text scanner; Claude CLI has the weaker PRD-state stop guard.
+Both read from and write to `$HOLOCRON_MEMORY_DIR`. Both share the same Holocron source files (skills, commands, instructions, scripts) via their respective symlinks. The only behavioral difference is the Ralph Loop — OpenCode has the full live-text scanner; Claude CLI has the weaker PRD-state stop guard.
 
 ---
 
-## Implementation Priority
+## Implementation Status
 
-| # | Task | Effort | Blocks |
-|---|------|--------|--------|
-| 1 | Create `~/.claude/settings.json` with `env` and hook wiring | 5 min | Everything else |
-| 2 | Create `~/.claude/CLAUDE.md` with `@` imports | 10 min | Core context |
-| 3 | Write `learning-capture.sh` | 60 min | Rating signals in Claude CLI |
-| 4 | Write `prd-sync.sh` | 45 min | PRD state tracking |
-| 5 | Write `session-start.sh` | 30 min | Active work context injection |
-| 6 | Write `stop-guard.sh` | 30 min | Weak Ralph Loop approximation |
-| 7 | Write `memory-feed.sh` | 20 min | Live feed sidebar |
-| 8 | Write `glob-rules.sh` | 45 min | Conditional file rules in Claude CLI |
-| 9 | Add `PreCompact` hook to re-inject active PRD | 15 min | Context survival after compaction |
-| — | Agents loader | 0 min | Native Claude CLI behavior |
-| — | `opencode-claude-auth` | 0 min | OpenCode-only, no equivalent needed |
-| — | MCP (linear) | 0 min | Already configured in `~/.claude.json` |
-| — | Algorithm, steering rules | 0 min | Already shared via `AGENTS.md` `@` imports |
-| — | Skills (`~/.claude/skills/` symlink) | 0 min | Added to install.sh — run installer |
-| — | Commands (`~/.claude/commands/` symlink) | 0 min | Added to install.sh — run installer |
-| — | Subagents | 0 min | Already shared via `~/.config/Claude` symlink |
+All items below are **complete**. This table is retained for historical reference.
 
-**Total estimated effort: ~4.5 hours for full parity.**
+| # | Task | Status |
+|---|------|--------|
+| 1 | Create `~/.claude/settings.json` with `env` and hook wiring | ✓ Done |
+| 2 | Create `~/.claude/CLAUDE.md` with `@` imports | ✓ Done |
+| 3 | Write `learning-capture.sh` | ✓ Done |
+| 4 | Write `prd-sync.sh` | ✓ Done |
+| 5 | Write `session-start.sh` | ✓ Done |
+| 6 | Write `stop-guard.sh` | ✓ Done |
+| 7 | Write `memory-feed.sh` | ✓ Done |
+| 8 | Write `glob-rules.sh` | ✓ Done |
+| 9 | `PreCompact` hook to re-inject active PRD | ✓ Done |
+| — | Agents loader | ✓ Native Claude CLI behavior |
+| — | `opencode-claude-auth` | ✓ OpenCode-only, no equivalent needed |
+| — | MCP (linear) | ✓ Configured in settings.json |
+| — | Algorithm, steering rules | ✓ Loaded via `AGENTS.md` `@` imports |
+| — | Skills (`~/.claude/skills/` symlink) | ✓ install.sh |
+| — | Commands (`~/.claude/commands/` symlink) | ✓ install.sh |
+| — | Subagents (`~/.claude/agents/`) | ✓ `agents/claude/` — 15 agents, Claude Code schema, symlinked by install.sh |
+
+To verify the current state, run: `bash docs/validate-claude-cli.sh`
 
 ---
 
@@ -724,4 +724,6 @@ Claude CLI's `Stop` hook fires after the response is complete, receives no text 
 - Claude CLI hooks reference: https://docs.anthropic.com/en/docs/claude-code/hooks
 - Claude CLI settings reference: https://docs.anthropic.com/en/docs/claude-code/settings
 - Holocron MEMORY_CONTRACT: `MEMORY_CONTRACT.md`
-- Holocron DECISIONS.md: `DECISIONS.md` (see 2026-03-16 entry for symlink decision)
+- Holocron DECISIONS.md: `DECISIONS.md` (see 2026-03-23 entries for symlink decisions)
+- Validation script: `docs/validate-claude-cli.sh`
+- Validation playbook: `docs/ValidateClaudeCLI.md`

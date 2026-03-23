@@ -6,6 +6,37 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ## 2026-03-23
 
+### Refactored agents/ into opencode/ and claude/ subdirectories
+
+- **Decision** — Split `agents/` into `agents/opencode/` (existing 15 agents, opencode schema) and `agents/claude/` (new 15 agents, Claude Code schema). Updated `install.sh` to symlink each harness to its own subdir: `~/.config/opencode/agents → agents/opencode/`, `~/.claude/agents → agents/claude/`. Added dual-maintenance rule to `VERIFY_AGENTS.md`.
+- **Options considered** — (1) Single directory with harness-detection in frontmatter — not possible, schemas are structurally different. (2) Single directory with shared files and a separate override mechanism — complex, fragile. (3) Separate subdirs per harness — clean, explicit, each harness gets exactly what it expects.
+- **Rationale** — OpenCode and Claude Code use incompatible agent frontmatter schemas (opencode uses `color`/`voiceId`/`voice`/`persona`/`permission`; Claude Code uses `model`/`tools`/`skills`). The body content (behavior, persona, output format) is identical and must stay in sync. Separate directories make the contract explicit: same body, different headers. The dual-maintenance rule in `VERIFY_AGENTS.md` ensures they don't drift.
+
+---
+
+
+- **Decision** — Created `docs/ValidateClaudeCLI.md` (human-readable checklist) and `docs/validate-claude-cli.sh` (runnable bash script) to verify all Claude Code harness wiring: CLAUDE.md symlink and imports, settings.json validity, skills/commands symlinks, hook scripts existence/executability/exit codes, HOLOCRON_MEMORY_DIR, absence of stale `~/.config/claude`, and MCP config.
+- **Options considered** — (1) Manual spot-check — no audit trail, easy to miss things. (2) Inline checks in install.sh — couples validation to install, hard to re-run independently. (3) Standalone playbook + script — runs anytime, documents expected state, exits non-zero on failure for CI use.
+- **Rationale** — After removing the `~/.config/claude` symlink and clarifying the Claude CLI wiring model, a repeatable validation was needed to catch regressions. The script runs in ~2s and currently passes 41/41 checks (1 info for optional agents dir).
+
+---
+
+### Updated CLAUDE_CLI_COMPATIBILITY.md — removed stale symlink references
+
+- **Decision** — Rewrote the opening sections of `CLAUDE_CLI_COMPATIBILITY.md` to remove all references to `~/.config/Claude → ~/.config/opencode` as an active symlink, corrected the agents location claim (Claude CLI reads `~/.claude/agents/`, not `~/.config/Claude/agents/`), updated status from "Planning" to "Implemented", and converted the implementation priority table to a completion status table.
+- **Options considered** — (1) Leave the doc stale — causes confusion on next read. (2) Annotate with correction comments — messy. (3) Rewrite the affected sections — clean and accurate.
+- **Rationale** — The doc was written when the symlink was assumed to be the mechanism. Now that the actual mechanism is fully explicit symlinks in `~/.claude/` managed by `install.sh`, the doc should reflect that. The subagents gap is also now clearly documented as an unresolved item rather than falsely marked complete.
+
+---
+
+### Removed ~/.config/claude symlink
+
+- **Decision** — Deleted the `~/.config/claude → ~/.config/opencode` symlink. Claude Code does not read `~/.config/claude/` automatically; it only reads from `~/.claude/`. The symlink served no functional purpose and created confusion about which directory Claude Code actually used.
+- **Options considered** — (1) Keep the symlink for completeness — no benefit, adds confusion. (2) Remove it — correct state; `~/.claude/` already has all required symlinks (CLAUDE.md, settings.json, skills/, commands/) via `install.sh`.
+- **Rationale** — Claude Code's documented config locations are `~/.claude/` (user-level) and project-level `.claude/`. `~/.config/claude/` is not in that list. The install script already handles `~/.claude/` explicitly. The symlink was an artifact of an earlier setup assumption that has since been superseded.
+
+---
+
 ### Claude CLI config files versioned in Holocron repo, symlinked from ~/.claude/
 
 - **Decision** — `config/claude/settings.json` and `config/claude/CLAUDE.md` live in the Holocron repo under `config/claude/` and are symlinked from `~/.claude/settings.json` and `~/.claude/CLAUDE.md`. Hook scripts live in `scripts/hooks/` (already in the repo) and are symlinked from `~/.config/opencode/scripts/hooks`.
