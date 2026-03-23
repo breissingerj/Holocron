@@ -4,6 +4,22 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ---
 
+## 2026-03-23
+
+### Claude CLI dual-harness compatibility plan approach
+
+- **Decision** — Created `docs/CLAUDE_CLI_COMPATIBILITY.md` as the compatibility plan. Shell hook scripts will live in `scripts/hooks/` (version-controlled in this repo, accessible via the existing symlink from both harnesses). Claude CLI config lives in `~/.claude/settings.json` and `~/.claude/CLAUDE.md` (outside the repo — user-scope config). No TypeScript plugins are modified or deleted.
+- **Options considered** — (1) Put shell scripts in `~/.claude/hooks/` (outside the repo, not version-controlled). (2) Put shell scripts in a new `hooks/` directory in the Holocron repo. (3) Put them in `scripts/hooks/` alongside the existing `voice.sh`.
+- **Rationale** — `scripts/hooks/` extends the existing scripts directory pattern (already contains `voice.sh`). Scripts in `scripts/` are accessible from both harnesses via the `~/.config/Claude → ~/.config/opencode` symlink — no duplication. The hook scripts reference `$HOLOCRON_MEMORY_DIR` directly, so they work regardless of which harness invokes them.
+
+### Ralph Loop is an OpenCode-exclusive feature
+
+- **Decision** — Documented the Ralph Loop as not fully portable to Claude CLI. The `stop-guard.sh` script is a weak PRD-state approximation, not a full port.
+- **Options considered** — (1) Attempt a `Stop` hook + transcript-read approximation (read the last message from the transcript file). (2) Accept the limitation and document it clearly.
+- **Rationale** — Claude CLI's `Stop` hook stdin contains no response text, and there is no mechanism to programmatically inject a follow-up user turn. Reading the transcript at Stop time could work in theory but introduces race conditions (transcript may not be flushed) and file-parsing complexity for marginal gain. The stop-guard covers the primary use case (preventing premature stopping during active PRD execution). The live-text scanning behavior that catches incomplete work in arbitrary responses is genuinely impossible in the Claude CLI hook model.
+
+---
+
 ## 2026-03-19
 
 ### Add /compound command for solution card extraction
