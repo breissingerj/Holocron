@@ -147,4 +147,26 @@ fi
 
 echo ""
 
+# ── Claude CLI harness symlinks ───────────────────────────────────────────────
+# Claude CLI reads from ~/.claude/ directly — the ~/.config/Claude → ~/.config/opencode
+# symlink does NOT cover ~/.claude/commands/ or ~/.claude/skills/. These must be
+# symlinked explicitly. Skills and commands are read from the Holocron repo source.
+#
+# Claude CLI skill discovery: ~/.claude/skills/<name>/SKILL.md (personal skills)
+# Claude CLI command discovery: ~/.claude/commands/<name>.md
+
+echo "Claude CLI harness (~/.claude/)"
+CLAUDE_DIR="$HOME/.claude"
+mkdir -p "$CLAUDE_DIR"
+
+# commands/ and skills/ — point directly at Holocron source
+link_dir "$HOLOCRON_DIR/commands" "$CLAUDE_DIR/commands" "claude/commands"
+link_dir "$HOLOCRON_DIR/skills"   "$CLAUDE_DIR/skills"   "claude/skills"
+
+# settings.json and CLAUDE.md — versioned in config/claude/, symlinked here
+link_file "$HOLOCRON_DIR/config/claude/settings.json" "$CLAUDE_DIR/settings.json" "claude/settings.json"
+link_file "$HOLOCRON_DIR/config/claude/CLAUDE.md"     "$CLAUDE_DIR/CLAUDE.md"     "claude/CLAUDE.md"
+
+echo ""
+
 echo "Done. Restart your agent harness to pick up the new config."

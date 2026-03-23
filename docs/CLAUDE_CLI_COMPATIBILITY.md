@@ -18,8 +18,8 @@
 | System instructions (`AGENTS.md`) | `~/.config/Claude/` → symlink | Works — Claude CLI reads `AGENTS.md` as equivalent to `CLAUDE.md` |
 | Algorithm + steering rules | `~/.config/Claude/instructions/algorithm.md`, `steering-rules.md` | Works — loaded via `@` import in `AGENTS.md` |
 | Agent definitions (subagents) | `~/.config/Claude/agents/*.md` → symlink | Works — identical `.md` frontmatter format; Claude CLI spawns via `Task` tool |
-| Slash commands | `~/.config/Claude/commands/` → symlink | Works — `!cmd`, `$ARGUMENTS`, `@file` all work |
-| Skills | `~/.config/Claude/skills/` → symlink | Works — all 16 skill directories including `Agents/` context files |
+| Slash commands | `~/.claude/commands/` → symlink to `Holocron/commands/` | Works — requires explicit symlink via `install.sh`; `~/.config/Claude` symlink does **not** cover `~/.claude/commands/` |
+| Skills | `~/.claude/skills/` → symlink to `Holocron/skills/` | Works — requires explicit symlink via `install.sh`; Claude CLI reads `~/.claude/skills/<name>/SKILL.md`, not `~/.config/opencode/skills/` |
 | Voice script (`voice.sh`) | `scripts/voice.sh` | Works — pure bash, no harness dependency |
 | `HOLOCRON_MEMORY_DIR` env var | Shell environment | Works — available in any shell session |
 | Linear MCP server | `~/.claude.json` `mcpServers` | Works — already configured at the user level |
@@ -39,11 +39,15 @@ One difference: OpenCode's `holocron-agents-loader` plugin injects local `AGENTS
 
 ### Skills
 
-All 16 skill directories are accessible to Claude CLI via the symlink. Skill invocation (loading `SKILL.md` and following the workflow) is harness-agnostic — both harnesses use the same `USE WHEN` frontmatter to decide when to load a skill. No action required.
+Claude CLI reads personal skills from `~/.claude/skills/<name>/SKILL.md`. Holocron's skills already use this exact directory structure (`skills/<name>/SKILL.md`), so a single symlink `~/.claude/skills → Holocron/skills/` exposes all skills to Claude CLI. This symlink is created by `install.sh`. The `USE WHEN` description frontmatter works identically in both harnesses.
+
+> **Note:** The `~/.config/Claude → ~/.config/opencode` symlink does **not** help here. Claude CLI resolves skills from `~/.claude/skills/`, not from `~/.config/Claude/skills/`.
 
 ### Commands
 
-`/reflect` and `/compound` work in Claude CLI via the symlink. Both use `!cmd` shell injection and `$ARGUMENTS` substitution, which Claude CLI supports natively.
+`/reflect` and `/compound` work in Claude CLI once `~/.claude/commands/` is symlinked to `Holocron/commands/`. Both use `!cmd` shell injection and `$ARGUMENTS` substitution, which Claude CLI supports natively. This symlink is created by `install.sh`.
+
+> **Note:** The `~/.config/Claude → ~/.config/opencode` symlink does **not** help here. Claude CLI resolves commands from `~/.claude/commands/`, not from `~/.config/Claude/commands/`.
 
 ---
 
@@ -695,7 +699,9 @@ Both read from `~/.config/opencode/` (via the symlink). Both read from and write
 | — | `opencode-claude-auth` | 0 min | OpenCode-only, no equivalent needed |
 | — | MCP (linear) | 0 min | Already configured in `~/.claude.json` |
 | — | Algorithm, steering rules | 0 min | Already shared via `AGENTS.md` `@` imports |
-| — | Skills, subagents, commands | 0 min | Already shared via symlink |
+| — | Skills (`~/.claude/skills/` symlink) | 0 min | Added to install.sh — run installer |
+| — | Commands (`~/.claude/commands/` symlink) | 0 min | Added to install.sh — run installer |
+| — | Subagents | 0 min | Already shared via `~/.config/Claude` symlink |
 
 **Total estimated effort: ~4.5 hours for full parity.**
 
