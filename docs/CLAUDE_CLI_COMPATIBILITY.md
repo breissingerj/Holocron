@@ -58,12 +58,14 @@ The OpenCode TypeScript plugins are **not modified**. They continue to run exact
 ~/.claude/settings.json                          ← New (Claude CLI user-scope config)
 ~/.claude/CLAUDE.md                              ← New (context injection via @imports)
 scripts/hooks/
-  session-start.sh                               ← New (replaces session.created)
-  learning-capture.sh                            ← New (replaces chat.message)
-  prd-sync.sh                                    ← New (replaces tool.execute.after on edit/write)
-  memory-feed.sh                                 ← New (replaces file.edited)
-  stop-guard.sh                                  ← New (partial Ralph Loop approximation)
+  session-start.sh                               ← New (Claude CLI equivalent of session.created)
+  learning-capture.sh                            ← New (Claude CLI equivalent of chat.message)
+  prd-sync.sh                                    ← New (Claude CLI equivalent of tool.execute.after on edit/write)
+  memory-feed.sh                                 ← New (Claude CLI equivalent of file.edited)
+  stop-guard.sh                                  ← New (partial Claude CLI equivalent of Ralph Loop)
 ```
+
+> These shell scripts are **Claude CLI-only additions**. The OpenCode TypeScript plugins continue to run unchanged when using OpenCode. Both automation layers coexist — each harness runs its own against the same `$HOLOCRON_MEMORY_DIR`.
 
 ## Files NOT Modified
 
@@ -156,7 +158,7 @@ This is the only Claude CLI-specific config file required. It injects `HOLOCRON_
 
 ### 2. `~/.claude/CLAUDE.md` — Context Injection
 
-Replaces the OpenCode `session.created` + `tui.prompt.append` mechanism for static context. Claude CLI natively loads files referenced with `@path` syntax at every session start.
+Claude CLI equivalent of the OpenCode `session.created` + `tui.prompt.append` static context injection. Claude CLI natively loads files referenced with `@path` syntax at every session start. The OpenCode plugin continues to run when using OpenCode.
 
 ```markdown
 @~/.config/opencode/AGENTS.md
@@ -174,7 +176,7 @@ This gives Claude CLI the Holocron behavioral rules and curated memory on every 
 
 ### 3. `scripts/hooks/session-start.sh` — Active Work Context
 
-**Replaces:** `session.created` → `tui.prompt.append` (dynamic PRD injection in `holocron-context-loader`)  
+**Claude CLI equivalent of:** `session.created` → `tui.prompt.append` in `holocron-context-loader` (OpenCode plugin unchanged)  
 **PAI pattern:** `LoadContext.hook.ts` on `SessionStart` (returns `additionalContext` via `hookSpecificOutput`)  
 **Claude CLI hook:** `SessionStart`, `matcher: "startup"`, returns JSON with `additionalContext`
 
@@ -220,7 +222,7 @@ EOF
 
 ### 4. `scripts/hooks/learning-capture.sh` — Rating & Sentiment Capture
 
-**Replaces:** `chat.message` hook in `holocron-learning-capture`  
+**Claude CLI equivalent of:** `chat.message` in `holocron-learning-capture` (OpenCode plugin unchanged)  
 **PAI pattern:** `RatingCapture.hook.ts` on `UserPromptSubmit`  
 **Claude CLI hook:** `UserPromptSubmit` — stdin has `prompt` field (confirmed in PAI's THEHOOKSYSTEM docs)
 
@@ -325,7 +327,7 @@ exit 0
 
 ### 5. `scripts/hooks/prd-sync.sh` — PRD Frontmatter → work.json
 
-**Replaces:** `tool.execute.after` on `edit`/`write` in `holocron-prd`  
+**Claude CLI equivalent of:** `tool.execute.after` on `edit`/`write` in `holocron-prd` (OpenCode plugin unchanged)  
 **PAI pattern:** `PRDSync.hook.ts` on `PostToolUse` with `matcher: "Write|Edit"` (confirmed in PAI `settings.json`)  
 **Claude CLI hook:** `PostToolUse`, `matcher: "Write|Edit"`, `async: true`
 
@@ -399,7 +401,7 @@ exit 0
 
 ### 6. `scripts/hooks/memory-feed.sh` — Live Memory Write Log
 
-**Replaces:** `file.edited` event in `holocron-memory-feed`  
+**Claude CLI equivalent of:** `file.edited` event in `holocron-memory-feed` (OpenCode plugin unchanged)  
 **Claude CLI hook:** Piggybacked on the same `PostToolUse Write|Edit` matcher — runs alongside `prd-sync.sh`
 
 ```bash
@@ -437,7 +439,7 @@ exit 0
 
 ### 7. `scripts/hooks/stop-guard.sh` — Incomplete Work Guard
 
-**Replaces (partially):** `experimental.text.complete` + `client.tui.submitPrompt` in `holocron-ralph-loop`  
+**Partial Claude CLI equivalent of:** `experimental.text.complete` + `client.tui.submitPrompt` in `holocron-ralph-loop` (OpenCode plugin unchanged)  
 **PAI pattern:** Several `Stop` hooks run post-response (see PAI's `Stop` section in `settings.json`)  
 **Claude CLI hook:** `Stop` — exit code 2 blocks Claude from stopping; stderr text is shown to Claude as an error
 
@@ -476,8 +478,8 @@ exit 0
 
 ### 8. `holocron-agents-loader` — No Work Required
 
-**Replaces:** The `tool.execute.after` on `read` in `holocron-agents-loader`  
-**Claude CLI behavior:** Native. Claude CLI walks up the directory tree looking for `CLAUDE.md` and `AGENTS.md` files when reading from any directory. This is built-in behavior — the `holocron-agents-loader` plugin replicates what Claude CLI already does natively.
+**OpenCode plugin:** `holocron-agents-loader` (`tool.execute.after` on `read`) continues to run in OpenCode unchanged.  
+**Claude CLI behavior:** Native. Claude CLI walks up the directory tree looking for `CLAUDE.md` and `AGENTS.md` files when reading from any directory. This is built-in behavior — no additional shell script needed.
 
 No shell hook script needed for this capability.
 
