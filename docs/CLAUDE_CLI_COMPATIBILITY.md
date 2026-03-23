@@ -176,6 +176,8 @@ This gives Claude CLI the Holocron behavioral rules and curated memory on every 
 
 ### 3. `scripts/hooks/session-start.sh` — Active Work Context
 
+> **DUAL-MAINTENANCE:** Keep in sync with `plugins/holocron-context-loader/src/index.ts`. The PRD discovery logic (find most recent `PRD.md`, extract frontmatter fields) must stay equivalent between both files.
+
 **Claude CLI equivalent of:** `session.created` → `tui.prompt.append` in `holocron-context-loader` (OpenCode plugin unchanged)  
 **PAI pattern:** `LoadContext.hook.ts` on `SessionStart` (returns `additionalContext` via `hookSpecificOutput`)  
 **Claude CLI hook:** `SessionStart`, `matcher: "startup"`, returns JSON with `additionalContext`
@@ -221,6 +223,8 @@ EOF
 ---
 
 ### 4. `scripts/hooks/learning-capture.sh` — Rating & Sentiment Capture
+
+> **DUAL-MAINTENANCE:** Keep in sync with `plugins/holocron-learning-capture/src/index.ts`. Detection regexes, rating thresholds (explicit patterns, implicit keywords, low-rating threshold ≤4), JSONL field names in `ratings.jsonl`, and the capture `.md` file format in `LEARNING/CAPTURES/` must all match between both files.
 
 **Claude CLI equivalent of:** `chat.message` in `holocron-learning-capture` (OpenCode plugin unchanged)  
 **PAI pattern:** `RatingCapture.hook.ts` on `UserPromptSubmit`  
@@ -327,6 +331,8 @@ exit 0
 
 ### 5. `scripts/hooks/prd-sync.sh` — PRD Frontmatter → work.json
 
+> **DUAL-MAINTENANCE:** Keep in sync with `plugins/holocron-prd/src/index.ts`. The set of frontmatter fields extracted and the shape of entries written to `STATE/work.json` must be identical between both files. If a new field is added to the PRD format, add it to both the TS plugin and this script.
+
 **Claude CLI equivalent of:** `tool.execute.after` on `edit`/`write` in `holocron-prd` (OpenCode plugin unchanged)  
 **PAI pattern:** `PRDSync.hook.ts` on `PostToolUse` with `matcher: "Write|Edit"` (confirmed in PAI `settings.json`)  
 **Claude CLI hook:** `PostToolUse`, `matcher: "Write|Edit"`, `async: true`
@@ -401,6 +407,8 @@ exit 0
 
 ### 6. `scripts/hooks/memory-feed.sh` — Live Memory Write Log
 
+> **DUAL-MAINTENANCE:** Keep in sync with `plugins/holocron-memory-feed.ts`. Path classification labels (`WORK`, `SIGNAL`, `CAPTURE`, etc.) and the log line format written to `/tmp/holocron-memory-feed.log` must match exactly — `scripts/memory-feed.sh` (the tail renderer) parses both harnesses' output identically.
+
 **Claude CLI equivalent of:** `file.edited` event in `holocron-memory-feed` (OpenCode plugin unchanged)  
 **Claude CLI hook:** Piggybacked on the same `PostToolUse Write|Edit` matcher — runs alongside `prd-sync.sh`
 
@@ -438,6 +446,8 @@ exit 0
 ---
 
 ### 7. `scripts/hooks/stop-guard.sh` — Incomplete Work Guard
+
+> **DUAL-MAINTENANCE (asymmetric):** Loosely paired with `plugins/holocron-ralph-loop/src/index.ts`. These files are intentionally different in capability (see limitation note below) and will never be fully equivalent. Only sync if: the PRD phase names change, the checkbox pattern (`- [ ]`) changes, or the sentinel string that guards against infinite loops changes.
 
 **Partial Claude CLI equivalent of:** `experimental.text.complete` + `client.tui.submitPrompt` in `holocron-ralph-loop` (OpenCode plugin unchanged)  
 **PAI pattern:** Several `Stop` hooks run post-response (see PAI's `Stop` section in `settings.json`)  
@@ -478,10 +488,36 @@ exit 0
 
 ### 8. `holocron-agents-loader` — No Work Required
 
+> **DUAL-MAINTENANCE (monitor only):** No shell script to maintain. If `plugins/holocron-agents-loader/src/index.ts` changes its walk depth, dedup logic, or the files it looks for (currently `AGENTS.md`), verify that Claude CLI's native hierarchical loading behavior still covers the same scope. No code change required unless Claude CLI's native behavior diverges.
+
 **OpenCode plugin:** `holocron-agents-loader` (`tool.execute.after` on `read`) continues to run in OpenCode unchanged.  
 **Claude CLI behavior:** Native. Claude CLI walks up the directory tree looking for `CLAUDE.md` and `AGENTS.md` files when reading from any directory. This is built-in behavior — no additional shell script needed.
 
 No shell hook script needed for this capability.
+
+---
+
+## Dual-Maintenance Registry
+
+These are the file pairs that implement the **same logical behavior** across both harnesses. Whenever you change the logic in one file, you must apply the equivalent change to its paired file. They are never identical (different languages, different event APIs) but must stay **semantically in sync**.
+
+> **Rule:** Any PR or commit that touches a file in the left column should also touch the file in the right column — and vice versa. If you intentionally update only one side, explain why in the commit message.
+
+| Behavior | OpenCode file | Claude CLI file | Sync notes |
+|---|---|---|---|
+| Context injection at session start | `plugins/holocron-context-loader/src/index.ts` | `~/.claude/CLAUDE.md` + `scripts/hooks/session-start.sh` | Logic that picks the active PRD lives in the TS plugin and `session-start.sh`. CLAUDE.md imports are static; only the dynamic PRD summary needs to stay in sync. |
+| Rating & sentiment capture | `plugins/holocron-learning-capture/src/index.ts` | `scripts/hooks/learning-capture.sh` | Detection regexes, rating thresholds, JSONL schema, and `LEARNING/CAPTURES/` file format must match exactly. |
+| PRD frontmatter → work.json sync | `plugins/holocron-prd/src/index.ts` | `scripts/hooks/prd-sync.sh` | Fields written to `STATE/work.json` and the frontmatter keys parsed must stay identical. |
+| Memory write feed log | `plugins/holocron-memory-feed.ts` | `scripts/hooks/memory-feed.sh` | Path classification labels (`WORK`, `SIGNAL`, etc.) and log format (`/tmp/holocron-memory-feed.log`) must match so `scripts/memory-feed.sh` renders both harnesses identically. |
+| Incomplete-work continuation | `plugins/holocron-ralph-loop/src/index.ts` | `scripts/hooks/stop-guard.sh` | **Asymmetric by design** — the Ralph Loop scans live response text; the stop-guard only checks PRD state. These will never be identical. Only sync PRD phase names and checkbox pattern (`- [ ]`) if those change. |
+| Hierarchical context injection | `plugins/holocron-agents-loader/src/index.ts` | Native Claude CLI behavior | No shell script. If the OpenCode plugin's walk depth, dedup logic, or AGENTS.md path changes, verify Claude CLI's native behavior still covers it. |
+
+### How to apply a logic change
+
+1. Identify which row in the table the changed behavior belongs to.
+2. Open both files in the same PR.
+3. Apply the equivalent logic change to the paired file using the hook event reference below as a translation guide.
+4. Add a commit message note: `sync: updated learning-capture.sh to match holocron-learning-capture changes`.
 
 ---
 
