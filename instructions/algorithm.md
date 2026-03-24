@@ -230,6 +230,8 @@ GUIDANCE:
 - **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
   <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
+- **Parallel WebFetch for multi-URL research**: When a task requires fetching N URLs (repos, READMEs, docs, API references), issue ALL N WebFetch calls simultaneously in the OBSERVE phase — never sequentially. One round-trip for all sources is always correct; sequential fetching is always wrong for research tasks.
+  <!-- reflect: applied from signals 2026-03-24T12:10:00Z (x4), 2026-03-24T00:10:00Z, 2026-03-24T00:00:00Z — rating avg 8 -->
 - **Invoke Research/Task agents for validation**: When verifying file locations, dependency existence, API contracts, or external state, explicitly select and invoke Research skill or parallel Task agents in OBSERVE rather than reverting to manual sequential grep/read probing during BUILD.
   <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-23T09:30, 2026-03-23T12:57, 2026-03-23T20:45 — rating avg N/A -->
 - Use **skills** for any domain-specific workflow — check `~/.config/opencode/skills/` before building logic inline.
