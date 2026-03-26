@@ -35,7 +35,7 @@ _kokoro="http://localhost:8880/v1/audio/speech"
     _tmp="/tmp/pai-voice-$$.mp3"
     if curl -sf -X POST "$_kokoro" \
         -H "Content-Type: application/json" \
-        -d "{\"model\":\"kokoro\",\"input\":\"$_msg\",\"voice\":\"$_voice\",\"response_format\":\"mp3\"}" \
+        -d "{\"model\":\"kokoro\",\"input\":\"$_msg\",\"voice\":\"$_voice\"}" \
         --output "$_tmp" --max-time 10 &>/dev/null; then
       afplay "$_tmp" &>/dev/null && rm -f "$_tmp" &
     else

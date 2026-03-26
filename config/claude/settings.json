@@ -4,9 +4,23 @@
     "HOLOCRON_MEMORY_DIR": "/Users/jbreissinger/Projects/personalProjects/holocron-context"
   },
   "permissions": {
-    "allow": ["Bash", "Read", "Write", "Edit", "MultiEdit", "Glob", "Grep", "WebFetch", "Task"],
+    "allow": [
+      "Bash",
+      "Read",
+      "Write",
+      "Edit",
+      "MultiEdit",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "Task"
+    ],
     "defaultMode": "default"
   },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "linear"
+  ],
   "hooks": {
     "SessionStart": [
       {
@@ -187,7 +201,5 @@
         ]
       }
     ]
-  },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["linear"]
+  }
 }
