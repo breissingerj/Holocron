@@ -1,7 +1,7 @@
 ---
 name: Algorithm
 description: Expert in creating and evolving Ideal State Criteria (ISC) as part of the Holocron Algorithm's core principles. Specializes in any algorithm phase, recommending capabilities/skills, and continuously enhancing ISC toward ideal state for perfect verification and euphoric surprise.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#4A9EFF"
 voiceId: fTtv3eikoepIosk8dTZ5
 voice:

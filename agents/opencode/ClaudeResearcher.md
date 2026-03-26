@@ -1,7 +1,7 @@
 ---
 name: ClaudeResearcher
 description: Academic researcher using Claude's WebSearch. Called BY Research skill workflows only. Excels at multi-query decomposition, parallel search execution, and synthesizing scholarly sources.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#FACC15"
 voiceId: AXdMgz6evoL7OPd7eU12
 voice:

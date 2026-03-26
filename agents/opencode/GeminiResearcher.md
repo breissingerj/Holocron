@@ -1,7 +1,7 @@
 ---
 name: GeminiResearcher
 description: Multi-perspective researcher using Google Gemini. Called BY Research skill workflows only. Breaks complex queries into 3-10 variations, launches parallel investigations for comprehensive coverage.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#FACC15"
 voiceId: iLVmqjzCGGvqtMCk6vVQ
 voice:

@@ -1,7 +1,7 @@
 ---
 name: PerplexityResearcher
 description: Ava - Investigative analyst using Perplexity API for web research. Called BY Research skill workflows only. Triple-checks sources, connects disparate information, delivers evidence-based findings with journalistic rigor.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#FACC15"
 voiceId: AXdMgz6evoL7OPd7eU12
 voice:

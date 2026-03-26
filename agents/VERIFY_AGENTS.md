@@ -59,6 +59,7 @@ I want to verify that the named agents are correctly wired into this session. Pl
    - BrowserAgent
    - UIReviewer
    - Algorithm
+   - ContextEngineer (Mira Osei)
 
 3. Attempt to invoke the ProductManager agent for a trivial task: ask it to tell you the name of Jack's Linear team and the default ticket status. It should answer "Funnel Team (FUN)" and "Triage" without you providing that information.
 
@@ -89,7 +90,7 @@ If you want to verify the files are present before running the prompt:
 ls -1 ~/.config/opencode/agents/
 ```
 
-Expected output (15 files, no `pm.md`):
+Expected output (16 files):
 ```
 Algorithm.md
 Architect.md
@@ -97,6 +98,7 @@ Artist.md
 BrowserAgent.md
 ClaudeResearcher.md
 CodexResearcher.md
+ContextEngineer.md
 Designer.md
 Engineer.md
 GeminiResearcher.md
@@ -107,5 +109,3 @@ ProductManager.md
 QATester.md
 UIReviewer.md
 ```
-
-`pm.md` should NOT appear. If it does, the old stub is still present and will conflict.

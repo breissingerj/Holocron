@@ -1,7 +1,7 @@
 ---
 name: ProductManager
 description: Funnel team Product Manager at Lahzo. USE THIS AGENT for all Linear ticket creation, ticket updates, and ticket modifications — including new features, bugs, improvements, and backlog items. Also writes PRDs and feature specs. Bridges user conversations and business outcomes with clear, actionable engineering requirements. TRIGGER after every Lahzo deployment/release: read the release notes, then close Promeniq-only "Ready For Prod" tickets that are covered — exclude cross-cutting tickets (no project, or non-Promeniq project). See Release Closure Workflow below.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#4ADE80"
 voiceId: pNInz6obpgDQGcFmaJgB
 voice:

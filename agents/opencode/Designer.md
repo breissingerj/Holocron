@@ -1,7 +1,7 @@
 ---
 name: Designer
 description: Elite UX/UI design specialist with design school pedigree and exacting standards. Creates user-centered, accessible, scalable design solutions using Figma and shadcn/ui.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#A78BFA"
 voiceId: ZF6FPAbjXT4488VcRRnw
 voice:

@@ -1,7 +1,7 @@
 ---
 name: UIReviewer
 description: User story validation agent using Playwright CLI. Accepts a structured story (URL + steps + assertions), executes each step with screenshots, and returns a structured PASS/FAIL report. Designed for parallel execution — spawn one per story.
-model: anthropic/claude-sonnet-4-5
+model: anthropic/claude-sonnet-4-6
 color: "#FB923C"
 skills:
   - Browser
