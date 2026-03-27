@@ -32,8 +32,14 @@ Read and display all unprocessed signal data:
 2. Read the full contents of `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl`
 3. List and read all `.md` files under `$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/`
 4. List all existing snapshot directories under `$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/` — their contents are already applied and must NOT be reprocessed
-5. Count total signals by type: explicit ratings, implicit ratings, algorithm reflections, captures
-6. If total unprocessed signals = 0, output: "No unprocessed signals found. Nothing to reflect." and stop.
+5. Scan `$HOLOCRON_MEMORY_DIR/WORK/` for PRD slug directories and extract any client names embedded in slugs or PRD content. Cross-reference against `algorithm-reflections.jsonl` entries for the same client names. Build a per-client session count:
+   ```bash
+   ls "$HOLOCRON_MEMORY_DIR/WORK/" 2>/dev/null
+   ```
+   For each client with ≥ 2 matching sessions, flag it for client state synthesis in PHASE 2.
+6. Scan `algorithm-reflections.jsonl` for recurring error classes or correction signals. Group by behavioral anti-pattern description (not by session). For each class that appears in ≥ 3 separate sessions, flag it for behavioral correction pattern synthesis in PHASE 2.
+7. Count total signals by type: explicit ratings, implicit ratings, algorithm reflections, captures
+8. If total unprocessed signals = 0, output: "No unprocessed signals found. Nothing to reflect." and stop.
 
 ---
 
@@ -45,6 +51,8 @@ Analyze all unprocessed signals and cluster them into themes. Apply the followin
 - **Algorithm improvement** (applies to `algorithm.md`, `steering-rules.md`): Include if the same Q1/Q2/Q3 reflection pattern appears in ≥ 3 sessions OR a reflection specifically calls out a systemic process failure
 - **One-off error**: Rating ≤ 5 on an isolated incident with no pattern — note it but do NOT apply to memory or system files. These are learning signals, not rules.
 - **Preference/workflow update**: Explicit user corrections about output format, tooling, workflow — apply if explicit (not just inferred) and not already in memory
+- **Client state snapshot** (applies to `memory/{client}-state.md`): Include if ≥ 2 sessions reference the same client with non-trivial work context (substantive tool calls, PRD entries, or reflections — not just mentions). Synthesize current active risks, known tech debt, behavioral quirks, and unresolved issues as facts. Do NOT summarize what was done; capture what is true now.
+- **Behavioral correction pattern** (applies to `memory/behavioral-corrections.md`): Include if the same anti-pattern class appears in ≥ 3 separate sessions. This is distinct from the "Behavioral correction" category above — that category handles explicit corrections the user named; this category handles implicit recurring mistakes surfaced by rating patterns and reflection content. Do NOT promote a pattern here unless it meets the 3-session threshold.
 
 Output a structured synthesis table:
 
@@ -54,6 +62,8 @@ Output a structured synthesis table:
 | ...   | behavioral | N | ... | Apply to OPINIONS.md |
 | ...   | algorithm  | N | ... | Apply to algorithm.md |
 | ...   | one-off    | N | ... | Note only, discard |
+| ...   | client-state     | N | ... | Write/update memory/{client}-state.md |
+| ...   | behavior-pattern | N | ... | Append to memory/behavioral-corrections.md |
 ```
 
 For each "Apply" row, write out the exact proposed change (the new bullet, rule, or note to add) before proceeding. Do not proceed to PHASE 3 until the synthesis table and proposed changes are complete and visible.
@@ -105,10 +115,46 @@ If there are memory/behavioral/preference changes to apply:
    - Strong opinions/preferences → `Holocron/USER/OPINIONS.md`
    - Behavioral steering overrides → `Holocron/USER/AISTEERINGRULES.md`
 
-3. For EVERY change, add a source annotation comment in the file using this format:
+3. For client state snapshots flagged in PHASE 2:
+   - Determine the client slug (e.g., `promeniq` → `promeniq-state.md`).
+   - Check if `$HOLOCRON_MEMORY_DIR/memory/{client}-state.md` exists.
+     - If it exists: read the file, then update only the sections that have changed — do not append blindly. Preserve existing facts that are still accurate.
+     - If it does not exist: create it with the following header, then populate:
+       ```markdown
+       # {Client} — State Snapshot
+       <!-- reflect: generated {REFLECT_TS} -->
+
+       ## Active Risks
+
+       ## Known Tech Debt
+
+       ## Behavioral Quirks
+
+       ## Unresolved Issues
+       ```
+   - Add a `<!-- reflect: applied from signals {TIMESTAMPS} — {N} sessions -->` annotation at the top of the file on every write.
+
+4. For behavioral correction patterns flagged in PHASE 2:
+   - Check if `$HOLOCRON_MEMORY_DIR/memory/behavioral-corrections.md` exists.
+     - If it does not exist: create it with this header before appending:
+       ```markdown
+       # Behavioral Correction Patterns
+       <!-- Managed by Holocron Reflect. Do not edit manually. -->
+       ```
+   - For each new pattern, append one block in this format:
+     ```markdown
+     ### Pattern: [name]
+     [1-2 sentence rule written in imperative voice, stating what NOT to do or what to do instead.]
+     **Evidence:** N sessions, timestamps: {TS_1}, {TS_2}, {TS_3}
+     **Why:** [Root cause hypothesis — one sentence.]
+     <!-- reflect: applied from signals {TIMESTAMPS} — rating avg {N} -->
+     ```
+   - Never overwrite an existing pattern entry. If the same pattern recurs after a prior reflect run, append a `**Recurrence:**` line to the existing entry with the new timestamps and updated session count.
+
+5. For EVERY change, add a source annotation comment in the file using this format:
    `<!-- reflect: applied from signals {TIMESTAMP_1}, {TIMESTAMP_2} — rating avg {N} -->`
 
-4. Commit the changes and push directly to main:
+6. Commit the changes and push directly to main:
    ```bash
    cd $HOLOCRON_MEMORY_DIR
    git add -A
