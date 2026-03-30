@@ -363,12 +363,24 @@ OUTPUT:
 - **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
 
 ```bash
-echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false],"agents_invoked":["AgentType1","AgentType2"]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 ```
 
 Fill in all bracketed values from the current session. `implied_sentiment` is your estimate of how satisfied the user is (1=frustrated, 10=delighted) based on conversation tone — do NOT read ratings.jsonl. Escape double quotes in reflection text with `\"`.
 
 `work_type` valid values: `feature` (shipping new product capability), `system_improvement` (improving the Holocron/PAI system itself), `research` (investigation without direct output), `debugging` (fixing something broken). This field enables tracking the 50/50 balance between feature work and system improvement over time.
+
+`agents_invoked`: JSON array of subagent type strings actually invoked via the Agent tool during this session (e.g., `["ContextEngineer","Explore"]`). Use the exact `subagent_type` value passed to the Agent tool. If no agents were invoked, write `[]`. Do NOT list capabilities that were selected but never called.
+
+- **WRITE AGENT INVOCATION COUNTER (if `agents_invoked` is non-empty):** For each agent invoked, append one entry per agent to the persistent counter log. This file survives reflect signal clearing and is the source of truth for lifetime invocation counts.
+
+```bash
+for agent in [AgentType1] [AgentType2]; do
+  echo "{\"timestamp\":\"[ISO-8601]\",\"agent\":\"$agent\",\"task\":\"[8-word task description]\",\"prd_id\":\"[slug]\"}" >> $HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl
+done
+```
+
+Skip this step entirely if `agents_invoked` is `[]`.
 
 ---
 

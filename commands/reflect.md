@@ -19,6 +19,9 @@ Algorithm reflections:
 Capture files:
 !`find $HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES -name "*.md" 2>/dev/null | wc -l` capture .md files
 
+Agent invocations (lifetime):
+!`cat $HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl 2>/dev/null | wc -l` total entries in agent-invocations.jsonl
+
 Already processed snapshots:
 !`ls $HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/ 2>/dev/null | wc -l` prior reflect runs in PROCESSED/
 
@@ -32,6 +35,11 @@ Read and display all unprocessed signal data:
 2. Read the full contents of `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl`
 3. List and read all `.md` files under `$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/`
 4. List all existing snapshot directories under `$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/` — their contents are already applied and must NOT be reprocessed
+5. Read `$HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl` and compute a per-agent invocation count:
+   ```bash
+   cat $HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl 2>/dev/null | grep -o '"agent":"[^"]*"' | sort | uniq -c | sort -rn
+   ```
+   Display as a table: Agent | Lifetime Invocations | Sessions in Current Signal Window. The "sessions in current signal window" is the count of entries in `algorithm-reflections.jsonl` that include each agent in their `agents_invoked` array.
 5. Scan `$HOLOCRON_MEMORY_DIR/WORK/` for PRD slug directories and extract any client names embedded in slugs or PRD content. Cross-reference against `algorithm-reflections.jsonl` entries for the same client names. Build a per-client session count:
    ```bash
    ls "$HOLOCRON_MEMORY_DIR/WORK/" 2>/dev/null
@@ -49,6 +57,7 @@ Analyze all unprocessed signals and cluster them into themes. Apply the followin
 
 - **Behavioral correction** (applies to `memory/MEMORY.md`, `OPINIONS.md`, `AISTEERINGRULES.md`): Include if rating ≤ 5 OR the same correction pattern appears in ≥ 3 separate sessions
 - **Algorithm improvement** (applies to `algorithm.md`, `steering-rules.md`): Include if the same Q1/Q2/Q3 reflection pattern appears in ≥ 3 sessions OR a reflection specifically calls out a systemic process failure
+- **Agent improvement** (applies to `agents/claude/{AgentName}.md` and `agents/opencode/{AgentName}.md`): Include if the same agent appears in `agents_invoked` across ≥ 3 sessions AND the reflections for those sessions describe a recurring failure or gap attributable to that agent's instructions. Look for: Q1/Q2/Q3 answers that reference the agent by name, low `implied_sentiment` on sessions where the agent was invoked, or explicit critique of the agent's behavior in captures. The file targets are both `agents/claude/{AgentName}.md` and `agents/opencode/{AgentName}.md` in the Holocron repo — always update both. Do NOT apply agent improvements for a one-session incident.
 - **One-off error**: Rating ≤ 5 on an isolated incident with no pattern — note it but do NOT apply to memory or system files. These are learning signals, not rules.
 - **Preference/workflow update**: Explicit user corrections about output format, tooling, workflow — apply if explicit (not just inferred) and not already in memory
 - **Client state snapshot** (applies to `memory/{client}-state.md`): Include if ≥ 2 sessions reference the same client with non-trivial work context (substantive tool calls, PRD entries, or reflections — not just mentions). Synthesize current active risks, known tech debt, behavioral quirks, and unresolved issues as facts. Do NOT summarize what was done; capture what is true now.
@@ -59,9 +68,10 @@ Output a structured synthesis table:
 ```
 | Theme | Category | Signal Count | Source Timestamps | Action |
 |-------|----------|-------------|------------------|--------|
-| ...   | behavioral | N | ... | Apply to OPINIONS.md |
-| ...   | algorithm  | N | ... | Apply to algorithm.md |
-| ...   | one-off    | N | ... | Note only, discard |
+| ...   | behavioral       | N | ... | Apply to OPINIONS.md |
+| ...   | algorithm        | N | ... | Apply to algorithm.md |
+| ...   | agent-improvement| N | ... | Apply to agents/claude/{Name}.md + agents/opencode/{Name}.md |
+| ...   | one-off          | N | ... | Note only, discard |
 | ...   | client-state     | N | ... | Write/update memory/{client}-state.md |
 | ...   | behavior-pattern | N | ... | Append to memory/behavioral-corrections.md |
 ```
@@ -82,6 +92,7 @@ mkdir -p "$SNAPSHOT_DIR"
 # Copy all signal files to snapshot
 cp "$HOLOCRON_MEMORY_DIR/LEARNING/SIGNALS/ratings.jsonl" "$SNAPSHOT_DIR/ratings.jsonl" 2>/dev/null || true
 cp "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl" "$SNAPSHOT_DIR/algorithm-reflections.jsonl" 2>/dev/null || true
+cp "$HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl" "$SNAPSHOT_DIR/agent-invocations.jsonl" 2>/dev/null || true
 
 # Copy all capture files preserving subdirectory structure
 if [ -d "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES" ]; then
@@ -185,6 +196,7 @@ If there are algorithm/system changes to apply:
    - Algorithm process improvements → `instructions/algorithm.md` (open items section or inline at relevant phase)
    - Behavioral steering changes → `instructions/steering-rules.md`
    - Roadmap items or deferred work surfaced by signals → `ROADMAP.md`
+   - Agent improvements → both `agents/claude/{AgentName}.md` AND `agents/opencode/{AgentName}.md`. The opencode version may have additional frontmatter (voice, persona, color) — preserve it. Only update the body content that the signals call out. Apply the ContextEngineer's own audit protocol when editing agent files: identify the specific section that caused the problem before adding new rules.
 
 3. For EVERY change, add a source annotation comment:
    `<!-- reflect: applied from signals {TIMESTAMP_1}, {TIMESTAMP_2} — rating avg {N} -->`
@@ -211,6 +223,7 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
    > "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl"
    # Remove processed capture files (already in snapshot)
    rm -rf "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/"*/
+   # NOTE: Do NOT clear agent-invocations.jsonl — it is a lifetime counter, not a per-cycle signal file.
    
    # Clean up old PRDs in WORK/ that have been processed for learnings
    grep -h -o '"prd_id":"[^"]*"' "$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/"*/algorithm-reflections.jsonl "$SNAPSHOT_DIR/algorithm-reflections.jsonl" 2>/dev/null | cut -d'"' -f4 | sort -u | while read -r prd; do
