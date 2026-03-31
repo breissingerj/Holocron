@@ -226,6 +226,7 @@ PLATFORM CAPABILITIES (consider alongside skills):
 
 GUIDANCE:
 
+- **Multi-domain expert selection** — If the task spans 2+ domains (e.g., code + prompts, infra + UI, security + design) OR effort is Extended+, consult the Agent tool's available `subagent_type` values and their descriptions — they are injected into context by the harness at session start and are always current. Each entry includes a USE WHEN trigger; match detected task domains against those triggers and select the best-fitting specialist agents. Spawn matched agents in parallel during BUILD.
 - Use the **Plan subagent** (`subagent_type: "Plan"`) for any review, audit, or analysis task — it enforces read-only by design.
 - **Parallelize aggressively** — spawn multiple Agent tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
@@ -361,7 +362,7 @@ OUTPUT:
 - **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
 
 ```bash
-echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"agents_invoked":["subagent_type value as listed in Agent tool description, e.g. Engineer, ContextEngineer, Explore"],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 ```
 
 Fill in all bracketed values from the current session. `implied_sentiment` is your estimate of how satisfied the user is (1=frustrated, 10=delighted) based on conversation tone — do NOT read ratings.jsonl. Escape double quotes in reflection text with `\"`.

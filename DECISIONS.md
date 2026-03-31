@@ -4,6 +4,16 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ---
 
+## 2026-03-31
+
+### Multi-domain agent selection — use Agent tool's injected subagent descriptions
+
+- **Decision** — Updated `algorithm.md` OBSERVE capability selection to consult the Agent tool's available `subagent_type` values and their USE WHEN descriptions for multi-domain or Extended+ tasks. Both Claude Code and OpenCode inject agent descriptions into the model's context at session start via the Agent tool schema — no file globbing or env vars needed. Added `agents_invoked` field to the LEARN phase reflection JSONL to track which agents are actually used per session.
+- **Options considered** — (1) Static agent table in algorithm.md — requires manual updates. (2) `$HOLOCRON_AGENTS_DIR` env var + glob — dynamic but redundant; the harness already loads agent descriptions into context. (3) Agent tool self-description — always current, harness-agnostic, zero configuration.
+- **Rationale** — Option 2 was initially implemented before recognizing that both harnesses already inject agent descriptions through the Agent tool schema. Option 3 is strictly simpler: no env var, no file I/O, works identically in Claude Code and OpenCode.
+
+---
+
 ## 2026-03-23
 
 ### Known issue: RelationshipMemory and IntegrityCheck may be no-ops on SessionEnd
