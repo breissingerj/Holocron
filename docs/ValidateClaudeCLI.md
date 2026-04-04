@@ -12,7 +12,7 @@ Each check is a bash one-liner. Run them in order. A ✓ means pass; a ✗ means
 required — the remedy is listed inline.
 
 ```bash
-bash /Users/jbreissinger/Projects/personalProjects/Holocron/docs/validate-claude-cli.sh
+bash $HOLOCRON_REPO_ROOT/docs/validate-claude-cli.sh
 ```
 
 Or run checks manually section by section below.
@@ -152,20 +152,20 @@ CMD_COUNT=$(ls ~/.claude/commands/*.md 2>/dev/null | grep -v .gitkeep | wc -l | 
 Claude Code reads subagents from `~/.claude/agents/`. Holocron maintains Claude Code
 schema agent files at `agents/claude/`, symlinked here by `install.sh`.
 
-### 4.1 agents/ is a symlink
+### 4.1 agents/ exists as a real directory (merged from public + private)
 
 ```bash
-[[ -L ~/.claude/agents ]] \
-  && echo "✓ ~/.claude/agents is a symlink" \
-  || echo "✗ ~/.claude/agents is not a symlink — run install.sh"
+[[ -d ~/.claude/agents && ! -L ~/.claude/agents ]] \
+  && echo "✓ ~/.claude/agents is a real directory (merge-linked)" \
+  || echo "✗ ~/.claude/agents missing or still a symlink — run install.sh"
 ```
 
-### 4.2 agents/ symlink target exists
+### 4.2 At least one agent symlink resolves
 
 ```bash
-[[ -d ~/.claude/agents ]] \
-  && echo "✓ ~/.claude/agents target exists" \
-  || echo "✗ ~/.claude/agents symlink is broken"
+[[ -f "$(ls ~/.claude/agents/*.md 2>/dev/null | head -1)" ]] \
+  && echo "✓ agent symlinks resolve" \
+  || echo "✗ no agent .md files found in ~/.claude/agents/"
 ```
 
 ### 4.3 At least 15 agents present
@@ -177,12 +177,12 @@ AGENT_COUNT=$(ls ~/.claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
   || echo "✗ Expected 15+, found $AGENT_COUNT — check agents/claude/ directory"
 ```
 
-### 4.4 opencode agents symlink points to agents/opencode/
+### 4.4 opencode agents/ exists as a real directory (merged from public + private)
 
 ```bash
-[[ "$(readlink ~/.config/opencode/agents 2>/dev/null)" == *"agents/opencode"* ]] \
-  && echo "✓ ~/.config/opencode/agents → agents/opencode/ (correct)" \
-  || echo "✗ ~/.config/opencode/agents not pointing to agents/opencode/ — run install.sh"
+[[ -d ~/.config/opencode/agents && ! -L ~/.config/opencode/agents ]] \
+  && echo "✓ ~/.config/opencode/agents is a real directory (merge-linked)" \
+  || echo "✗ ~/.config/opencode/agents missing or still a symlink — run install.sh"
 ```
 
 ---

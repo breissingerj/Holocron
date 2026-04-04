@@ -127,7 +127,7 @@ If there are memory/behavioral/preference changes to apply:
    - Behavioral steering overrides → `Holocron/USER/AISTEERINGRULES.md`
 
 3. For client state snapshots flagged in PHASE 2:
-   - Determine the client slug (e.g., `promeniq` → `promeniq-state.md`).
+   - Determine the client slug (e.g., `acme-corp` → `acme-corp-state.md`).
    - Check if `$HOLOCRON_MEMORY_DIR/memory/{client}-state.md` exists.
      - If it exists: read the file, then update only the sections that have changed — do not append blindly. Preserve existing facts that are still accurate.
      - If it does not exist: create it with the following header, then populate:
@@ -187,7 +187,7 @@ If there are algorithm/system changes to apply:
    ```bash
    HOLOCRON_REPO=$(cd $HOLOCRON_MEMORY_DIR && git remote get-url origin | sed 's|.*github.com[:/]\(.*\)\.git|\1|' | head -1)
    # Use the actual Holocron repo path — check memory for it
-   cd /Users/jbreissinger/Projects/personalProjects/Holocron
+   cd $HOLOCRON_REPO_ROOT
    git checkout main && git pull
    git checkout -b "reflect/$REFLECT_TS"
    ```
@@ -203,7 +203,7 @@ If there are algorithm/system changes to apply:
 
 4. Commit the changes:
    ```bash
-   cd /Users/jbreissinger/Projects/personalProjects/Holocron
+   cd $HOLOCRON_REPO_ROOT
    git add -A
    git commit -m "reflect($REFLECT_TS): apply learning signals to system"
    git push -u origin "reflect/$REFLECT_TS"
@@ -240,7 +240,7 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
 
 3. Open PR in `Holocron` repo (if system branch was pushed):
    ```bash
-   cd /Users/jbreissinger/Projects/personalProjects/Holocron
+   cd $HOLOCRON_REPO_ROOT
    gh pr create \
      --title "reflect($REFLECT_TS): apply learning signals to system" \
      --body "$(cat <<EOF

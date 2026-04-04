@@ -115,7 +115,7 @@ This is the only Claude CLI-specific config file required. It injects `HOLOCRON_
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "HOLOCRON_MEMORY_DIR": "/Users/jbreissinger/Projects/personalProjects/holocron-context"
+    "HOLOCRON_MEMORY_DIR": "/path/to/your/holocron-context"
   },
   "permissions": {
     "allow": ["Bash", "Read", "Write", "Edit", "MultiEdit", "Glob", "Grep", "WebFetch", "Task"],
@@ -198,7 +198,7 @@ Claude CLI equivalent of the OpenCode `session.created` + `tui.prompt.append` st
 ```markdown
 @~/.config/opencode/AGENTS.md
 
-@/Users/jbreissinger/Projects/personalProjects/holocron-context/memory/MEMORY.md
+@$HOLOCRON_MEMORY_DIR/memory/MEMORY.md
 ```
 
 This gives Claude CLI the Holocron behavioral rules and curated memory on every session without any hook code. The `session-start.sh` hook (below) handles the dynamic component (active PRD).
