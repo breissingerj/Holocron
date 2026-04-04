@@ -1,0 +1,91 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "holocron",
+      "devDependencies": {
+        "@types/node": "^22.0.0",
+      },
+    },
+    "plugins/holocron-agents-loader": {
+      "name": "holocron-agents-loader",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "plugins/holocron-context-loader": {
+      "name": "holocron-context-loader",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "plugins/holocron-glob-rules": {
+      "name": "holocron-glob-rules",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "plugins/holocron-learning-capture": {
+      "name": "holocron-learning-capture",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "plugins/holocron-prd": {
+      "name": "holocron-prd",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+    "plugins/holocron-ralph-loop": {
+      "name": "holocron-ralph-loop",
+      "version": "1.0.0",
+      "devDependencies": {
+        "@opencode-ai/plugin": "^1.2.26",
+        "@types/node": "^22.0.0",
+        "typescript": "^5.9.3",
+      },
+    },
+  },
+  "packages": {
+    "@opencode-ai/plugin": ["@opencode-ai/plugin@1.2.26", "", { "dependencies": { "@opencode-ai/sdk": "1.2.26", "zod": "4.1.8" } }, "sha512-pC71KGAI9T0+S84KpbEq9THp5pT7KOq+GmfdXkvQ7KSH5zi+iASWRhqorir73sKmEj2MQfpbe1BxdcU5qbeOwA=="],
+
+    "@opencode-ai/sdk": ["@opencode-ai/sdk@1.2.26", "", {}, "sha512-HPB+0pfvTMPj2KEjNLF3oqgldKW8koTJ7ssqXwzndazqxS+gUynzvdIKIQP4+QIInNcc5nJMG9JtfLcePGgTLQ=="],
+
+    "@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
+
+    "holocron-agents-loader": ["holocron-agents-loader@workspace:plugins/holocron-agents-loader"],
+
+    "holocron-context-loader": ["holocron-context-loader@workspace:plugins/holocron-context-loader"],
+
+    "holocron-glob-rules": ["holocron-glob-rules@workspace:plugins/holocron-glob-rules"],
+
+    "holocron-learning-capture": ["holocron-learning-capture@workspace:plugins/holocron-learning-capture"],
+
+    "holocron-prd": ["holocron-prd@workspace:plugins/holocron-prd"],
+
+    "holocron-ralph-loop": ["holocron-ralph-loop@workspace:plugins/holocron-ralph-loop"],
+
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+
+    "undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
+
+    "zod": ["zod@4.1.8", "", {}, "sha512-5R1P+WwQqmmMIEACyzSvo4JXHY5WiAFHRMg+zBZKgKS+Q1viRa0C1hmUKtHltoIFKtIdki3pRxkmpP74jnNYHQ=="],
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "_comment": "TTS pronunciation overrides. Each entry maps a display term to its phonetic TTS spelling. Uses word-boundary matching to avoid mid-word replacements.",
+  "replacements": [
+    { "term": "ISC", "phonetic": "I S C", "note": "Ideal State Criteria - spell out" }
+  ]
+}
