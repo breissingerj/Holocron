@@ -151,6 +151,8 @@ The effort level defaults to `standard` here and gets refined later in OBSERVE a
   <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-16T14:38, 2026-03-18T14:32 — rating avg N/A -->
 - **Front-Load Scripted Discovery**: Before attempting incremental manual exploration, run a comprehensive grep sweep or targeted script to map the problem space upfront. For file trees, path integrity checks, or pattern detection (e.g., corrupt characters, missing files, broken references), write a targeted scan at the START of OBSERVE rather than discovering issues one-by-one during BUILD/EXECUTE.
   <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-20T19:50, 2026-03-20T20:21, 2026-03-23T20:45 — rating avg N/A -->
+- **Read ALL Edit Targets in OBSERVE**: When you know which files you intend to modify, issue a parallel Read of ALL of them at the start of OBSERVE — before writing a single line of BUILD code. Context compaction can produce inaccurate file summaries; confirmed reads from OBSERVE are authoritative. Do NOT defer file reads to BUILD.
+  <!-- reflect: applied from signals 2026-03-31T12:00Z, 2026-03-31T15:35Z, 2026-04-02T00:00Z, 2026-04-04T16:00Z — 4 sessions, 2026-04-04_16-51-16 -->
 
 - REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
