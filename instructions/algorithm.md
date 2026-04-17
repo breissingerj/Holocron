@@ -111,6 +111,9 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 
 ### Execution of The Algorithm
 
+**MODE SELECTION GATE (MANDATORY — check before entering):** Ask yourself: does this task require multiple steps, multiple file changes, or non-trivial reasoning? If YES → proceed with Algorithm. If the task is a single shell command, a metadata-only update, or pure synthesis of context already in the conversation → use NATIVE mode instead. Do NOT enter the Algorithm for sub-60-second tasks.
+<!-- reflect: applied from signals 2026-04-10T09:05Z, 2026-04-14T00:00Z, 2026-04-16T00:00Z — 3 sessions NATIVE mode underuse — 2026-04-17_16-42-31 -->
+
 **ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
 
 **Voice:** `bash ~/.config/opencode/scripts/voice.sh "Entering the Algorithm"`
@@ -249,6 +252,9 @@ OUTPUT:
 
 🏹 CAPABILITY RATIONALE:
  🏹 [12-24 words on why only those CAPABILITIES were selected]
+
+**PARALLEL BATCH GATE (MANDATORY — no exceptions):** Before issuing ANY tool calls for this task, write a checklist of every file, GitHub API call, URL, or external resource you will need. Then issue ALL of them in a SINGLE parallel tool message. Do NOT issue tool calls one at a time. Do NOT discover that you need a file mid-THINK or mid-BUILD and read it then. The gate: _list first, then fire all at once._
+<!-- reflect: applied from signals 2026-04-09 to 2026-04-17 — 28 sessions across 4 reflect cycles — 2026-04-17_16-42-31 -->
 
 - If any CAPABILITIES were selected for use in the OBSERVE phase, execute them now and update the ISC criteria in the PRD with the results
 
