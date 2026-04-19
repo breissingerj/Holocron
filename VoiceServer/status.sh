@@ -2,9 +2,8 @@
 
 # Check status of Holocron Voice Server
 
-SERVICE_NAME="com.holocron.voice-server"
-PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/holocron-voice-server.log"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/platform.sh"
 ENV_FILE="$HOME/.env"
 
 RED='\033[0;31m'
@@ -19,15 +18,19 @@ echo -e "${BLUE}=====================================================${NC}"
 echo
 
 echo -e "${BLUE}Service Status:${NC}"
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    PID=$(launchctl list | grep "$SERVICE_NAME" | awk '{print $1}')
-    if [ "$PID" != "-" ]; then
-        echo -e "  ${GREEN}OK Service is loaded (PID: $PID)${NC}"
+if svc_is_running; then
+    if [[ "$PLATFORM" == "darwin" ]]; then
+        PID=$(launchctl list | grep "$SERVICE_NAME" | awk '{print $1}')
     else
-        echo -e "  ${YELLOW}! Service is loaded but not running${NC}"
+        PID=$(systemctl --user show --property=MainPID --value holocron-voice-server 2>/dev/null)
+    fi
+    if [ -n "$PID" ] && [ "$PID" != "-" ] && [ "$PID" != "0" ]; then
+        echo -e "  ${GREEN}OK Service is running (PID: $PID)${NC}"
+    else
+        echo -e "  ${GREEN}OK Service is running${NC}"
     fi
 else
-    echo -e "  ${RED}X Service is not loaded${NC}"
+    echo -e "  ${RED}X Service is not running${NC}"
 fi
 
 echo

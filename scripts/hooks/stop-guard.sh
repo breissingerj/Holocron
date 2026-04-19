@@ -16,7 +16,8 @@ mem_dir="${HOLOCRON_MEMORY_DIR:-}"
 [ -z "$mem_dir" ] && exit 0
 
 # Find most recently modified PRD
-prd=$(find "$mem_dir/WORK" -name "PRD.md" -exec stat -f "%m %N" {} \; 2>/dev/null \
+[[ "$(uname)" == "Darwin" ]] && _stat_fmt="-f %m %N" || _stat_fmt="-c %Y %n"
+prd=$(find "$mem_dir/WORK" -name "PRD.md" -exec stat $_stat_fmt {} \; 2>/dev/null \
   | sort -rn | head -1 | awk '{print $2}')
 [ -z "$prd" ] && exit 0
 

@@ -2,10 +2,8 @@
 
 # Start the Holocron Voice Server
 
-SERVICE_NAME="com.holocron.voice-server"
-PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/holocron-voice-server.log"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/platform.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,13 +18,13 @@ if [ ! -f "$PLIST_PATH" ]; then
     exit 1
 fi
 
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+if svc_is_running; then
     echo -e "${YELLOW}! Voice server is already running${NC}"
     echo "  To restart, use: ./restart.sh"
     exit 0
 fi
 
-launchctl load "$PLIST_PATH" 2>/dev/null
+svc_start
 
 if [ $? -eq 0 ]; then
     sleep 2

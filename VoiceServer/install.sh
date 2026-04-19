@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Holocron Voice Server Installation Script
-# Installs the voice server as a macOS LaunchAgent service.
+# Installs the voice server as a managed service (macOS LaunchAgent or Linux systemd user service).
 
 set -e
 
@@ -12,9 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SERVICE_NAME="com.holocron.voice-server"
-PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/holocron-voice-server.log"
+source "${SCRIPT_DIR}/platform.sh"
 ENV_FILE="$HOME/.env"
 
 echo -e "${BLUE}=====================================================${NC}"
@@ -33,13 +31,13 @@ fi
 echo -e "${GREEN}OK Bun is installed${NC}"
 
 # Check for existing installation
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+if svc_is_running; then
     echo -e "${YELLOW}! Voice server is already installed${NC}"
     read -p "Do you want to reinstall? (y/n): " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo -e "${YELLOW}> Stopping existing service...${NC}"
-        launchctl unload "$PLIST_PATH" 2>/dev/null || true
+        svc_stop || true
         echo -e "${GREEN}OK Existing service stopped${NC}"
     else
         echo "Installation cancelled"
@@ -76,11 +74,12 @@ else
 fi
 echo
 
-# Create LaunchAgent plist
-echo -e "${YELLOW}> Creating LaunchAgent configuration...${NC}"
-mkdir -p "$HOME/Library/LaunchAgents"
+# Create service configuration
+echo -e "${YELLOW}> Creating service configuration...${NC}"
 
-cat > "$PLIST_PATH" << EOF
+if [[ "$PLATFORM" == "darwin" ]]; then
+    mkdir -p "$HOME/Library/LaunchAgents"
+    cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -123,14 +122,39 @@ cat > "$PLIST_PATH" << EOF
 </dict>
 </plist>
 EOF
+    echo -e "${GREEN}OK LaunchAgent configuration created${NC}"
+else
+    mkdir -p "$(dirname "$PLIST_PATH")"
+    mkdir -p "$(dirname "$LOG_PATH")"
+    cat > "$PLIST_PATH" << EOF
+[Unit]
+Description=Holocron Voice Server
+After=network.target
 
-echo -e "${GREEN}OK LaunchAgent configuration created${NC}"
+[Service]
+Type=simple
+ExecStart=$(which bun) run ${SCRIPT_DIR}/server.ts
+WorkingDirectory=${SCRIPT_DIR}
+Restart=on-failure
+RestartSec=5
+Environment=HOME=${HOME}
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:${HOME}/.bun/bin
+StandardOutput=append:${LOG_PATH}
+StandardError=append:${LOG_PATH}
 
-# Load the LaunchAgent
+[Install]
+WantedBy=default.target
+EOF
+    systemctl --user daemon-reload
+    svc_enable
+    echo -e "${GREEN}OK systemd service configuration created${NC}"
+fi
+
+# Start the service
 echo -e "${YELLOW}> Starting voice server service...${NC}"
-launchctl load "$PLIST_PATH" 2>/dev/null || {
-    echo -e "${RED}X Failed to load LaunchAgent${NC}"
-    echo "  Try manually: launchctl load $PLIST_PATH"
+svc_start || {
+    echo -e "${RED}X Failed to start service${NC}"
+    echo "  Try manually: bun run ${SCRIPT_DIR}/server.ts"
     exit 1
 }
 

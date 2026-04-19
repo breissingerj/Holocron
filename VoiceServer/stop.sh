@@ -2,8 +2,8 @@
 
 # Stop the Holocron Voice Server
 
-SERVICE_NAME="com.holocron.voice-server"
-PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "${SCRIPT_DIR}/platform.sh"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,8 +12,8 @@ NC='\033[0m'
 
 echo -e "${YELLOW}> Stopping Holocron Voice Server...${NC}"
 
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    launchctl unload "$PLIST_PATH" 2>/dev/null
+if svc_is_running; then
+    svc_stop
 
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}OK Voice server stopped successfully${NC}"

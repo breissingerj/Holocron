@@ -334,8 +334,12 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
 
   await Bun.write(tempFile, audioBuffer);
 
+  const isDarwin = process.platform === 'darwin';
+  const playerCmd = isDarwin ? '/usr/bin/afplay' : 'paplay';
+  const playerArgs = isDarwin ? ['-v', volume.toString(), tempFile] : [tempFile];
+
   return new Promise((resolve, reject) => {
-    const proc = spawn('/usr/bin/afplay', ['-v', volume.toString(), tempFile]);
+    const proc = spawn(playerCmd, playerArgs);
 
     proc.on('error', (error) => {
       console.error('Error playing audio:', error);
@@ -347,7 +351,7 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`afplay exited with code ${code}`));
+        reject(new Error(`${playerCmd} exited with code ${code}`));
       }
     });
   });
@@ -445,17 +449,21 @@ async function sendNotification(
     }
   }
 
-  // Display macOS notification via terminal-notifier
+  // Desktop notification
   if (voiceConfig.desktopNotifications) {
     try {
-      const args = ['-title', safeTitle, '-message', safeMessage];
-      if (existsSync(NOTIFICATION_ICON)) {
-        args.push('-appIcon', NOTIFICATION_ICON);
+      if (process.platform === 'darwin') {
+        const args = ['-title', safeTitle, '-message', safeMessage];
+        if (existsSync(NOTIFICATION_ICON)) {
+          args.push('-appIcon', NOTIFICATION_ICON);
+        }
+        if (notificationSound) {
+          args.push('-sound', 'default');
+        }
+        await spawnSafe('/opt/homebrew/bin/terminal-notifier', args);
+      } else {
+        await spawnSafe('notify-send', [safeTitle, safeMessage]);
       }
-      if (notificationSound) {
-        args.push('-sound', 'default');
-      }
-      await spawnSafe('/opt/homebrew/bin/terminal-notifier', args);
     } catch (error) {
       console.error("Notification display error:", error);
     }
