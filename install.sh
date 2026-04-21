@@ -219,7 +219,7 @@ for harness in "${!HARNESSES[@]}"; do
   mkdir -p "$target"
   for dir in "${DIRS[@]}"; do
     if [[ "$dir" == "skills" ]]; then
-      local private_skills=""
+      private_skills=""
       [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && private_skills="$HOLOCRON_MEMORY_DIR/skills"
       merge_link_skills "$HOLOCRON_DIR/skills" "$private_skills" "$target/skills" "skills"
     else
@@ -292,6 +292,46 @@ link_file "$HOLOCRON_DIR/config/claude/CLAUDE.md"     "$CLAUDE_DIR/CLAUDE.md"   
 # Claude-specific instructions and scripts (harness-split from OpenCode equivalents)
 link_dir "$HOLOCRON_DIR/config/claude/instructions" "$CLAUDE_DIR/instructions" "claude/instructions"
 link_dir "$HOLOCRON_DIR/config/claude/scripts"      "$CLAUDE_DIR/scripts"      "claude/scripts"
+
+echo ""
+
+# ── Pi CLI harness symlinks ──────────────────────────────────────────────────
+# Pi.dev (https://pi.dev) reads from ~/.pi/agent/ directly. Its conventions:
+#   - AGENTS.md            — auto-loaded as context file (no @file imports)
+#   - skills/<name>/SKILL.md — Agent Skills standard, recursive discovery
+#   - prompts/*.md         — prompt templates (non-recursive, top-level only)
+#   - extensions/*.ts      — TypeScript extensions (different API from OpenCode plugins)
+#   - settings.json        — user-configured; install.sh does NOT touch it
+#
+# Holocron commands/ map to pi prompts/ (both are flat .md files).
+# Plugin porting (plugins/ → extensions/) is tracked as open work in ROADMAP M15.
+
+echo "Pi CLI harness (~/.pi/agent/)"
+PI_DIR="$HOME/.pi/agent"
+mkdir -p "$PI_DIR"
+
+# AGENTS.md — pi-specific top-level context file
+link_file "$HOLOCRON_DIR/config/pi/AGENTS.md" "$PI_DIR/AGENTS.md" "pi/AGENTS.md"
+
+# instructions/ — algorithm.md + steering-rules.md are referenced by absolute path in AGENTS.md
+link_dir "$HOLOCRON_DIR/instructions" "$PI_DIR/instructions" "pi/instructions"
+
+# scripts/ — voice.sh and other Holocron scripts
+link_dir "$HOLOCRON_DIR/scripts" "$PI_DIR/scripts" "pi/scripts"
+
+# commands/ → pi prompts/
+link_dir "$HOLOCRON_DIR/commands" "$PI_DIR/prompts" "pi/prompts (from commands)"
+
+# skills/ — merge public + private skill dirs into a real directory (mirrors Claude CLI handling)
+PRIVATE_SKILLS_PI=""
+[[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && PRIVATE_SKILLS_PI="$HOLOCRON_MEMORY_DIR/skills"
+merge_link_skills "$HOLOCRON_DIR/skills" "$PRIVATE_SKILLS_PI" "$PI_DIR/skills" "pi/skills"
+
+# NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
+# install.sh intentionally does not create or overwrite it. If you want to wire
+# Holocron resources via settings.json instead of symlinks, see docs/settings.md
+# in pi-mono and add entries manually.
+echo "  ℹ  settings.json left untouched (user-configured)"
 
 echo ""
 

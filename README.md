@@ -57,6 +57,8 @@ cd Holocron
 
 The install scripts symlink `skills/`, `commands/`, `plugins/`, and `instructions/` into the target harness directory (e.g. `~/.opencode/`). Running it again is safe — existing links are skipped.
 
+**Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Plugin→extension porting is tracked as open work in ROADMAP M15.
+
 ### Private memory repo
 
 Holocron itself is public. Personal memory (learning signals, work tracking, relationship context) lives in a separate private repo. Point Holocron at it with an env var:
