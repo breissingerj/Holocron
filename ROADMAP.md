@@ -252,4 +252,25 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 
 **Shipped in this milestone:** filesystem-level harness wiring (install.sh + config/pi/) — pi sessions load Holocron skills, prompts, instructions, and AGENTS.md natively.
 
-**Deferred to future milestones:** plugin→extension ports, MCP bridge extension, sub-agent RPC bridge, plan-mode approval-gate extension, skill name normalization to the Agent Skills standard.
+**Deferred to future milestones:** plugin→extension ports (see M16), MCP bridge extension, sub-agent RPC bridge, plan-mode approval-gate extension.
+
+**Follow-up shipped:** skill name normalization to the Agent Skills standard (`config/pi/skills/` wrappers with lowercase-hyphen names matching directory names, `install.sh` updated accordingly).
+
+---
+
+## Milestone 16 — Pi Extensions Port
+*Port Claude Code hooks and OpenCode plugins to pi.dev extensions so pi reaches functional Holocron parity (context injection, PRD sync, security validation, voice completion, learning capture).*
+
+**Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
+
+- Adopt `hooks/<harness>/` directory pattern (`hooks/claude/`, `hooks/opencode/`, `hooks/pi/`) with shared `hooks/_lib/` — scaffolded
+- Scaffold `hooks/pi/` with `package.json`, extract shared helpers into `hooks/_lib/` (PRD parsing, STATE paths, tool-name mapping, blocking-semantics adapter)
+- Update `install.sh` to symlink `hooks/pi/*` → `~/.pi/agent/extensions/*` and run `bun install` per extension
+- **Phase 2 (Tier-1, core parity):** `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`, `holocron-skill-guard`
+- **Phase 3 (Tier-2, learning loop):** `holocron-rating-capture`, `holocron-work-completion-learning`, `holocron-relationship-memory`, `holocron-session-cleanup`, `holocron-update-counts`, `holocron-session-autoname`
+- **Phase 4 (Tier-3, maintenance):** `holocron-integrity-check`, `holocron-doc-integrity`, `holocron-agent-execution-guard`
+- **Phase 5 (Tier-4, Kitty UX, optional):** `holocron-kitty-env-persist`, `holocron-tab-title` (consolidates 4 Claude hooks into 1 pi extension)
+- **Phase 6 (drop/defer):** `holocron-ralph-loop` (drop — OpenCode-specific), `holocron-glob-rules` (evaluate), `holocron-agents-loader` (blocked on sub-agent bridge), `holocron-memory-feed` (evaluate overlap with load-context)
+- **Opportunistic migration:** `plugins/` → `hooks/opencode/` on next plugin touch; public Claude hooks → `hooks/claude/` on next touch
+
+**Recommended first PR:** Phase 1 + Phase 2 only — gets pi to functional parity for most-used behaviors.
