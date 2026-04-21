@@ -303,8 +303,93 @@ echo ""
 #   - extensions/*.ts      — TypeScript extensions (different API from OpenCode plugins)
 #   - settings.json        — user-configured; install.sh does NOT touch it
 #
+# Pi enforces the Agent Skills spec strictly: skill names must be lowercase a-z, 0-9,
+# hyphens only, and must match the parent directory name. Skills with invalid names
+# still load but produce startup warnings. To avoid warnings, pi uses harness-specific
+# SKILL.md wrappers in config/pi/skills/<slug>/ with compliant frontmatter, while
+# supporting files are symlinked from the canonical skills/<OriginalName>/ directory.
+#
 # Holocron commands/ map to pi prompts/ (both are flat .md files).
 # Plugin porting (plugins/ → extensions/) is tracked as open work in ROADMAP M15.
+
+# link_pi_skill — creates a pi-compliant skill dir by merging a pi-specific SKILL.md
+# (compliant name/description) with supporting files from the original skill directory.
+#
+# Usage: link_pi_skill <original_name> <pi_slug> <pi_wrapper_dir> <public_skill_dir> <private_src> <dest_root> <label>
+#   original_name    e.g. "Agents"
+#   pi_slug          e.g. "agents"
+#   pi_wrapper_dir   e.g. "$HOLOCRON_DIR/config/pi/skills"
+#   public_skill_dir e.g. "$HOLOCRON_DIR/skills/Agents"
+#   private_src      e.g. "$HOLOCRON_MEMORY_DIR/skills/Agents" (or "" if none)
+#   dest_root        e.g. "$PI_DIR/skills"
+#   label            e.g. "pi/skills"
+link_pi_skill() {
+  local original_name="$1"
+  local pi_slug="$2"
+  local pi_wrapper_dir="$3"
+  local public_skill_dir="$4"
+  local private_src="$5"
+  local dest_root="$6"
+  local label="$7"
+
+  local dest="$dest_root/$pi_slug"
+
+  # Remove legacy CamelCase symlink/dir at the original name (migration cleanup)
+  local legacy="$dest_root/$original_name"
+  if [[ -L "$legacy" ]]; then
+    rm "$legacy"
+    echo "  ✓  $label: removed legacy symlink $original_name → replaced by $pi_slug"
+  elif [[ -d "$legacy" && "$legacy" != "$dest" ]]; then
+    rm -rf "$legacy"
+    echo "  ✓  $label: removed legacy dir $original_name → replaced by $pi_slug"
+  fi
+
+  # Convert any existing symlink at the slug path to a real directory
+  if [[ -L "$dest" ]]; then
+    rm "$dest"
+  fi
+  mkdir -p "$dest"
+
+  # Symlink the pi-compliant SKILL.md from the wrapper
+  local wrapper_skill="$pi_wrapper_dir/$pi_slug/SKILL.md"
+  if [[ -f "$wrapper_skill" ]]; then
+    if [[ ! -L "$dest/SKILL.md" && ! -e "$dest/SKILL.md" ]]; then
+      ln -s "$wrapper_skill" "$dest/SKILL.md"
+      echo "  ✓  $label/$pi_slug/SKILL.md (pi wrapper)"
+    fi
+  else
+    echo "  ⚠  $label/$pi_slug: no pi wrapper found at $wrapper_skill"
+  fi
+
+  # Symlink all supporting files from the original public skill dir (skip SKILL.md)
+  if [[ -d "$public_skill_dir" ]]; then
+    for f in "$public_skill_dir"/*; do
+      [[ -e "$f" || -L "$f" ]] || continue
+      local fname; fname="$(basename "$f")"
+      [[ "$fname" == "SKILL.md" ]] && continue
+      if [[ ! -L "$dest/$fname" && ! -e "$dest/$fname" ]]; then
+        ln -s "$f" "$dest/$fname"
+      fi
+    done
+  fi
+
+  # Merge private skill files (if any) — private SKILL.md is skipped (pi wrapper takes precedence)
+  if [[ -n "$private_src" && -d "$private_src" ]]; then
+    for f in "$private_src"/*; do
+      [[ -e "$f" || -L "$f" ]] || continue
+      local fname; fname="$(basename "$f")"
+      [[ "$fname" == "SKILL.md" ]] && continue
+      if [[ -L "$dest/$fname" ]]; then
+        :
+      elif [[ -e "$dest/$fname" ]]; then
+        echo "  ⚠  $label/$pi_slug/$fname exists — skipping"
+      else
+        ln -s "$f" "$dest/$fname"
+        echo "  ✓  $label/$pi_slug/$fname (private)"
+      fi
+    done
+  fi
+}
 
 echo "Pi CLI harness (~/.pi/agent/)"
 PI_DIR="$HOME/.pi/agent"
@@ -322,10 +407,77 @@ link_dir "$HOLOCRON_DIR/scripts" "$PI_DIR/scripts" "pi/scripts"
 # commands/ → pi prompts/
 link_dir "$HOLOCRON_DIR/commands" "$PI_DIR/prompts" "pi/prompts (from commands)"
 
-# skills/ — merge public + private skill dirs into a real directory (mirrors Claude CLI handling)
-PRIVATE_SKILLS_PI=""
-[[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && PRIVATE_SKILLS_PI="$HOLOCRON_MEMORY_DIR/skills"
-merge_link_skills "$HOLOCRON_DIR/skills" "$PRIVATE_SKILLS_PI" "$PI_DIR/skills" "pi/skills"
+# skills/ — pi uses harness-specific SKILL.md wrappers for skills with CamelCase names
+# (Agent Skills spec requires lowercase names matching the directory name).
+# Compliant skills (already lowercase) are linked directly.
+mkdir -p "$PI_DIR/skills"
+PI_WRAPPER_DIR="$HOLOCRON_DIR/config/pi/skills"
+
+# Skills that need pi-compliant wrappers: CamelCase original → lowercase slug
+declare -a PI_SKILL_MAPPINGS=(
+  "Agents:agents"
+  "ContentAnalysis:content-analysis"
+  "Investigation:investigation"
+  "Media:media"
+  "RedisCloud:redis-cloud"
+  "Research:research"
+  "Scraping:scraping"
+  "Security:security"
+  "Telos:telos"
+  "Thinking:thinking"
+  "USMetrics:us-metrics"
+  "Utilities:utilities"
+)
+
+for mapping in "${PI_SKILL_MAPPINGS[@]}"; do
+  original="${mapping%%:*}"
+  slug="${mapping##*:}"
+  private_skill=""
+  [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills/$original" ]] && private_skill="$HOLOCRON_MEMORY_DIR/skills/$original"
+  link_pi_skill "$original" "$slug" "$PI_WRAPPER_DIR" "$HOLOCRON_DIR/skills/$original" "$private_skill" "$PI_DIR/skills" "pi/skills"
+done
+
+# Compliant skills (already lowercase) — link directly
+declare -a PI_COMPLIANT_SKILLS=("acli" "langsmith-cli" "mermaid" "op-1password" "playwright-cli" "volume")
+for skill in "${PI_COMPLIANT_SKILLS[@]}"; do
+  src="$HOLOCRON_DIR/skills/$skill"
+  [[ -d "$src" ]] || continue
+  dest="$PI_DIR/skills/$skill"
+  private_skill=""
+  [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills/$skill" ]] && private_skill="$HOLOCRON_MEMORY_DIR/skills/$skill"
+  if [[ -n "$private_skill" ]]; then
+    # Merge public + private at file level
+    if [[ -L "$dest" ]]; then rm "$dest"; fi
+    mkdir -p "$dest"
+    for f in "$src"/*; do
+      [[ -e "$f" ]] || continue
+      fname="$(basename "$f")"
+      [[ ! -L "$dest/$fname" && ! -e "$dest/$fname" ]] && ln -s "$f" "$dest/$fname"
+    done
+    for f in "$private_skill"/*; do
+      [[ -e "$f" ]] || continue
+      fname="$(basename "$f")"
+      if [[ -L "$dest/$fname" ]]; then :
+      elif [[ -e "$dest/$fname" ]]; then echo "  ⚠  pi/skills/$skill/$fname exists — skipping"
+      else ln -s "$f" "$dest/$fname"; echo "  ✓  pi/skills/$skill/$fname (private)"
+      fi
+    done
+  else
+    link_dir "$src" "$dest" "pi/skills/$skill"
+  fi
+done
+
+# Also link any private-only skills (exist in memory repo but not in Holocron public skills)
+if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
+  for skill_dir in "$HOLOCRON_MEMORY_DIR/skills"/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    skill_name="$(basename "$skill_dir")"
+    dest="$PI_DIR/skills/$skill_name"
+    # Skip if already handled (mapped or compliant)
+    [[ -e "$dest" || -L "$dest" ]] && continue
+    link_dir "$skill_dir" "$dest" "pi/skills/$skill_name (private-only)"
+  done
+fi
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire
