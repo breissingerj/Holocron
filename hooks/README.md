@@ -9,9 +9,10 @@ Each harness has its own subdirectory; Holocron-level code that hooks into harne
 ```
 hooks/
 ├── claude/      # Claude Code hooks (.hook.ts, invoked via settings.json)
-├── opencode/    # OpenCode plugins (Plugin interface, loaded from plugins/ at harness level)
-└── pi/          # pi.dev extensions (ExtensionAPI, loaded from ~/.pi/agent/extensions/)
+└── opencode/    # OpenCode plugins (Plugin interface, loaded from plugins/ at harness level)
 ```
+
+> **Note:** pi.dev extensions moved to [`extensions/`](../extensions/). Pi extensions use a different API (`ExtensionAPI`) and have a distinct enough identity that a top-level directory makes more sense than nesting under `hooks/`. See [extensions/README.md](../extensions/README.md).
 
 Shared helpers that multiple harnesses consume live in `hooks/_lib/`.
 
@@ -32,7 +33,7 @@ The new layout consolidates anything that can ship publicly. Claude hooks that a
 |---|---|---|---|
 | claude | `$HOLOCRON_MEMORY_DIR/hooks/` | `hooks/claude/` (public portions only) | Pending — identity-coupled handlers stay private |
 | opencode | `Holocron/plugins/` | `hooks/opencode/` | Pending — migrate on next plugin touch |
-| pi | — | `hooks/pi/` | In progress — see [pi/README.md](pi/README.md) and [../docs/M16-pi-extensions-plan.md](../docs/M16-pi-extensions-plan.md) |
+| pi | — | `extensions/` (top-level) | In progress — see [extensions/README.md](../extensions/README.md) and [../extensions/PORTING-PLAN.md](../extensions/PORTING-PLAN.md) |
 
 ## Install
 
@@ -40,4 +41,4 @@ The new layout consolidates anything that can ship publicly. Claude hooks that a
 
 - `hooks/claude/*.hook.ts` → referenced by `~/.claude/settings.json` hooks config
 - `hooks/opencode/*` → `~/.config/opencode/plugins/*`
-- `hooks/pi/*` → `~/.pi/agent/extensions/*`
+- `extensions/*` → `~/.pi/agent/extensions/*` (top-level, not under hooks/)

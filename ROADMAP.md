@@ -263,9 +263,9 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 
 **Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
 
-- Adopt `hooks/<harness>/` directory pattern (`hooks/claude/`, `hooks/opencode/`, `hooks/pi/`) with shared `hooks/_lib/` — scaffolded
-- Scaffold `hooks/pi/` with `package.json`, extract shared helpers into `hooks/_lib/` (PRD parsing, STATE paths, tool-name mapping, blocking-semantics adapter)
-- Update `install.sh` to symlink `hooks/pi/*` → `~/.pi/agent/extensions/*` and run `bun install` per extension
+- Adopt `hooks/<harness>/` directory pattern (`hooks/claude/`, `hooks/opencode/`) with shared `hooks/_lib/` — scaffolded
+- Pi extensions live in top-level `extensions/` (distinct from hooks — different API, different naming convention) with `_lib/` shared helpers — **scaffolded**
+- Update `install.sh` to symlink `extensions/*` → `~/.pi/agent/extensions/*` and run `bun install` per extension — **done**
 - **Phase 2 (Tier-1, core parity):** `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`, `holocron-skill-guard`
 - **Phase 3 (Tier-2, learning loop):** `holocron-rating-capture`, `holocron-work-completion-learning`, `holocron-relationship-memory`, `holocron-session-cleanup`, `holocron-update-counts`, `holocron-session-autoname`
 - **Phase 4 (Tier-3, maintenance):** `holocron-integrity-check`, `holocron-doc-integrity`, `holocron-agent-execution-guard`

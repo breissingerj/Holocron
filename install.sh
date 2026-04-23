@@ -310,7 +310,8 @@ echo ""
 # supporting files are symlinked from the canonical skills/<OriginalName>/ directory.
 #
 # Holocron commands/ map to pi prompts/ (both are flat .md files).
-# Plugin porting (plugins/ → extensions/) is tracked as open work in ROADMAP M15.
+# Pi extensions live in extensions/ (top-level). Each subdir is symlinked into
+# ~/.pi/agent/extensions/ by the extensions/ block below. See extensions/PORTING-PLAN.md.
 
 # link_pi_skill — creates a pi-compliant skill dir by merging a pi-specific SKILL.md
 # (compliant name/description) with supporting files from the original skill directory.
@@ -477,6 +478,33 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
     [[ -e "$dest" || -L "$dest" ]] && continue
     link_dir "$skill_dir" "$dest" "pi/skills/$skill_name (private-only)"
   done
+fi
+
+# extensions/ → pi extensions
+# Each subdirectory in extensions/ (except _lib/) is symlinked individually
+# into ~/.pi/agent/extensions/ and gets bun install if it has a package.json.
+mkdir -p "$PI_DIR/extensions"
+for ext_dir in "$HOLOCRON_DIR/extensions"/*/; do
+  [[ -d "$ext_dir" ]] || continue
+  ext_name="$(basename "$ext_dir")"
+  [[ "$ext_name" == "_lib" ]] && continue  # _lib is shared helpers, not a standalone extension
+  link_dir "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
+done
+
+# Install bun deps for any extension that has a package.json
+if command -v bun &>/dev/null; then
+  for ext_dir in "$HOLOCRON_DIR/extensions"/*/; do
+    [[ -d "$ext_dir" ]] || continue
+    ext_name="$(basename "$ext_dir")"
+    [[ "$ext_name" == "_lib" ]] && continue
+    if [[ -f "$ext_dir/package.json" ]]; then
+      echo "  Installing $ext_name dependencies..."
+      (cd "$ext_dir" && bun install --silent 2>&1 | tail -1)
+      echo "  ✓  $ext_name"
+    fi
+  done
+else
+  echo "  ⚠  bun not found — skipping extension dependency install"
 fi
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).

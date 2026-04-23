@@ -67,7 +67,7 @@ FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 ## Context Routing
 
-When you need context about the user, projects, system internals, or specific topics, read `$HOLOCRON_MEMORY_DIR/Holocron/CONTEXT_ROUTING.md` for the file path.
+When you need context about the user, projects, system internals, or specific topics, read `/Users/jbreissinger/Projects/personalProjects/holocron-context/Holocron/CONTEXT_ROUTING.md` for the file path.
 
 ---
 
