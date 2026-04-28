@@ -193,7 +193,7 @@ sleep 2
 - "perform this"
 
 **Technical Details:**
-- Voice server must be running (`~/.config/opencode/skills/VoiceServer/`)
+- `scripts/voice.sh` uses macOS `say` — no server required
 - Segments longer than 450 chars should be split
 - Natural 2-second pauses between segments for storytelling flow
 - Uses ElevenLabs API under the hood

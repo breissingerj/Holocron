@@ -2,7 +2,7 @@
 
 Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure), built to be harness-agnostic.
 
-> **Plugin philosophy:** Don't install plugins speculatively. Before building any capability from scratch, check `PLUGINS.md` to see if a well-supported plugin already covers the scope. Install plugins just-in-time — when the work demands it.
+> **Plugin philosophy:** Don't install plugins speculatively. Before building any capability from scratch, check `opencode/PLUGINS.md` to see if a well-supported plugin already covers the scope. Install plugins just-in-time — when the work demands it.
 
 ---
 
@@ -19,11 +19,9 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 2 — Voice & Notification System ✅
 *ElevenLabs TTS voice server, 5-level volume system, and cross-harness notification pipeline.*
 
-- Port PAI VoiceServer to `VoiceServer/` — config driven by `config.json` (not `settings.json`)
 - Port volume level system to `tools/VolumeLevel.ts` + `tools/ToggleMute.ts` (uses `$HOLOCRON_MEMORY_DIR`)
-- Port `scripts/voice.sh` announcement helper
+- Port `scripts/voice.sh` announcement helper (macOS `say` — replaced ElevenLabs VoiceServer)
 - Port `skills/volume/SKILL.md` for harness-native volume control
-- Config resolution: `$HOLOCRON_VOICE_CONFIG` → `VoiceServer/config.json` → fallback defaults
 - Notification icon: `$HOLOCRON_NOTIFICATION_ICON` → `assets/icon.png` → omit
 
 ---
@@ -125,7 +123,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 9 — Quality-of-Life Plugin Pass
 *Evaluate and install workflow plugins deferred from M3. Install only what repeated work has proven necessary.*
 
-See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
+See `opencode/PLUGINS.md` for the full evaluated list. Candidates to revisit:
 
 - **Dynamic Context Pruning** — prunes stale tool outputs mid-session; useful on long tasks
 - **opencode-snip** — truncates verbose shell output; useful in CLI-heavy workflows
@@ -187,15 +185,14 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 ---
 
 ## Feature — Cross-Platform Voice & Notifications
-*`voice.sh` and VoiceServer are the canonical notification layer. Ensure they work everywhere.*
+*`voice.sh` is the canonical notification layer (`say` on macOS). Ensure it works everywhere.*
 
-The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (ElevenLabs + macOS notification center). Before v1.0.0, harden for all target platforms:
+The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (macOS `say` + notification center). Before v1.0.0, harden for all target platforms:
 
-- **Linux**: Verify ElevenLabs curl works; replace macOS notification call with `notify-send` or equivalent
+- **Linux**: Replace macOS `say` and notification call with `espeak`/`festival` and `notify-send` equivalents
 - **Windows**: `install.ps1` exists but voice.sh is bash — port announcement logic to PowerShell or add a Windows-native wrapper script
-- **No-server fallback**: When VoiceServer is not running, `voice.sh` should degrade gracefully (silent, no crash) rather than surfacing a curl error to the agent
-- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established (avoids assuming `~/.opencode` is always the harness dir)
-- **Test matrix**: Mac + ElevenLabs running, Mac + server down, Linux, Windows
+- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established
+- **Test matrix**: Mac, Linux, Windows
 
 ---
 

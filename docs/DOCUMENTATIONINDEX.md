@@ -64,7 +64,7 @@ See `SKILLSYSTEM.md` for complete documentation.
 **Response & Communication:**
 - `USER/RESPONSEFORMAT.md` - Mandatory response format | Triggers: "output format", "response format"
 - `THEFABRICSYSTEM.md` - Fabric patterns | Triggers: "fabric patterns", "prompt engineering"
-- Voice notifications → VoiceServer (system alerts, agent feedback)
+- Voice notifications → `scripts/voice.sh` (macOS `say` — system alerts, agent feedback)
 
 **Configuration & Systems:**
 - `THEHOOKSYSTEM.md` - Hook configuration | Triggers: "hooks configuration", "create custom hooks"
