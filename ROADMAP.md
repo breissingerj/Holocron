@@ -264,8 +264,7 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 **Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
 
 - Harness-specific lifecycle integrations live under their harness directory: `claude/scripts/hooks/`, `opencode/plugins/`, `pi/extensions/`
-- Pi extensions live in `pi/extensions/` with `_lib/` shared helpers — **scaffolded**
-- `install.sh` symlinks `pi/extensions/*` → `~/.pi/agent/extensions/*` and runs `bun install` per extension — **done**
+- Pi extensions will live in `pi/extensions/` when built; `install.sh` wiring is ready
 - **Phase 2 (Tier-1, core parity):** `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`, `holocron-skill-guard`
 - **Phase 3 (Tier-2, learning loop):** `holocron-rating-capture`, `holocron-work-completion-learning`, `holocron-relationship-memory`, `holocron-session-cleanup`, `holocron-update-counts`, `holocron-session-autoname`
 - **Phase 4 (Tier-3, maintenance):** `holocron-integrity-check`, `holocron-doc-integrity`, `holocron-agent-execution-guard`

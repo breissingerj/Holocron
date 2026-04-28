@@ -13,7 +13,6 @@ The goal is harness-agnostic personalization: the same knowledge, voice, and wor
 - **Skills** — Domain-specific instruction files that activate on intent
 - **Commands** — Custom slash commands for recurring workflows
 - **Plugins** — OpenCode harness plugins (system prompt injection, context loading, memory sync)
-- **Extensions** — Pi.dev harness extensions (same purpose as plugins, different API — see `pi/extensions/`)
 - **Hooks** — Claude Code lifecycle hooks (context injection, PRD sync, security validation)
 - **Instructions** — Behavioral rules and algorithm that govern how I want agents to think and respond
 
@@ -63,7 +62,7 @@ cd Holocron
 
 The install scripts symlink `skills/`, `commands/`, `plugins/`, and `instructions/` into the target harness directory (e.g. `~/.opencode/`). Running it again is safe — existing links are skipped.
 
-**Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Pi extensions live in `pi/extensions/` and are symlinked to `~/.pi/agent/extensions/` by `install.sh`. See `pi/extensions/PORTING-PLAN.md` for the Claude hook → pi extension porting roadmap.
+**Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Pi extensions will live in `pi/extensions/` when built; `install.sh` will auto-link them into `~/.pi/agent/extensions/`.
 
 ### Private memory repo
 

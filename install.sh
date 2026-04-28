@@ -312,8 +312,8 @@ echo ""
 # supporting files are symlinked from the canonical skills/<OriginalName>/ directory.
 #
 # Holocron commands/ map to pi prompts/ (both are flat .md files).
-# Pi extensions live in pi/extensions/. Each subdir is symlinked into
-# ~/.pi/agent/extensions/ by the extensions/ block below. See pi/extensions/PORTING-PLAN.md.
+# Pi extensions live in pi/extensions/ (none yet). When added, install.sh will
+# auto-link each subdir into ~/.pi/agent/extensions/.
 
 # link_pi_skill — creates a pi-compliant skill dir by merging a pi-specific SKILL.md
 # (compliant name/description) with supporting files from the original skill directory.
@@ -482,32 +482,8 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
   done
 fi
 
-# pi/extensions/ → pi extensions
-# Each subdirectory in pi/extensions/ (except _lib/) is symlinked individually
-# into ~/.pi/agent/extensions/ and gets bun install if it has a package.json.
-mkdir -p "$PI_DIR/extensions"
-for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
-  [[ -d "$ext_dir" ]] || continue
-  ext_name="$(basename "$ext_dir")"
-  [[ "$ext_name" == "_lib" ]] && continue  # _lib is shared helpers, not a standalone extension
-  link_dir "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
-done
-
-# Install bun deps for any extension that has a package.json
-if command -v bun &>/dev/null; then
-  for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
-    [[ -d "$ext_dir" ]] || continue
-    ext_name="$(basename "$ext_dir")"
-    [[ "$ext_name" == "_lib" ]] && continue
-    if [[ -f "$ext_dir/package.json" ]]; then
-      echo "  Installing $ext_name dependencies..."
-      (cd "$ext_dir" && bun install --silent 2>&1 | tail -1)
-      echo "  ✓  $ext_name"
-    fi
-  done
-else
-  echo "  ⚠  bun not found — skipping extension dependency install"
-fi
+# pi/extensions/ → pi extensions (none yet — add subdirs to pi/extensions/ when ready)
+# install.sh will auto-link them into ~/.pi/agent/extensions/ on next run.
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire
