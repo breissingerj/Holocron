@@ -258,7 +258,7 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 ## Milestone 16 — Pi Extensions Port
 *Port Claude Code hooks and OpenCode plugins to pi.dev extensions so pi reaches functional Holocron parity (context injection, PRD sync, security validation, voice completion, learning capture).*
 
-**Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
+**Full plan:** [`pi/M16-pi-extensions-plan.md`](pi/M16-pi-extensions-plan.md)
 
 - Harness-specific lifecycle integrations live under their harness directory: `claude/scripts/hooks/`, `opencode/plugins/`, `pi/extensions/`
 - Pi extensions will live in `pi/extensions/` when built; `install.sh` wiring is ready

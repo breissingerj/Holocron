@@ -12,7 +12,7 @@ Each check is a bash one-liner. Run them in order. A ✓ means pass; a ✗ means
 required — the remedy is listed inline.
 
 ```bash
-bash $HOLOCRON_REPO_ROOT/docs/validate-claude-cli.sh
+bash $HOLOCRON_REPO_ROOT/claude/validate-claude-cli.sh
 ```
 
 Or run checks manually section by section below.

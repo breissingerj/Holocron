@@ -34,7 +34,7 @@ Key architectural and design decisions made while building Holocron. Captured so
 ---
 
 
-- **Decision** — Created `docs/ValidateClaudeCLI.md` (human-readable checklist) and `docs/validate-claude-cli.sh` (runnable bash script) to verify all Claude Code harness wiring: CLAUDE.md symlink and imports, settings.json validity, skills/commands symlinks, hook scripts existence/executability/exit codes, HOLOCRON_MEMORY_DIR, absence of stale `~/.config/claude`, and MCP config.
+- **Decision** — Created `claude/ValidateClaudeCLI.md` (human-readable checklist) and `claude/validate-claude-cli.sh` (runnable bash script) to verify all Claude Code harness wiring: CLAUDE.md symlink and imports, settings.json validity, skills/commands symlinks, hook scripts existence/executability/exit codes, HOLOCRON_MEMORY_DIR, absence of stale `~/.config/claude`, and MCP config.
 - **Options considered** — (1) Manual spot-check — no audit trail, easy to miss things. (2) Inline checks in install.sh — couples validation to install, hard to re-run independently. (3) Standalone playbook + script — runs anytime, documents expected state, exits non-zero on failure for CI use.
 - **Rationale** — After removing the `~/.config/claude` symlink and clarifying the Claude CLI wiring model, a repeatable validation was needed to catch regressions. The script runs in ~2s and currently passes 41/41 checks (1 info for optional agents dir).
 
@@ -68,7 +68,7 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ### Claude CLI dual-harness compatibility plan approach
 
-- **Decision** — Created `docs/CLAUDE_CLI_COMPATIBILITY.md` as the compatibility plan. Shell hook scripts will live in `scripts/hooks/` (version-controlled in this repo, accessible via the existing symlink from both harnesses). Claude CLI config lives in `~/.claude/settings.json` and `~/.claude/CLAUDE.md` (outside the repo — user-scope config). No TypeScript plugins are modified or deleted.
+- **Decision** — Created `claude/CLAUDE_CLI_COMPATIBILITY.md` as the compatibility plan. Shell hook scripts will live in `scripts/hooks/` (version-controlled in this repo, accessible via the existing symlink from both harnesses). Claude CLI config lives in `~/.claude/settings.json` and `~/.claude/CLAUDE.md` (outside the repo — user-scope config). No TypeScript plugins are modified or deleted.
 - **Options considered** — (1) Put shell scripts in `~/.claude/hooks/` (outside the repo, not version-controlled). (2) Put shell scripts in a new `hooks/` directory in the Holocron repo. (3) Put them in `scripts/hooks/` alongside the existing `voice.sh`.
 - **Rationale** — `scripts/hooks/` extends the existing scripts directory pattern (already contains `voice.sh`). Scripts in `scripts/` are accessible from both harnesses via the `~/.config/Claude → ~/.config/opencode` symlink — no duplication. The hook scripts reference `$HOLOCRON_MEMORY_DIR` directly, so they work regardless of which harness invokes them.
 

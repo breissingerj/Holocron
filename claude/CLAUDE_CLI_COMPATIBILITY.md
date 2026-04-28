@@ -36,7 +36,7 @@ Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subd
 
 Claude CLI reads user subagents from `~/.claude/agents/`. Holocron maintains a parallel set of Claude Code schema agent files at `claude/agents/`, symlinked from `~/.claude/agents/` via `install.sh`. All 15 agents are present.
 
-The two directories (`opencode/agents/` and `claude/agents/`) are kept in behavioral sync — same `name`, `description`, and body content. Only the frontmatter differs: opencode agents carry `color`, `voiceId`, `voice`, `persona`, and `permission`; Claude Code agents use `model`, `tools`, and optionally `skills`. See `docs/VERIFY_AGENTS.md` for the dual-maintenance rule.
+The two directories (`opencode/agents/` and `claude/agents/`) are kept in behavioral sync — same `name`, `description`, and body content. Only the frontmatter differs: opencode agents carry `color`, `voiceId`, `voice`, `persona`, and `permission`; Claude Code agents use `model`, `tools`, and optionally `skills`. See `VERIFY_AGENTS.md` for the dual-maintenance rule.
 
 ### Skills
 
@@ -703,7 +703,7 @@ All items below are **complete**. This table is retained for historical referenc
 | — | Commands (`~/.claude/commands/` symlink) | ✓ install.sh |
 | — | Subagents (`~/.claude/agents/`) | ✓ `claude/agents/` — 15 agents, Claude Code schema, symlinked by install.sh |
 
-To verify the current state, run: `bash docs/validate-claude-cli.sh`
+To verify the current state, run: `bash claude/validate-claude-cli.sh`
 
 ---
 
@@ -725,5 +725,5 @@ Claude CLI's `Stop` hook fires after the response is complete, receives no text 
 - Claude CLI settings reference: https://docs.anthropic.com/en/docs/claude-code/settings
 - Holocron MEMORY_CONTRACT: `MEMORY_CONTRACT.md`
 - Holocron DECISIONS.md: `DECISIONS.md` (see 2026-03-23 entries for symlink decisions)
-- Validation script: `docs/validate-claude-cli.sh`
-- Validation playbook: `docs/ValidateClaudeCLI.md`
+- Validation script: `claude/validate-claude-cli.sh`
+- Validation playbook: `claude/ValidateClaudeCLI.md`

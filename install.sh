@@ -487,7 +487,7 @@ fi
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire
-# Holocron resources via settings.json instead of symlinks, see docs/settings.md
+# Holocron resources via settings.json instead of symlinks, see pi.dev settings docs.
 # in pi-mono and add entries manually.
 echo "  ℹ  settings.json left untouched (user-configured)"
 

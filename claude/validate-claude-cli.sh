@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Holocron — Claude Code harness validation script
-# Runs all checks from docs/ValidateClaudeCLI.md and prints a summary.
-# Usage: bash docs/validate-claude-cli.sh
+# Runs all checks from claude/ValidateClaudeCLI.md and prints a summary.
+# Usage: bash claude/validate-claude-cli.sh
 
 set -uo pipefail
 
