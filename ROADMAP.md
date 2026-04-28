@@ -263,14 +263,14 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 
 **Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
 
-- Adopt `hooks/<harness>/` directory pattern (`hooks/claude/`, `hooks/opencode/`) with shared `hooks/_lib/` — scaffolded
-- Pi extensions live in top-level `extensions/` (distinct from hooks — different API, different naming convention) with `_lib/` shared helpers — **scaffolded**
-- Update `install.sh` to symlink `extensions/*` → `~/.pi/agent/extensions/*` and run `bun install` per extension — **done**
+- Harness-specific lifecycle integrations live under their harness directory: `claude/scripts/hooks/`, `opencode/plugins/`, `pi/extensions/`
+- Pi extensions live in `pi/extensions/` with `_lib/` shared helpers — **scaffolded**
+- `install.sh` symlinks `pi/extensions/*` → `~/.pi/agent/extensions/*` and runs `bun install` per extension — **done**
 - **Phase 2 (Tier-1, core parity):** `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`, `holocron-skill-guard`
 - **Phase 3 (Tier-2, learning loop):** `holocron-rating-capture`, `holocron-work-completion-learning`, `holocron-relationship-memory`, `holocron-session-cleanup`, `holocron-update-counts`, `holocron-session-autoname`
 - **Phase 4 (Tier-3, maintenance):** `holocron-integrity-check`, `holocron-doc-integrity`, `holocron-agent-execution-guard`
 - **Phase 5 (Tier-4, Kitty UX, optional):** `holocron-kitty-env-persist`, `holocron-tab-title` (consolidates 4 Claude hooks into 1 pi extension)
 - **Phase 6 (drop/defer):** `holocron-ralph-loop` (drop — OpenCode-specific), `holocron-glob-rules` (evaluate), `holocron-agents-loader` (blocked on sub-agent bridge), `holocron-memory-feed` (evaluate overlap with load-context)
-- **Opportunistic migration:** `plugins/` → `hooks/opencode/` on next plugin touch; public Claude hooks → `hooks/claude/` on next touch
+- **Opportunistic migration:** Public Claude hooks → `claude/scripts/hooks/` on next touch (identity-coupled handlers stay in private memory repo)
 
 **Recommended first PR:** Phase 1 + Phase 2 only — gets pi to functional parity for most-used behaviors.

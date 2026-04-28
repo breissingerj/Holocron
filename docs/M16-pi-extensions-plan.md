@@ -14,23 +14,23 @@ M16 closes that gap.
 
 ## Directory Pattern
 
-Pi extensions live in a top-level `extensions/` directory — separate from `hooks/` — because pi uses a distinct enough API (`ExtensionAPI`) and naming convention that nesting under `hooks/` was confusing:
+Pi extensions live in `pi/extensions/` — co-located with the pi harness — because pi uses a distinct enough API (`ExtensionAPI`) and naming convention that a dedicated harness directory makes more sense:
 
 ```
-extensions/
+pi/extensions/
 ├── _lib/                    # Shared helpers (PRD parsing, STATE paths, tool-name mapping)
 ├── holocron-load-context/   # Tier 1
 ├── holocron-prd-sync/       # Tier 1
 ├── holocron-voice-completion/ # Tier 1
 ├── holocron-security-validator/ # Tier 1
-└── ...                      # See extensions/PORTING-PLAN.md
+└── ...                      # See pi/extensions/PORTING-PLAN.md
 ```
 
-Claude hooks and OpenCode plugins continue to live under `hooks/claude/` and `hooks/opencode/` respectively. See [`extensions/README.md`](../extensions/README.md) for the full layout rationale.
+Claude hooks live in `claude/scripts/hooks/` and OpenCode plugins live in `opencode/plugins/`. See [`pi/extensions/README.md`](../pi/extensions/README.md) for the full layout rationale.
 
-`install.sh` symlinks each `extensions/<name>/` → `~/.pi/agent/extensions/<name>/` and runs `bun install` per extension.
+`install.sh` symlinks each `pi/extensions/<name>/` → `~/.pi/agent/extensions/<name>/` and runs `bun install` per extension.
 
-**Migration is incremental** — M16 scaffolds `extensions/` and ports Tier-1 extensions. OpenCode plugins migrate from `plugins/` → `hooks/opencode/` on the next plugin touch. Public Claude hooks migrate on the next Claude-hook touch.
+**Migration is incremental** — M16 scaffolds `pi/extensions/` and ports Tier-1 extensions. Claude hooks and OpenCode plugins live in their respective harness directories (`claude/scripts/hooks/`, `opencode/plugins/`).
 
 ## Event Mapping (Claude → Pi)
 
@@ -67,8 +67,8 @@ None. `~/.pi/agent/extensions/` does not exist.
 
 ### Phase 1 — Foundation (ship first, blocks everything else)
 
-1. Scaffold `extensions/` with `_lib/`, `README.md`, `PORTING-PLAN.md` — **done**.
-2. Extract common helpers to `extensions/_lib/`:
+1. Scaffold `pi/extensions/` with `_lib/`, `README.md`, `PORTING-PLAN.md` — **done**.
+2. Extract common helpers to `pi/extensions/_lib/`:
    - PRD frontmatter parser (matches existing `hooks/lib/` in `$HOLOCRON_MEMORY_DIR`)
    - STATE path resolver (evaluates `$HOLOCRON_MEMORY_DIR`)
    - Tool-name translation (Claude `Bash|Edit|Write|Read|Task` ↔ pi `bash|edit|write|read`)
@@ -81,11 +81,11 @@ Without these, pi is not a real Holocron harness.
 
 | Extension | Replaces | Events | Notes |
 |---|---|---|---|
-| `extensions/holocron-load-context` | `LoadContext.hook.ts` + `holocron-context-loader` | `before_agent_start` | Inject `MEMORY.md`, relationship notes, active PRD into system prompt |
-| `extensions/holocron-prd-sync` | `PRDSync.hook.ts` + `holocron-prd` | `tool_result` (write/edit on PRD.md) | Sync frontmatter → `STATE/work.json` |
-| `extensions/holocron-voice-completion` | `VoiceCompletion.hook.ts` | `agent_end` | Pipes 🗣️ line to `scripts/voice.sh` |
-| `extensions/holocron-security-validator` | `SecurityValidator.hook.ts` | `tool_call` (bash/edit/write/read) | Block dangerous commands, confirm risky ones |
-| `extensions/holocron-skill-guard` | `SkillGuard.hook.ts` | `tool_call` or `input` | Block false-positive skill invocations (evaluate need — pi skill model differs) |
+| `pi/extensions/holocron-load-context` | `LoadContext.hook.ts` + `holocron-context-loader` | `before_agent_start` | Inject `MEMORY.md`, relationship notes, active PRD into system prompt |
+| `pi/extensions/holocron-prd-sync` | `PRDSync.hook.ts` + `holocron-prd` | `tool_result` (write/edit on PRD.md) | Sync frontmatter → `STATE/work.json` |
+| `pi/extensions/holocron-voice-completion` | `VoiceCompletion.hook.ts` | `agent_end` | Pipes 🗣️ line to `scripts/voice.sh` |
+| `pi/extensions/holocron-security-validator` | `SecurityValidator.hook.ts` | `tool_call` (bash/edit/write/read) | Block dangerous commands, confirm risky ones |
+| `pi/extensions/holocron-skill-guard` | `SkillGuard.hook.ts` | `tool_call` or `input` | Block false-positive skill invocations (evaluate need — pi skill model differs) |
 
 ### Phase 3 — Tier-2 (learning & memory loop)
 
@@ -127,8 +127,8 @@ Pi has native `ctx.ui.setStatus()` / `ctx.ui.setWidget()` — evaluate using the
 ## Design Decisions
 
 1. **Shared lib placement.** Claude hooks in `$HOLOCRON_MEMORY_DIR/hooks/` import from `hooks/lib/` (private). Options:
-   - (a) Copy lib into `hooks/_lib/` (duplication, divergence risk)
-   - (b) Symlink `$HOLOCRON_MEMORY_DIR/hooks/lib` → `hooks/_lib` at install time (keeps lib private, single source)
+   - (a) Copy lib into `pi/extensions/_lib/` (duplication, divergence risk)
+   - (b) Symlink `$HOLOCRON_MEMORY_DIR/hooks/lib` → `pi/extensions/_lib` at install time (keeps lib private, single source)
    - (c) Publish lib as local npm workspace
    - **Recommend (b)** — minimum churn, lib stays private.
 
@@ -138,13 +138,13 @@ Pi has native `ctx.ui.setStatus()` / `ctx.ui.setWidget()` — evaluate using the
 
 4. **Testing.** Each extension ships a `test.ts` that invokes handlers with mock events — no pi runtime required for unit tests.
 
-5. **`hooks/` migration timing.** M16 creates `hooks/` and populates `hooks/pi/`. `plugins/` → `hooks/opencode/` and private-repo Claude hooks → `hooks/claude/` migrate opportunistically on next touch to avoid scope creep.
+5. **Harness layout.** Each harness owns its lifecycle integrations: `claude/scripts/hooks/` for Claude, `opencode/plugins/` for OpenCode, `pi/extensions/` for pi. No root-level `hooks/` directory.
 
 ## Recommended First PR
 
 **Ship Phase 1 + Phase 2 only.** That's:
 
-- `extensions/` scaffolded with `README.md`, `PORTING-PLAN.md`, `_lib/` — **done**
+- `pi/extensions/` scaffolded with `README.md`, `PORTING-PLAN.md`, `_lib/` — **done**
 - `install.sh` pi extension wiring — **done**
 - 4 Tier-1 extensions to build: `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`
 
@@ -160,4 +160,4 @@ Result: pi reaches functional Holocron parity for the most-used behaviors. Phase
 - [ ] Writing to a `PRD.md` under `$HOLOCRON_MEMORY_DIR/WORK/` updates `STATE/work.json` automatically
 - [ ] `bash` tool call with `rm -rf /` (or equivalent) is blocked with clear reason
 - [ ] `turn_end` triggers a voice announcement matching the Claude VoiceCompletion behavior
-- [ ] No regression in Claude Code / OpenCode harness behavior (they don't touch `hooks/pi/`)
+- [ ] No regression in Claude Code / OpenCode harness behavior (they use `claude/scripts/hooks/` and `opencode/plugins/` respectively)

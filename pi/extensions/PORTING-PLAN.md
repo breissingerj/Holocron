@@ -246,14 +246,14 @@ Identity-coupled helpers (`learning-readback.ts`, `tab-setter.ts`, `hook-io.ts`)
 
 **Phase 1 — Scaffold + Tier 1** (this PR):
 
-- [x] `extensions/` directory created with `README.md` and `PORTING-PLAN.md`
-- [x] `extensions/_lib/` scaffolded
-- [x] `install.sh` updated to symlink `extensions/*` → `~/.pi/agent/extensions/*`
-- [ ] `extensions/_lib/paths.ts` — extract from private lib
-- [ ] `extensions/_lib/prd-utils.ts` — extract from private lib
-- [ ] `extensions/holocron-load-context/` — Tier 1
-- [ ] `extensions/holocron-prd-sync/` — Tier 1
-- [ ] `extensions/holocron-voice-completion/` — Tier 1
-- [ ] `extensions/holocron-security-validator/` — Tier 1
+- [x] `pi/extensions/` directory created with `README.md` and `PORTING-PLAN.md`
+- [x] `pi/extensions/_lib/` scaffolded
+- [x] `install.sh` updated to symlink `pi/extensions/*` → `~/.pi/agent/extensions/*`
+- [ ] `pi/extensions/_lib/paths.ts` — extract from private lib
+- [ ] `pi/extensions/_lib/prd-utils.ts` — extract from private lib
+- [ ] `pi/extensions/holocron-load-context/` — Tier 1
+- [ ] `pi/extensions/holocron-prd-sync/` — Tier 1
+- [ ] `pi/extensions/holocron-voice-completion/` — Tier 1
+- [ ] `pi/extensions/holocron-security-validator/` — Tier 1
 
 Result: pi reaches functional Holocron parity for the four most-used behaviors. Tier 2–4 ship incrementally.

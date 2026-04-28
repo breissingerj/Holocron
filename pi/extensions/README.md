@@ -1,6 +1,6 @@
-# extensions/
+# pi/extensions/
 
-> **Pi-specific.** Extensions are a [pi.dev](https://pi.dev) concept — TypeScript modules loaded via jiti that hook into pi's `ExtensionAPI`. Claude Code uses `hooks/claude/` for its lifecycle integrations; OpenCode uses `hooks/opencode/`. This directory is **only for pi**.
+> **Pi-specific.** Extensions are a [pi.dev](https://pi.dev) concept — TypeScript modules loaded via jiti that hook into pi's `ExtensionAPI`. Claude Code uses `claude/scripts/hooks/` for its lifecycle integrations; OpenCode uses `opencode/plugins/`. This directory is **only for pi**.
 
 Pi extensions live in `~/.pi/agent/extensions/` and are auto-discovered at startup. `install.sh` symlinks each subdirectory here into that location.
 
@@ -9,7 +9,7 @@ Pi extensions live in `~/.pi/agent/extensions/` and are auto-discovered at start
 ## Structure
 
 ```
-extensions/
+pi/extensions/
 ├── _lib/                          # Shared helpers (not a standalone extension)
 │   ├── paths.ts                   # HOLOCRON_MEMORY_DIR resolution
 │   ├── prd-utils.ts               # PRD frontmatter parsing → work.json sync
