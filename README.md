@@ -33,11 +33,14 @@ The architecture is inspired by [Daniel Miessler's Personal AI Infrastructure](h
 Holocron/
   skills/        # Markdown skill files loaded as agent context
   commands/      # Custom slash commands (map to pi prompts/)
-  plugins/       # OpenCode harness plugins
+  instructions/  # Behavioral rules, algorithm, steering rules (shared)
+  skills/        # Agent skills (shared across harnesses)
+  scripts/       # Shared scripts (voice.sh, etc.)
+  claude/        # Claude CLI harness — agents/, CLAUDE.md, instructions/, scripts/, settings.json
+  opencode/      # OpenCode harness — agents/, plugins/
+  pi/            # Pi.dev harness — AGENTS.md, skills/ (wrappers)
   extensions/    # Pi.dev harness extensions (pi-specific — ExtensionAPI)
-  hooks/         # Claude Code hooks (hooks/claude/) and OpenCode plugins (hooks/opencode/)
-  instructions/  # Behavioral rules, algorithm, steering rules
-  config/        # Harness-specific config overrides (config/pi/, config/claude/)
+  hooks/         # Harness-specific hook scripts
   install.sh     # Symlinks config into the active harness (Mac/Linux)
   install.ps1    # Symlinks config into the active harness (Windows)
 ```

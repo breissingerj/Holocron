@@ -18,7 +18,7 @@ Shared helpers that multiple harnesses consume live in `hooks/_lib/`.
 
 ## Why this layout
 
-Holocron's core promise is harness-agnostic configuration. Grouping by **capability** (hooks) first, then splitting by **harness** keeps the mental model consistent with the rest of the repo (`agents/claude/`, `agents/opencode/`, `config/claude/`, `config/pi/`).
+Holocron's core promise is harness-agnostic configuration. Grouping by **capability** (hooks) first, then splitting by **harness** keeps the mental model consistent with the rest of the repo (`claude/agents/`, `opencode/agents/`, `claude/`, `pi/`).
 
 Previously:
 - Claude hooks lived in `$HOLOCRON_MEMORY_DIR/hooks/` (private memory repo — tightly coupled to user identity)

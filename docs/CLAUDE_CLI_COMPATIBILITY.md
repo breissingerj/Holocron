@@ -7,7 +7,7 @@
 
 ## The Core Insight
 
-Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subdirectory. Its config root is `~/.claude/`. All Holocron components are wired into `~/.claude/` explicitly via `install.sh` symlinks and a versioned `CLAUDE.md` + `settings.json` in `Holocron/config/claude/`. There is no shared directory between the two harnesses — each harness has its own wiring that points at the same Holocron source files.
+Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subdirectory. Its config root is `~/.claude/`. All Holocron components are wired into `~/.claude/` explicitly via `install.sh` symlinks and a versioned `CLAUDE.md` + `settings.json` in `Holocron/claude/`. There is no shared directory between the two harnesses — each harness has its own wiring that points at the same Holocron source files.
 
 > **Note:** A `~/.config/claude → ~/.config/opencode` symlink existed historically but was removed (2026-03-23) because Claude CLI never reads from that path. See `DECISIONS.md` for rationale.
 
@@ -17,14 +17,14 @@ Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subd
 
 | Component | Where Claude CLI reads it | How it gets there |
 |-----------|--------------------------|-------------------|
-| System instructions (`AGENTS.md`) | `~/.claude/CLAUDE.md` via `@` import | Symlink: `~/.claude/CLAUDE.md → Holocron/config/claude/CLAUDE.md` |
+| System instructions (`AGENTS.md`) | `~/.claude/CLAUDE.md` via `@` import | Symlink: `~/.claude/CLAUDE.md → Holocron/claude/CLAUDE.md` |
 | Algorithm + steering rules | `~/.config/opencode/instructions/` | Resolved via `@` import in `AGENTS.md`; path uses `~/.config/opencode` (opencode's dir, not Claude's) |
 | Memory (`MEMORY.md`) | `$HOLOCRON_MEMORY_DIR/memory/MEMORY.md` | `@` import in `CLAUDE.md`; path hardcoded to memory repo |
 | Slash commands | `~/.claude/commands/` | Symlink: `~/.claude/commands → Holocron/commands/` |
 | Skills | `~/.claude/skills/` | Symlink: `~/.claude/skills → Holocron/skills/` |
-| Subagents | `~/.claude/agents/` | Symlink: `~/.claude/agents → agents/claude/` — 15 Claude Code schema agents, kept in behavioral sync with `agents/opencode/` |
+| Subagents | `~/.claude/agents/` | Symlink: `~/.claude/agents → claude/agents/` — 15 Claude Code schema agents, kept in behavioral sync with `opencode/agents/` |
 | Hook scripts | `~/.config/opencode/scripts/hooks/` | Symlink via opencode install; referenced by absolute path in `settings.json` |
-| `HOLOCRON_MEMORY_DIR` env var | `~/.claude/settings.json` `env` block | Symlink: `~/.claude/settings.json → Holocron/config/claude/settings.json` |
+| `HOLOCRON_MEMORY_DIR` env var | `~/.claude/settings.json` `env` block | Symlink: `~/.claude/settings.json → Holocron/claude/settings.json` |
 | Linear MCP server | `~/.claude/settings.json` `enabledMcpjsonServers` | Same settings.json symlink |
 | Voice script (`voice.sh`) | `~/.config/opencode/scripts/voice.sh` | Works — pure bash, no harness dependency |
 
@@ -34,9 +34,9 @@ Claude CLI does **not** read from `~/.config/opencode/` or any `~/.config/` subd
 
 ### Subagents
 
-Claude CLI reads user subagents from `~/.claude/agents/`. Holocron maintains a parallel set of Claude Code schema agent files at `agents/claude/`, symlinked from `~/.claude/agents/` via `install.sh`. All 15 agents are present.
+Claude CLI reads user subagents from `~/.claude/agents/`. Holocron maintains a parallel set of Claude Code schema agent files at `claude/agents/`, symlinked from `~/.claude/agents/` via `install.sh`. All 15 agents are present.
 
-The two directories (`agents/opencode/` and `agents/claude/`) are kept in behavioral sync — same `name`, `description`, and body content. Only the frontmatter differs: opencode agents carry `color`, `voiceId`, `voice`, `persona`, and `permission`; Claude Code agents use `model`, `tools`, and optionally `skills`. See `agents/VERIFY_AGENTS.md` for the dual-maintenance rule.
+The two directories (`opencode/agents/` and `claude/agents/`) are kept in behavioral sync — same `name`, `description`, and body content. Only the frontmatter differs: opencode agents carry `color`, `voiceId`, `voice`, `persona`, and `permission`; Claude Code agents use `model`, `tools`, and optionally `skills`. See `docs/VERIFY_AGENTS.md` for the dual-maintenance rule.
 
 ### Skills
 
@@ -701,7 +701,7 @@ All items below are **complete**. This table is retained for historical referenc
 | — | Algorithm, steering rules | ✓ Loaded via `AGENTS.md` `@` imports |
 | — | Skills (`~/.claude/skills/` symlink) | ✓ install.sh |
 | — | Commands (`~/.claude/commands/` symlink) | ✓ install.sh |
-| — | Subagents (`~/.claude/agents/`) | ✓ `agents/claude/` — 15 agents, Claude Code schema, symlinked by install.sh |
+| — | Subagents (`~/.claude/agents/`) | ✓ `claude/agents/` — 15 agents, Claude Code schema, symlinked by install.sh |
 
 To verify the current state, run: `bash docs/validate-claude-cli.sh`
 

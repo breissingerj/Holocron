@@ -34,7 +34,7 @@ Or run checks manually section by section below.
 ```bash
 [[ -f ~/.claude/CLAUDE.md ]] \
   && echo "✓ CLAUDE.md target exists" \
-  || echo "✗ CLAUDE.md symlink is broken — check Holocron/config/claude/CLAUDE.md"
+  || echo "✗ CLAUDE.md symlink is broken — check Holocron/claude/CLAUDE.md"
 ```
 
 ### 1.3 CLAUDE.md imports AGENTS.md
@@ -150,7 +150,7 @@ CMD_COUNT=$(ls ~/.claude/commands/*.md 2>/dev/null | grep -v .gitkeep | wc -l | 
 ## Section 4 — Agents
 
 Claude Code reads subagents from `~/.claude/agents/`. Holocron maintains Claude Code
-schema agent files at `agents/claude/`, symlinked here by `install.sh`.
+schema agent files at `claude/agents/`, symlinked here by `install.sh`.
 
 ### 4.1 agents/ exists as a real directory (merged from public + private)
 
@@ -174,7 +174,7 @@ schema agent files at `agents/claude/`, symlinked here by `install.sh`.
 AGENT_COUNT=$(ls ~/.claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
 [[ "$AGENT_COUNT" -ge 15 ]] \
   && echo "✓ $AGENT_COUNT agents found" \
-  || echo "✗ Expected 15+, found $AGENT_COUNT — check agents/claude/ directory"
+  || echo "✗ Expected 15+, found $AGENT_COUNT — check claude/agents/ directory"
 ```
 
 ### 4.4 opencode agents/ exists as a real directory (merged from public + private)

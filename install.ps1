@@ -67,7 +67,7 @@ Write-Host ""
 
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
-$Dirs = @("skills", "commands", "plugins", "instructions")
+$Dirs = @("skills", "commands", "instructions")
 
 foreach ($harness in $Harnesses.Keys) {
   $Target = $Harnesses[$harness]
@@ -76,6 +76,8 @@ foreach ($harness in $Harnesses.Keys) {
   foreach ($dir in $Dirs) {
     Link-Dir "$HolocronDir\$dir" "$Target\$dir" $dir
   }
+  # plugins are opencode-specific — link from opencode/plugins/
+  Link-Dir "$HolocronDir\opencode\plugins" "$Target\plugins" "plugins"
   Write-Host ""
 }
 

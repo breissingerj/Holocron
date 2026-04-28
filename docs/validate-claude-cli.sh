@@ -75,11 +75,11 @@ section "4. Agents"
 AGENT_COUNT=$(ls ~/.claude/agents/*.md 2>/dev/null | wc -l | tr -d ' ')
 [[ "$AGENT_COUNT" -ge 15 ]] \
   && ok "$AGENT_COUNT agent(s) found in ~/.claude/agents/" \
-  || fail "Expected 15+ agents, found $AGENT_COUNT — check agents/claude/ directory"
+  || fail "Expected 15+ agents, found $AGENT_COUNT — check claude/agents/ directory"
 
-[[ "$(readlink ~/.config/opencode/agents 2>/dev/null)" == *"agents/opencode"* ]] \
-  && ok "~/.config/opencode/agents → agents/opencode/ (correct)" \
-  || fail "~/.config/opencode/agents does not point to agents/opencode/ — run install.sh"
+[[ "$(readlink ~/.config/opencode/agents 2>/dev/null)" == *"opencode/agents"* ]] \
+  && ok "~/.config/opencode/agents → opencode/agents/ (correct)" \
+  || fail "~/.config/opencode/agents does not point to opencode/agents/ — run install.sh"
 
 # ── 5. Environment variable ───────────────────────────────────────────────────
 
