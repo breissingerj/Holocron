@@ -6,8 +6,8 @@ Holocron maintains **two parallel agent directories**, one per harness:
 
 | Directory | Harness | Symlinked to | Schema |
 |---|---|---|---|
-| `agents/opencode/` | OpenCode | `~/.config/opencode/agents/` | OpenCode frontmatter (`color`, `voiceId`, `voice`, `persona`, `permission`) |
-| `agents/claude/` | Claude Code | `~/.claude/agents/` | Claude Code frontmatter (`model`, `tools`, `skills`, `permissionMode`) |
+| `opencode/agents/` | OpenCode | `~/.config/opencode/agents/` | OpenCode frontmatter (`color`, `voiceId`, `voice`, `persona`, `permission`) |
+| `claude/agents/` | Claude Code | `~/.claude/agents/` | Claude Code frontmatter (`model`, `tools`, `skills`, `permissionMode`) |
 
 **Both directories must stay in behavioral sync.** When you change an agent's description, system prompt, methodology, or core behavior in one directory, apply the equivalent change to the same agent in the other directory.
 
@@ -19,7 +19,7 @@ Holocron maintains **two parallel agent directories**, one per harness:
 **What differs between the two:**
 - Frontmatter only — OpenCode uses `color`/`voiceId`/`voice`/`persona`/`permission`; Claude Code uses `model`/`tools`/`skills`
 
-**Dual-maintenance rule:** Any commit that touches a file in `agents/opencode/` should also touch the corresponding file in `agents/claude/` — and vice versa. If you intentionally update only one side, note it in the commit message.
+**Dual-maintenance rule:** Any commit that touches a file in `opencode/agents/` should also touch the corresponding file in `claude/agents/` — and vice versa. If you intentionally update only one side, note it in the commit message.
 
 ---
 

@@ -2,7 +2,7 @@
 
 Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessler/Personal_AI_Infrastructure), built to be harness-agnostic.
 
-> **Plugin philosophy:** Don't install plugins speculatively. Before building any capability from scratch, check `PLUGINS.md` to see if a well-supported plugin already covers the scope. Install plugins just-in-time — when the work demands it.
+> **Plugin philosophy:** Don't install plugins speculatively. Before building any capability from scratch, check `opencode/PLUGINS.md` to see if a well-supported plugin already covers the scope. Install plugins just-in-time — when the work demands it.
 
 ---
 
@@ -19,11 +19,9 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 2 — Voice & Notification System ✅
 *ElevenLabs TTS voice server, 5-level volume system, and cross-harness notification pipeline.*
 
-- Port PAI VoiceServer to `VoiceServer/` — config driven by `config.json` (not `settings.json`)
 - Port volume level system to `tools/VolumeLevel.ts` + `tools/ToggleMute.ts` (uses `$HOLOCRON_MEMORY_DIR`)
-- Port `scripts/voice.sh` announcement helper
+- Port `scripts/voice.sh` announcement helper (macOS `say` — replaced ElevenLabs VoiceServer)
 - Port `skills/volume/SKILL.md` for harness-native volume control
-- Config resolution: `$HOLOCRON_VOICE_CONFIG` → `VoiceServer/config.json` → fallback defaults
 - Notification icon: `$HOLOCRON_NOTIFICATION_ICON` → `assets/icon.png` → omit
 
 ---
@@ -125,7 +123,7 @@ Feature parity with [Personal AI Infrastructure](https://github.com/danielmiessl
 ## Milestone 9 — Quality-of-Life Plugin Pass
 *Evaluate and install workflow plugins deferred from M3. Install only what repeated work has proven necessary.*
 
-See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
+See `opencode/PLUGINS.md` for the full evaluated list. Candidates to revisit:
 
 - **Dynamic Context Pruning** — prunes stale tool outputs mid-session; useful on long tasks
 - **opencode-snip** — truncates verbose shell output; useful in CLI-heavy workflows
@@ -187,15 +185,14 @@ See `PLUGINS.md` for the full evaluated list. Candidates to revisit:
 ---
 
 ## Feature — Cross-Platform Voice & Notifications
-*`voice.sh` and VoiceServer are the canonical notification layer. Ensure they work everywhere.*
+*`voice.sh` is the canonical notification layer (`say` on macOS). Ensure it works everywhere.*
 
-The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (ElevenLabs + macOS notification center). Before v1.0.0, harden for all target platforms:
+The algorithm leans on `voice.sh` for all phase announcements. Current state: Mac-only (macOS `say` + notification center). Before v1.0.0, harden for all target platforms:
 
-- **Linux**: Verify ElevenLabs curl works; replace macOS notification call with `notify-send` or equivalent
+- **Linux**: Replace macOS `say` and notification call with `espeak`/`festival` and `notify-send` equivalents
 - **Windows**: `install.ps1` exists but voice.sh is bash — port announcement logic to PowerShell or add a Windows-native wrapper script
-- **No-server fallback**: When VoiceServer is not running, `voice.sh` should degrade gracefully (silent, no crash) rather than surfacing a curl error to the agent
-- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established (avoids assuming `~/.opencode` is always the harness dir)
-- **Test matrix**: Mac + ElevenLabs running, Mac + server down, Linux, Windows
+- **Harness-agnostic path**: `algorithm.md` currently hardcodes `~/.opencode/scripts/voice.sh` — update to use `$HOLOCRON_DIR/scripts/voice.sh` once a `HOLOCRON_DIR` env var convention is established
+- **Test matrix**: Mac, Linux, Windows
 
 ---
 
@@ -239,38 +236,37 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 > **Context:** pi.dev is a minimal CLI coding agent harness with an aggressively extensible design. It loads `AGENTS.md` from `~/.pi/agent/` and parent directories (simple concatenation — **no `@file` imports**), supports per-project `SYSTEM.md` system-prompt overrides, ships a native Skills system following the Agent Skills standard, TypeScript Extensions, and Markdown Prompt Templates (`/name`). It deliberately omits MCP, sub-agents, and plan mode — which creates specific compatibility gaps Holocron must address.
 
 - ✅ Extend `install.sh` with a pi CLI harness block: symlinks `skills/`, `commands/→prompts/`, `instructions/`, `scripts/`, and a pi-specific `AGENTS.md` into `~/.pi/agent/`. Intentionally does not touch `~/.pi/agent/settings.json` (user-configured)
-- ✅ `config/pi/AGENTS.md` — harness-specific top-level context file referencing `~/.pi/agent/instructions/algorithm.md` and `steering-rules.md` by absolute path (pi does not support `@file` includes, confirmed via source read of `badlogic/pi-mono`)
+- ✅ `pi/AGENTS.md` — harness-specific top-level context file referencing `~/.pi/agent/instructions/algorithm.md` and `steering-rules.md` by absolute path (pi does not support `@file` includes, confirmed via source read of `badlogic/pi-mono`)
 - ✅ `skills/` → pi `~/.pi/agent/skills/` — 17+ skills linked via `merge_link_skills`, including private memory-repo skills. Pi warns on uppercase skill names (e.g., `ContentAnalysis`) but loads them; name normalization deferred as cosmetic
 - ✅ `commands/` → pi `~/.pi/agent/prompts/` — both `compound.md` and `reflect.md` are top-level flat Markdown, matching pi's non-recursive prompt-template discovery
 - Port `plugins/` (OpenCode TypeScript plugins) to pi Extensions — different API surface (`pi.registerTool`, `pi.registerCommand`, `pi.on(event, ...)` vs OpenCode hooks). **Deferred** — start with `holocron-context-loader`, `holocron-prd`, `holocron-learning-capture`
-- **MCP gap:** pi.dev has no MCP support. Inventory MCP-dependent skills (Linear, 1Password, Atlassian, Gmail, Slack, etc.) and decide per-skill: degrade gracefully (prefer bash/CLI equivalents like `acli`, `gh`, `op`), replace with a pi Extension bridge, or mark as pi-unsupported. Noted in `config/pi/AGENTS.md` as a harness-time constraint. **Per-skill remediation deferred.**
-- **Sub-agent gap:** pi.dev has no sub-agent primitive. The Algorithm's `Plan` / `Explore` / `Engineer` delegation capabilities need a pi Extension bridge (e.g., spawning secondary pi sessions via RPC) or an explicit degradation path in `algorithm.md`. Interim: `config/pi/AGENTS.md` instructs to degrade inline or defer parallel work. **Bridge extension deferred.**
-- **Plan mode gap:** pi.dev has no built-in plan mode. The Algorithm's "Enter plan mode if EFFORT LEVEL is Advanced+" instruction has no native pi enforcement. Interim: `config/pi/AGENTS.md` instructs to present plan + explicit user approval. **Approval-gate extension deferred.**
+- **MCP gap:** pi.dev has no MCP support. Inventory MCP-dependent skills (Linear, 1Password, Atlassian, Gmail, Slack, etc.) and decide per-skill: degrade gracefully (prefer bash/CLI equivalents like `acli`, `gh`, `op`), replace with a pi Extension bridge, or mark as pi-unsupported. Noted in `pi/AGENTS.md` as a harness-time constraint. **Per-skill remediation deferred.**
+- **Sub-agent gap:** pi.dev has no sub-agent primitive. The Algorithm's `Plan` / `Explore` / `Engineer` delegation capabilities need a pi Extension bridge (e.g., spawning secondary pi sessions via RPC) or an explicit degradation path in `algorithm.md`. Interim: `pi/AGENTS.md` instructs to degrade inline or defer parallel work. **Bridge extension deferred.**
+- **Plan mode gap:** pi.dev has no built-in plan mode. The Algorithm's "Enter plan mode if EFFORT LEVEL is Advanced+" instruction has no native pi enforcement. Interim: `pi/AGENTS.md` instructs to present plan + explicit user approval. **Approval-gate extension deferred.**
 - Validate context loading parity: pi session reads Holocron `AGENTS.md` + memory block + active PRD on startup, matching Claude Code / OpenCode behavior. **Pending:** requires a pi plugin port of `holocron-context-loader` to inject memory block + active PRD on startup. Today, only AGENTS.md is auto-loaded natively.
-- ✅ Voice / notification path: `scripts/voice.sh` symlinked into `~/.pi/agent/scripts/voice.sh`; `config/pi/AGENTS.md` references that absolute path for mode announcements
+- ✅ Voice / notification path: `scripts/voice.sh` symlinked into `~/.pi/agent/scripts/voice.sh`; `pi/AGENTS.md` references that absolute path for mode announcements
 - ✅ Add pi.dev to the harness list in `README.md`
 
-**Shipped in this milestone:** filesystem-level harness wiring (install.sh + config/pi/) — pi sessions load Holocron skills, prompts, instructions, and AGENTS.md natively.
+**Shipped in this milestone:** filesystem-level harness wiring (install.sh + pi/) — pi sessions load Holocron skills, prompts, instructions, and AGENTS.md natively.
 
 **Deferred to future milestones:** plugin→extension ports (see M16), MCP bridge extension, sub-agent RPC bridge, plan-mode approval-gate extension.
 
-**Follow-up shipped:** skill name normalization to the Agent Skills standard (`config/pi/skills/` wrappers with lowercase-hyphen names matching directory names, `install.sh` updated accordingly).
+**Follow-up shipped:** skill name normalization to the Agent Skills standard (`pi/skills/` wrappers with lowercase-hyphen names matching directory names, `install.sh` updated accordingly).
 
 ---
 
 ## Milestone 16 — Pi Extensions Port
 *Port Claude Code hooks and OpenCode plugins to pi.dev extensions so pi reaches functional Holocron parity (context injection, PRD sync, security validation, voice completion, learning capture).*
 
-**Full plan:** [`docs/M16-pi-extensions-plan.md`](docs/M16-pi-extensions-plan.md)
+**Full plan:** [`pi/M16-pi-extensions-plan.md`](pi/M16-pi-extensions-plan.md)
 
-- Adopt `hooks/<harness>/` directory pattern (`hooks/claude/`, `hooks/opencode/`) with shared `hooks/_lib/` — scaffolded
-- Pi extensions live in top-level `extensions/` (distinct from hooks — different API, different naming convention) with `_lib/` shared helpers — **scaffolded**
-- Update `install.sh` to symlink `extensions/*` → `~/.pi/agent/extensions/*` and run `bun install` per extension — **done**
+- Harness-specific lifecycle integrations live under their harness directory: `claude/scripts/hooks/`, `opencode/plugins/`, `pi/extensions/`
+- Pi extensions will live in `pi/extensions/` when built; `install.sh` wiring is ready
 - **Phase 2 (Tier-1, core parity):** `holocron-load-context`, `holocron-prd-sync`, `holocron-voice-completion`, `holocron-security-validator`, `holocron-skill-guard`
 - **Phase 3 (Tier-2, learning loop):** `holocron-rating-capture`, `holocron-work-completion-learning`, `holocron-relationship-memory`, `holocron-session-cleanup`, `holocron-update-counts`, `holocron-session-autoname`
 - **Phase 4 (Tier-3, maintenance):** `holocron-integrity-check`, `holocron-doc-integrity`, `holocron-agent-execution-guard`
 - **Phase 5 (Tier-4, Kitty UX, optional):** `holocron-kitty-env-persist`, `holocron-tab-title` (consolidates 4 Claude hooks into 1 pi extension)
 - **Phase 6 (drop/defer):** `holocron-ralph-loop` (drop — OpenCode-specific), `holocron-glob-rules` (evaluate), `holocron-agents-loader` (blocked on sub-agent bridge), `holocron-memory-feed` (evaluate overlap with load-context)
-- **Opportunistic migration:** `plugins/` → `hooks/opencode/` on next plugin touch; public Claude hooks → `hooks/claude/` on next touch
+- **Opportunistic migration:** Public Claude hooks → `claude/scripts/hooks/` on next touch (identity-coupled handlers stay in private memory repo)
 
 **Recommended first PR:** Phase 1 + Phase 2 only — gets pi to functional parity for most-used behaviors.

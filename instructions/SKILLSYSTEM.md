@@ -250,8 +250,6 @@ science_cycle_time: meso
    Running the **WorkflowName** workflow in the **SkillName** skill to ACTION...
    ```
 
-**Full documentation:** `$HOLOCRON_DIR/docs/THENOTIFICATIONSYSTEM.md`
-
 ## Workflow Routing
 
 The notification announces workflow execution. The routing table tells Claude which workflow to execute:
@@ -461,7 +459,7 @@ Use dynamic loading for skills with:
 
 Don't bother for:
 - ❌ Simple skills (< 50 lines total)
-- ❌ Pure utility wrappers (use docs/TOOLS.md instead)
+- ❌ Pure utility wrappers (document in the relevant skill's README instead)
 - ❌ Skills that are already minimal
 
 ---
@@ -608,8 +606,6 @@ Complete blog workflow.
    ```
    Running the **WorkflowName** workflow in the **Blogging** skill to ACTION...
    ```
-
-**Full documentation:** `$HOLOCRON_DIR/docs/THENOTIFICATIONSYSTEM.md`
 
 ## Core Paths
 
@@ -829,7 +825,7 @@ bun ToolName.ts \
 \`\`\`
 ```
 
-**See:** `$HOLOCRON_DIR/docs/CLIFIRSTARCHITECTURE.md` (Workflow-to-Tool Integration section)
+
 
 ---
 
@@ -934,7 +930,7 @@ bun Generate.ts \
 4. **Value flags**: `--flag <value>` for choices
 5. **Composable**: Flags should combine logically
 
-**See:** `$HOLOCRON_DIR/docs/CLIFIRSTARCHITECTURE.md` (Configuration Flags section) for full documentation
+
 
 ### Tool Structure
 

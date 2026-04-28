@@ -193,7 +193,7 @@ echo ""
 
 echo "Plugin dependencies"
 if command -v bun &>/dev/null; then
-  for plugin_dir in "$HOLOCRON_DIR/plugins"/*/; do
+  for plugin_dir in "$HOLOCRON_DIR/opencode/plugins"/*/; do
     if [[ -f "$plugin_dir/package.json" ]]; then
       plugin_name="$(basename "$plugin_dir")"
       echo "  Installing $plugin_name..."
@@ -210,7 +210,7 @@ echo ""
 # ── Symlink each harness ─────────────────────────────────────────────────────
 
 # opencode: granular — symlink individual subdirs into ~/.config/opencode
-# agents is harness-specific: opencode reads agents/opencode/, Claude CLI reads agents/claude/
+# agents is harness-specific: opencode reads opencode/agents/, Claude CLI reads claude/agents/
 DIRS=("skills" "commands" "plugins" "instructions" "scripts")
 
 for harness in "${!HARNESSES[@]}"; do
@@ -222,12 +222,14 @@ for harness in "${!HARNESSES[@]}"; do
       private_skills=""
       [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && private_skills="$HOLOCRON_MEMORY_DIR/skills"
       merge_link_skills "$HOLOCRON_DIR/skills" "$private_skills" "$target/skills" "skills"
+    elif [[ "$dir" == "plugins" ]]; then
+      link_dir "$HOLOCRON_DIR/opencode/plugins" "$target/plugins" "plugins"
     else
       link_dir "$HOLOCRON_DIR/$dir" "$target/$dir" "$dir"
     fi
   done
   # opencode agents: merge public + private agent files into a real directory
-  merge_link_agents "$HOLOCRON_DIR/agents/opencode" "$target/agents" "agents (opencode)"
+  merge_link_agents "$HOLOCRON_DIR/opencode/agents" "$target/agents" "agents (opencode)"
   if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/agents/opencode" ]]; then
     merge_link_agents "$HOLOCRON_MEMORY_DIR/agents/opencode" "$target/agents" "agents (opencode, private)"
   fi
@@ -275,23 +277,23 @@ PRIVATE_SKILLS=""
 [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && PRIVATE_SKILLS="$HOLOCRON_MEMORY_DIR/skills"
 merge_link_skills "$HOLOCRON_DIR/skills" "$PRIVATE_SKILLS" "$CLAUDE_DIR/skills" "claude/skills"
 # agents/ — merge public + private agent files into a real directory
-merge_link_agents "$HOLOCRON_DIR/agents/claude" "$CLAUDE_DIR/agents" "claude/agents"
+merge_link_agents "$HOLOCRON_DIR/claude/agents" "$CLAUDE_DIR/agents" "claude/agents"
 if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/agents/claude" ]]; then
   merge_link_agents "$HOLOCRON_MEMORY_DIR/agents/claude" "$CLAUDE_DIR/agents" "claude/agents (private)"
 fi
 
 # settings.json — prefer private copy from memory repo (has real env values);
-# fall back to the template in config/claude/ for fresh installs without a private copy.
+# fall back to the template in claude/ for fresh installs without a private copy.
 if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/settings.json" ]]; then
   link_file "$HOLOCRON_MEMORY_DIR/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (from memory repo)"
 else
-  link_file "$HOLOCRON_DIR/config/claude/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (template — set real values in \$HOLOCRON_MEMORY_DIR/settings.json)"
+  link_file "$HOLOCRON_DIR/claude/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (template — set real values in \$HOLOCRON_MEMORY_DIR/settings.json)"
 fi
-link_file "$HOLOCRON_DIR/config/claude/CLAUDE.md"     "$CLAUDE_DIR/CLAUDE.md"     "claude/CLAUDE.md"
+link_file "$HOLOCRON_DIR/claude/CLAUDE.md"     "$CLAUDE_DIR/CLAUDE.md"     "claude/CLAUDE.md"
 
 # Claude-specific instructions and scripts (harness-split from OpenCode equivalents)
-link_dir "$HOLOCRON_DIR/config/claude/instructions" "$CLAUDE_DIR/instructions" "claude/instructions"
-link_dir "$HOLOCRON_DIR/config/claude/scripts"      "$CLAUDE_DIR/scripts"      "claude/scripts"
+link_dir "$HOLOCRON_DIR/claude/instructions" "$CLAUDE_DIR/instructions" "claude/instructions"
+link_dir "$HOLOCRON_DIR/claude/scripts"      "$CLAUDE_DIR/scripts"      "claude/scripts"
 
 echo ""
 
@@ -306,12 +308,12 @@ echo ""
 # Pi enforces the Agent Skills spec strictly: skill names must be lowercase a-z, 0-9,
 # hyphens only, and must match the parent directory name. Skills with invalid names
 # still load but produce startup warnings. To avoid warnings, pi uses harness-specific
-# SKILL.md wrappers in config/pi/skills/<slug>/ with compliant frontmatter, while
+# SKILL.md wrappers in pi/skills/<slug>/ with compliant frontmatter, while
 # supporting files are symlinked from the canonical skills/<OriginalName>/ directory.
 #
 # Holocron commands/ map to pi prompts/ (both are flat .md files).
-# Pi extensions live in extensions/ (top-level). Each subdir is symlinked into
-# ~/.pi/agent/extensions/ by the extensions/ block below. See extensions/PORTING-PLAN.md.
+# Pi extensions live in pi/extensions/ (none yet). When added, install.sh will
+# auto-link each subdir into ~/.pi/agent/extensions/.
 
 # link_pi_skill — creates a pi-compliant skill dir by merging a pi-specific SKILL.md
 # (compliant name/description) with supporting files from the original skill directory.
@@ -319,7 +321,7 @@ echo ""
 # Usage: link_pi_skill <original_name> <pi_slug> <pi_wrapper_dir> <public_skill_dir> <private_src> <dest_root> <label>
 #   original_name    e.g. "Agents"
 #   pi_slug          e.g. "agents"
-#   pi_wrapper_dir   e.g. "$HOLOCRON_DIR/config/pi/skills"
+#   pi_wrapper_dir   e.g. "$HOLOCRON_DIR/pi/skills"
 #   public_skill_dir e.g. "$HOLOCRON_DIR/skills/Agents"
 #   private_src      e.g. "$HOLOCRON_MEMORY_DIR/skills/Agents" (or "" if none)
 #   dest_root        e.g. "$PI_DIR/skills"
@@ -397,7 +399,7 @@ PI_DIR="$HOME/.pi/agent"
 mkdir -p "$PI_DIR"
 
 # AGENTS.md — pi-specific top-level context file
-link_file "$HOLOCRON_DIR/config/pi/AGENTS.md" "$PI_DIR/AGENTS.md" "pi/AGENTS.md"
+link_file "$HOLOCRON_DIR/pi/AGENTS.md" "$PI_DIR/AGENTS.md" "pi/AGENTS.md"
 
 # instructions/ — algorithm.md + steering-rules.md are referenced by absolute path in AGENTS.md
 link_dir "$HOLOCRON_DIR/instructions" "$PI_DIR/instructions" "pi/instructions"
@@ -412,7 +414,7 @@ link_dir "$HOLOCRON_DIR/commands" "$PI_DIR/prompts" "pi/prompts (from commands)"
 # (Agent Skills spec requires lowercase names matching the directory name).
 # Compliant skills (already lowercase) are linked directly.
 mkdir -p "$PI_DIR/skills"
-PI_WRAPPER_DIR="$HOLOCRON_DIR/config/pi/skills"
+PI_WRAPPER_DIR="$HOLOCRON_DIR/pi/skills"
 
 # Skills that need pi-compliant wrappers: CamelCase original → lowercase slug
 declare -a PI_SKILL_MAPPINGS=(
@@ -480,36 +482,12 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
   done
 fi
 
-# extensions/ → pi extensions
-# Each subdirectory in extensions/ (except _lib/) is symlinked individually
-# into ~/.pi/agent/extensions/ and gets bun install if it has a package.json.
-mkdir -p "$PI_DIR/extensions"
-for ext_dir in "$HOLOCRON_DIR/extensions"/*/; do
-  [[ -d "$ext_dir" ]] || continue
-  ext_name="$(basename "$ext_dir")"
-  [[ "$ext_name" == "_lib" ]] && continue  # _lib is shared helpers, not a standalone extension
-  link_dir "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
-done
-
-# Install bun deps for any extension that has a package.json
-if command -v bun &>/dev/null; then
-  for ext_dir in "$HOLOCRON_DIR/extensions"/*/; do
-    [[ -d "$ext_dir" ]] || continue
-    ext_name="$(basename "$ext_dir")"
-    [[ "$ext_name" == "_lib" ]] && continue
-    if [[ -f "$ext_dir/package.json" ]]; then
-      echo "  Installing $ext_name dependencies..."
-      (cd "$ext_dir" && bun install --silent 2>&1 | tail -1)
-      echo "  ✓  $ext_name"
-    fi
-  done
-else
-  echo "  ⚠  bun not found — skipping extension dependency install"
-fi
+# pi/extensions/ → pi extensions (none yet — add subdirs to pi/extensions/ when ready)
+# install.sh will auto-link them into ~/.pi/agent/extensions/ on next run.
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire
-# Holocron resources via settings.json instead of symlinks, see docs/settings.md
+# Holocron resources via settings.json instead of symlinks, see pi.dev settings docs.
 # in pi-mono and add entries manually.
 echo "  ℹ  settings.json left untouched (user-configured)"
 
