@@ -1,0 +1,8 @@
+{
+  "name": "algorithm-pipeline",
+  "version": "1.0.0",
+  "description": "Holocron Algorithm as a sequential sub-agent pipeline",
+  "pi": {
+    "extensions": ["./index.ts"]
+  }
+}

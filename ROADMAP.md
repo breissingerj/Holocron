@@ -255,6 +255,26 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 
 ---
 
+## Milestone 17 — Pi Algorithm Sub-Agent Pipeline
+*Restructure the Holocron Algorithm to run as a sequential sub-agent pipeline in pi — each phase isolated, context curated between agents, phases skipped programmatically.*
+
+**Full plan:** [`pi/M17-algorithm-pipeline-plan.md`](pi/M17-algorithm-pipeline-plan.md)  
+**Prerequisite:** M16 (Pi Extensions Port — `subagent` extension + `algorithm-mode` extension)
+
+- `pi/extensions/algorithm-pipeline/` — new extension: `index.ts` (tool registration), `orchestrator.ts` (pipeline loop + skip evaluation), `context.ts` (envelope types), `phases.ts` (phase definitions)
+- 7 agent prompt files in `agents/` — one per Algorithm phase (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN)
+- Structured context envelope (JSON) passed between agents — each agent summarises prior phases before appending its own output
+- Two-layer skip system: agent `recommend_skip` output (primary) + orchestrator hard rules (secondary). OBSERVE, EXECUTE, VERIFY never skip
+- THINK skips on Standard effort + small ISC + no research capabilities
+- PLAN skips on Standard effort + no blocked prerequisites + ≤2 capabilities
+- BUILD skips when zero capabilities were selected
+- LEARN skips on Standard effort + pure lookup tasks with no file changes
+- `force_skip` / `force_run` parameters for manual override
+- Graceful failure recovery: malformed agent JSON falls back to raw text, aborted phases don't crash pipeline
+- `algorithm-mode.ts` extended with `PIPELINE` mode — primary agent calls `algorithm_pipeline` tool instead of running Algorithm inline
+
+---
+
 ## Milestone 16 — Pi Extensions Port
 *Port Claude Code hooks and OpenCode plugins to pi.dev extensions so pi reaches functional Holocron parity (context injection, PRD sync, security validation, voice completion, learning capture).*
 

@@ -482,8 +482,33 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
   done
 fi
 
-# pi/extensions/ → pi extensions (none yet — add subdirs to pi/extensions/ when ready)
-# install.sh will auto-link them into ~/.pi/agent/extensions/ on next run.
+# pi/extensions/ → pi extensions (single .ts files and subdir packages)
+# Each *.ts file and each subdir with an index.ts is symlinked into ~/.pi/agent/extensions/.
+PI_EXT_SRC="$HOLOCRON_DIR/pi/extensions"
+PI_EXT_DEST="$PI_DIR/extensions"
+mkdir -p "$PI_EXT_DEST"
+if [[ -d "$PI_EXT_SRC" ]]; then
+  # Single-file extensions (*.ts)
+  for ext_file in "$PI_EXT_SRC"/*.ts; do
+    [[ -f "$ext_file" ]] || continue
+    fname="$(basename "$ext_file")"
+    dest="$PI_EXT_DEST/$fname"
+    if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+      ln -s "$ext_file" "$dest"
+      echo "  ✓  pi/extensions: linked $fname"
+    fi
+  done
+  # Directory extensions (<name>/index.ts)
+  for ext_dir in "$PI_EXT_SRC"/*/; do
+    [[ -d "$ext_dir" ]] || continue
+    dname="$(basename "$ext_dir")"
+    dest="$PI_EXT_DEST/$dname"
+    if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+      ln -s "$ext_dir" "$dest"
+      echo "  ✓  pi/extensions: linked $dname/"
+    fi
+  done
+fi
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire

@@ -76,10 +76,11 @@ When you need context about the user, projects, system internals, or specific to
 Pi.dev is deliberately minimal and omits several features Holocron's Algorithm assumes:
 
 - **No MCP.** Skills that depend on MCP servers (Linear, 1Password, Atlassian, Gmail, Slack, etc. in Holocron's `skills/` set) will not have their MCP tools available under pi. Use bash-based CLI equivalents (e.g., `acli`, `gh`, `op`) where documented, or flag the gap when an MCP tool is required.
-- **No sub-agents.** Holocron's Algorithm references `Plan` / `Explore` / `Engineer` subagents. Under pi, these are unavailable natively. Degrade by running the equivalent work inline in the main session, or defer the task if true parallelism is required.
+- **Sub-agents available via pipeline extension (M17).** The `algorithm_pipeline` tool (installed by `pi/extensions/algorithm-pipeline/`) runs each Algorithm phase as an isolated pi subprocess. Activate with `/pipeline` or `Ctrl+Alt+A` to cycle to PIPELINE mode. For Advanced+ effort tasks, prefer PIPELINE mode over running the Algorithm inline — it prevents context rot and phase cross-contamination. For Standard effort tasks, run the Algorithm inline as normal.
 - **No plan mode.** The Algorithm's "Enter plan mode if EFFORT LEVEL is Advanced+" instruction has no native pi enforcement. Present the plan in your response and explicitly ask the user to approve before executing.
+- **No MCP.** Skills that depend on MCP servers (Linear, 1Password, Atlassian, Gmail, Slack, etc.) will not have their MCP tools available under pi. Use bash-based CLI equivalents (e.g., `acli`, `gh`, `op`) where documented, or flag the gap when an MCP tool is required.
 
-These gaps are tracked as follow-up work on Holocron's M15 roadmap.
+The M15 sub-agent gap is closed by M17. MCP and plan-mode gaps remain open.
 
 ---
 
