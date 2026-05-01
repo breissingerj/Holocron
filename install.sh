@@ -482,8 +482,28 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
   done
 fi
 
-# pi/extensions/ → pi extensions (none yet — add subdirs to pi/extensions/ when ready)
-# install.sh will auto-link them into ~/.pi/agent/extensions/ on next run.
+# pi/extensions/ → link each subdir and flat .ts file into ~/.pi/agent/extensions/
+# Subdirs are multi-file extensions; flat .ts files are single-file extensions.
+# Dirs prefixed with _ (e.g. _lib) are internal helpers, not extensions — skip them.
+if [[ -d "$HOLOCRON_DIR/pi/extensions" ]]; then
+  mkdir -p "$PI_DIR/extensions"
+  for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
+    [[ -d "$ext_dir" ]] || continue
+    ext_name="$(basename "$ext_dir")"
+    [[ "$ext_name" == _* ]] && continue
+    link_dir "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
+  done
+  for ext_file in "$HOLOCRON_DIR/pi/extensions"/*.ts; do
+    [[ -f "$ext_file" ]] || continue
+    ext_name="$(basename "$ext_file")"
+    link_file "$ext_file" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
+  done
+fi
+
+# pi/agents/ → link each .md and .chain.md into ~/.pi/agent/agents/
+if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
+  merge_link_agents "$HOLOCRON_DIR/pi/agents" "$PI_DIR/agents" "pi/agents"
+fi
 
 # NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
 # install.sh intentionally does not create or overwrite it. If you want to wire
