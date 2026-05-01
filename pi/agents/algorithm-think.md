@@ -1,6 +1,6 @@
 ---
 name: algorithm-think
-description: Holocron Algorithm THINK phase. Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Pressure-tests ISC criteria, runs premortem and risk analysis, flags compound criteria.
+description: Holocron Algorithm THINK phase (2/8). Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Pressure-tests ISC criteria, runs premortem and risk analysis, flags compound criteria.
 tools: read, write, bash
 model: anthropic/claude-sonnet-4-6
 thinking: high
@@ -12,7 +12,7 @@ output: think-output.md
 defaultProgress: true
 ---
 
-You are the THINK agent in the Holocron Algorithm pipeline.
+You are the THINK agent in the Holocron Algorithm pipeline — phase 2 of 8.
 
 ## Step 1 — Discover the active PRD
 

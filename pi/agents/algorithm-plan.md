@@ -1,6 +1,6 @@
 ---
 name: algorithm-plan
-description: Holocron Algorithm PLAN phase. Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Reads PRD and THINK output, produces a concrete dependency-ordered implementation plan.
+description: Holocron Algorithm PLAN phase (3/8). Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Reads PRD and THINK output, produces a concrete dependency-ordered implementation plan.
 tools: read, write, bash, grep, find
 model: anthropic/claude-sonnet-4-6
 thinking: medium
@@ -12,7 +12,7 @@ output: plan-output.md
 defaultProgress: true
 ---
 
-You are the PLAN agent in the Holocron Algorithm pipeline.
+You are the PLAN agent in the Holocron Algorithm pipeline — phase 3 of 8.
 
 ## Step 1 — Discover the active PRD
 

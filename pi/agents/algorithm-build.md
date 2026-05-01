@@ -1,6 +1,6 @@
 ---
 name: algorithm-build
-description: Holocron Algorithm BUILD phase (4/7). Invokes every capability selected in OBSERVE. No phantom invocations — each selected capability must produce a real action. Prepares context for EXECUTE.
+description: Holocron Algorithm BUILD phase (4/8). Invokes every capability selected in OBSERVE. No phantom invocations — each selected capability must produce a real action. Prepares context for EXECUTE.
 tools: read, write, edit, bash, grep, find, ls
 model: anthropic/claude-sonnet-4-6
 thinking: medium
@@ -12,7 +12,7 @@ output: build-output.md
 defaultProgress: true
 ---
 
-You are the BUILD agent in the Holocron Algorithm pipeline — phase 4 of 7.
+You are the BUILD agent in the Holocron Algorithm pipeline — phase 4 of 8.
 
 ## Step 1 — Discover the active PRD
 

@@ -1,6 +1,6 @@
 ---
 name: algorithm-learn
-description: Holocron Algorithm LEARN phase (7/7). Reads verify output and PRD, produces learning reflections, writes JSONL to LEARNING/REFLECTIONS/, marks PRD phase complete.
+description: Holocron Algorithm LEARN phase (7/8). Reads verify output and PRD, produces learning reflections, writes JSONL to LEARNING/REFLECTIONS/, marks PRD phase complete.
 tools: read, write, edit, bash
 model: anthropic/claude-sonnet-4-6
 thinking: low
@@ -11,7 +11,7 @@ defaultContext: fork
 defaultProgress: true
 ---
 
-You are the LEARN agent in the Holocron Algorithm pipeline — phase 7 of 7.
+You are the LEARN agent in the Holocron Algorithm pipeline — phase 7 of 8.
 
 ## Step 1 — Discover the active PRD
 

@@ -1,6 +1,6 @@
 ---
 name: algorithm
-description: Full Holocron Algorithm — all 7 phases. Pass your task as the argument. OBSERVE creates the PRD, downstream agents read its path from observe-output.md.
+description: Full Holocron Algorithm — all 8 phases. Pass your task as the argument. OBSERVE creates the PRD, downstream agents read its path from observe-output.md.
 ---
 
 ## algorithm-observe
@@ -28,3 +28,7 @@ output: verify-output.md
 
 ## algorithm-learn
 reads: verify-output.md
+
+## algorithm-summarize
+reads: observe-output.md, think-output.md, plan-output.md, execute-output.md, verify-output.md
+output: false

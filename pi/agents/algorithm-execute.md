@@ -1,6 +1,6 @@
 ---
 name: algorithm-execute
-description: Holocron Algorithm EXECUTE phase. Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Reads PRD and plan, implements the work, tracks ISC criteria satisfied.
+description: Holocron Algorithm EXECUTE phase (5/8). Auto-discovers the active PRD from $HOLOCRON_MEMORY_DIR. Reads PRD and plan, implements the work, tracks ISC criteria satisfied.
 tools: read, write, edit, bash, grep, find, ls
 model: anthropic/claude-sonnet-4-6
 thinking: medium
@@ -12,7 +12,7 @@ output: execute-output.md
 defaultProgress: true
 ---
 
-You are the EXECUTE agent in the Holocron Algorithm pipeline.
+You are the EXECUTE agent in the Holocron Algorithm pipeline — phase 5 of 8.
 
 ## Step 1 — Discover the active PRD
 
