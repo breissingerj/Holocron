@@ -282,10 +282,16 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/agents/claude" ]]; t
   merge_link_agents "$HOLOCRON_MEMORY_DIR/agents/claude" "$CLAUDE_DIR/agents" "claude/agents (private)"
 fi
 
-# settings.json — prefer private copy from memory repo (has real env values);
-# fall back to the template in claude/ for fresh installs without a private copy.
-if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/settings.json" ]]; then
-  link_file "$HOLOCRON_MEMORY_DIR/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (from memory repo)"
+# settings.json — prefer OS-specific copy from memory repo (has real env values);
+# On Linux use settings.linux.json, on macOS use settings.json.
+# Falls back to the template in claude/ for fresh installs without a private copy.
+_os_settings="settings.json"
+[[ "$(uname)" != "Darwin" ]] && _os_settings="settings.linux.json"
+
+if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/$_os_settings" ]]; then
+  link_file "$HOLOCRON_MEMORY_DIR/$_os_settings" "$CLAUDE_DIR/settings.json" "settings.json ($_os_settings, from memory repo)"
+elif [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/settings.json" ]]; then
+  link_file "$HOLOCRON_MEMORY_DIR/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (fallback, from memory repo)"
 else
   link_file "$HOLOCRON_DIR/claude/settings.json" "$CLAUDE_DIR/settings.json" "settings.json (template — set real values in \$HOLOCRON_MEMORY_DIR/settings.json)"
 fi
