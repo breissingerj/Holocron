@@ -12,7 +12,8 @@ The goal is harness-agnostic personalization: the same knowledge, voice, and wor
 
 - **Skills** — Domain-specific instruction files that activate on intent
 - **Commands** — Custom slash commands for recurring workflows
-- **Plugins** — Custom agent harness plugins (system prompt injection, context loading, memory sync)
+- **Plugins** — OpenCode harness plugins (system prompt injection, context loading, memory sync)
+- **Hooks** — Claude Code lifecycle hooks (context injection, PRD sync, security validation)
 - **Instructions** — Behavioral rules and algorithm that govern how I want agents to think and respond
 
 ---
@@ -30,9 +31,13 @@ The architecture is inspired by [Daniel Miessler's Personal AI Infrastructure](h
 ```
 Holocron/
   skills/        # Markdown skill files loaded as agent context
-  commands/      # Custom slash commands
-  plugins/       # Agent harness plugins (OpenCode, etc.)
-  instructions/  # Behavioral rules, algorithm, steering rules
+  commands/      # Custom slash commands (map to pi prompts/)
+  instructions/  # Behavioral rules, algorithm, steering rules (shared)
+  skills/        # Agent skills (shared across harnesses)
+  scripts/       # Shared scripts (voice.sh, etc.)
+  claude/        # Claude CLI harness — agents/, CLAUDE.md, instructions/, scripts/, settings.json
+  opencode/      # OpenCode harness — agents/, plugins/
+  pi/            # Pi.dev harness — AGENTS.md, skills/ (wrappers)
   install.sh     # Symlinks config into the active harness (Mac/Linux)
   install.ps1    # Symlinks config into the active harness (Windows)
 ```
@@ -56,6 +61,8 @@ cd Holocron
 ```
 
 The install scripts symlink `skills/`, `commands/`, `plugins/`, and `instructions/` into the target harness directory (e.g. `~/.opencode/`). Running it again is safe — existing links are skipped.
+
+**Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Pi extensions will live in `pi/extensions/` when built; `install.sh` will auto-link them into `~/.pi/agent/extensions/`.
 
 ### Private memory repo
 
