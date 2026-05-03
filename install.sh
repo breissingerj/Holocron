@@ -505,11 +505,15 @@ if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
   merge_link_agents "$HOLOCRON_DIR/pi/agents" "$PI_DIR/agents" "pi/agents"
 fi
 
-# NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
-# install.sh intentionally does not create or overwrite it. If you want to wire
-# Holocron resources via settings.json instead of symlinks, see pi.dev settings docs.
-# in pi-mono and add entries manually.
-echo "  ℹ  settings.json left untouched (user-configured)"
+# pi/settings.json — prefer private copy from memory repo; fall back to Holocron template.
+# Mirrors the same pattern used for ~/.claude/settings.json.
+if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/pi-settings.json" ]]; then
+  link_file "$HOLOCRON_MEMORY_DIR/pi-settings.json" "$PI_DIR/settings.json" "pi-settings.json (from memory repo)"
+elif [[ -f "$HOLOCRON_DIR/pi/settings.json" ]]; then
+  link_file "$HOLOCRON_DIR/pi/settings.json" "$PI_DIR/settings.json" "pi/settings.json (template)"
+else
+  echo "  ℹ  settings.json left untouched (no template or memory repo copy found)"
+fi
 
 echo ""
 
