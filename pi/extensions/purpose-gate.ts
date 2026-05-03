@@ -11,9 +11,29 @@
  * Usage: pi -e extensions/purpose-gate.ts
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Text, truncateToWidth } from "@mariozechner/pi-tui";
 import { applyExtensionDefaults } from "./themeMap.ts";
+
+/** Read purpose_gate.enabled from ~/.pi/agent/settings.json. Defaults to true if missing or unreadable. */
+function isPurposeGateEnabled(): boolean {
+	try {
+		const settingsPath = join(homedir(), ".pi", "agent", "settings.json");
+		if (!existsSync(settingsPath)) return true;
+		const raw = readFileSync(settingsPath, "utf-8");
+		const parsed = JSON.parse(raw) as Record<string, unknown>;
+		const gate = parsed["purpose_gate"];
+		if (gate && typeof gate === "object" && "enabled" in gate) {
+			return (gate as Record<string, unknown>)["enabled"] !== false;
+		}
+		return true;
+	} catch {
+		return true;
+	}
+}
 
 // synthwave: bgWarm #4a1e6a → rgb(74,30,106)
 function bg(s: string): string {
@@ -35,6 +55,9 @@ function bold(s: string): string {
 }
 
 export default function (pi: ExtensionAPI) {
+	// Skip entirely when disabled via settings.json purpose_gate.enabled = false.
+	if (!isPurposeGateEnabled()) return;
+
 	// Skip entirely when running as a pi-subagent child process.
 	// The parent session already has a declared purpose; asking again in a
 	// forked subagent session would also crash with a stale-ctx error.

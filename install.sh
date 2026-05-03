@@ -111,6 +111,41 @@ merge_link_skills() {
   fi
 }
 
+# merge_link_chains — links individual *.chain.md files from src into dest.
+# Chains are stored separately from agents; pi-subagents discovers them from
+# ~/.pi/agent/chains/ (getUserChainDir), not from ~/.pi/agent/agents/.
+merge_link_chains() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+
+  [[ -d "$src" ]] || return
+
+  if [[ -L "$dest" ]]; then
+    echo "  ✦  $label: converting directory symlink to real directory…"
+    rm "$dest"
+    mkdir -p "$dest"
+  else
+    mkdir -p "$dest"
+  fi
+
+  local linked=0
+  for f in "$src"/*.chain.md; do
+    [[ -e "$f" ]] || continue
+    local fname
+    fname="$(basename "$f")"
+    if [[ -L "$dest/$fname" ]]; then
+      : # already linked — skip silently
+    elif [[ -e "$dest/$fname" ]]; then
+      echo "  ⚠  $label/$fname exists as a real file — skipping"
+    else
+      ln -s "$f" "$dest/$fname"
+      linked=$((linked + 1))
+    fi
+  done
+  echo "  ✓  $label → $dest ($linked linked)"
+}
+
 # merge_link_agents — links individual agent .md files from src into dest.
 # If dest is a directory symlink, it is converted to a real directory first.
 # Supports merging agents from multiple source directories (public + private).
@@ -500,9 +535,16 @@ if [[ -d "$HOLOCRON_DIR/pi/extensions" ]]; then
   done
 fi
 
-# pi/agents/ → link each .md and .chain.md into ~/.pi/agent/agents/
+# pi/agents/ → link agent .md files (non-chain) into ~/.pi/agent/agents/
 if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
   merge_link_agents "$HOLOCRON_DIR/pi/agents" "$PI_DIR/agents" "pi/agents"
+fi
+
+# pi/agents/ → link *.chain.md files into ~/.pi/agent/chains/
+# pi-subagents discovers chains from ~/.pi/agent/chains/ (getUserChainDir),
+# not from agents/. Without this, /run-chain won't show completions for them.
+if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
+  merge_link_chains "$HOLOCRON_DIR/pi/agents" "$PI_DIR/chains" "pi/chains"
 fi
 
 # pi/settings.json — prefer private copy from memory repo; fall back to Holocron template.

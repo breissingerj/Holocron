@@ -78,7 +78,19 @@ Cost and token tracking accumulate across the full session branch via `ctx.sessi
 | **License** | (see source repo) |
 | **Lifted** | 2026-05-01 |
 
-**What it does:** Forces a purpose declaration via text input dialog on session start. Blocks all input until a non-empty purpose is entered. Displays the purpose in a persistent widget and injects it into the system prompt as a `<purpose>` block for the full session.
+**What it does:** Prompts the engineer to declare intent on session start via a text input dialog. Purpose is **optional** — dismissing the dialog (empty input) lets you continue without one. When provided, the purpose is displayed in a persistent widget and injected into the system prompt as a `<purpose>` block for the full session, keeping the agent focused.
+
+**Enable / disable:** The extension reads `purpose_gate.enabled` from `~/.pi/agent/settings.json` at load time. Set it to `false` to skip the extension entirely without removing it from the config:
+
+```json
+"purpose_gate": {
+  "enabled": false
+}
+```
+
+> **Requires a pi reload to take effect.** Edit the value, then run `/reload` (or restart pi). Changes while pi is running are ignored until reload.
+
+Omitting the key, or any read/parse error, defaults to `true` (gate enabled).
 
 Aligns with Holocron's *"Plan means stop"* and session naming principles.
 
