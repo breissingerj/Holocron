@@ -56,7 +56,6 @@ export default function (pi: ExtensionAPI) {
 					const usage = ctx.getContextUsage();
 					const pct = usage ? usage.percent : 0;
 					const filled = Math.round(pct / 10) || 1;
-					const bar = "#".repeat(filled) + "-".repeat(10 - filled);
 					const model = ctx.model?.id || "no-model";
 
 					const l1Left =

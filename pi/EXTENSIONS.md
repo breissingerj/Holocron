@@ -10,7 +10,7 @@ Update this file whenever an extension is added, removed, or sourced.
 Sourced from [`disler/pi-vs-claude-code`](https://github.com/disler/pi-vs-claude-code/tree/main/extensions).
 Files live in `pi/extensions/`. All five share a required dependency: `themeMap.ts` (also lifted, same source).
 
-> **To activate:** Copy the desired `.ts` files from `pi/extensions/` into `~/.pi/agent/extensions/` alongside `themeMap.ts`.
+> **Activated automatically** by `install.sh`, which symlinks all `.ts` files from `pi/extensions/` (and the `prd-sidebar/` subdirectory) into `~/.pi/agent/extensions/`. The `_lib/` directory is a shared helper and is intentionally skipped. No manual copying required.
 
 ---
 
@@ -121,30 +121,33 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 Custom agent files and chain pipelines stored in `pi/agents/`. Install by copying to `~/.pi/agent/agents/`.
 
-> **To activate:** `cp pi/agents/*.md ~/.pi/agent/agents/` — or add `~/.pi/agent/agents/` to Holocron's install.sh symlink step.
+> **Activated automatically** by `install.sh` via `merge_link_agents`, which symlinks all `.md` and `.chain.md` files from `pi/agents/` into `~/.pi/agent/agents/`. No manual copying required.
 
 ---
 
 ### Algorithm Pipeline
 
-Replaces the ALGORITHM mode inline execution with a subagent chain. The parent session handles **OBSERVE** (PRD creation, ISC gate, voice) and **LEARN** (JSONL reflection). The chain handles phases 2–5.
+Runs the full 8-phase Holocron Algorithm as a subagent chain. Pass your task and the chain handles everything: PRD creation, ISC criteria, planning, building, executing, verification, learning, and a final session summary.
 
 **How to run:**
 ```text
-# After parent session completes OBSERVE and passes ISC gate:
-/run-chain algorithm
+/run-chain algorithm -- your task description here
 ```
-No path argument needed. Each agent auto-discovers the active PRD from `$HOLOCRON_MEMORY_DIR`.
+Each agent auto-discovers the active PRD from `$HOLOCRON_MEMORY_DIR` via the `PRD_PATH` written by the OBSERVE agent.
 
 | File | Phase | Role |
 |------|-------|------|
-| `algorithm-think.md` | THINK (2/7) | Reads PRD, applies Splitting Test to all ISC, runs premortem + risk analysis, flags compound criteria |
-| `algorithm-plan.md` | PLAN (3/7) | Reads PRD + think output, addresses prerequisites, produces dependency-ordered implementation plan |
-| `algorithm-execute.md` | EXECUTE (5/7) | Reads PRD + plan, implements the work, reports which ISC criteria were satisfied with evidence |
-| `algorithm-verify.md` | VERIFY (6/7) | Independently tests each ISC criterion (does not trust executor's claims), produces PASS/FAIL table + Confidence Check |
-| `algorithm.chain.md` | Full chain | Wires THINK → PLAN → EXECUTE → VERIFY, passing PRD path and intermediate outputs between steps |
+| `algorithm-observe.md` | OBSERVE (1/8) | Creates PRD, reverse-engineers request, generates atomic ISC criteria (with Splitting Test + ISC count gate), selects capabilities |
+| `algorithm-think.md` | THINK (2/8) | Reads PRD, applies Splitting Test to all ISC, runs premortem + risk analysis, flags compound criteria |
+| `algorithm-plan.md` | PLAN (3/8) | Reads PRD + think output, addresses prerequisites, produces dependency-ordered implementation plan |
+| `algorithm-build.md` | BUILD (4/8) | Invokes every capability selected in OBSERVE — research APIs, codebase analysis, thinking. No phantom invocations. |
+| `algorithm-execute.md` | EXECUTE (5/8) | Reads PRD + plan, implements the work, reports which ISC criteria were satisfied with evidence |
+| `algorithm-verify.md` | VERIFY (6/8) | Independently tests each ISC criterion (does not trust executor's claims), produces PASS/FAIL table + Confidence Check |
+| `algorithm-learn.md` | LEARN (7/8) | Produces learning reflections, writes JSONL to `LEARNING/REFLECTIONS/`, marks PRD phase complete |
+| `algorithm-summarize.md` | SUMMARIZE (8/8) | Synthesizes a concise session brief from all phase outputs — decisions, verification results, follow-up items |
+| `algorithm.chain.md` | Full chain | Wires all 8 phases in sequence, passing `observe-output.md` path and intermediate outputs between steps |
 
-**PRD discovery:** Each agent runs a bash snippet at startup that checks `$HOLOCRON_MEMORY_DIR/STATE/work.json` first (M7 plugin, if active), then falls back to the most recent non-complete PRD by mtime in `$HOLOCRON_MEMORY_DIR/WORK/`. No path argument needed at any step.
+**PRD discovery:** OBSERVE creates the PRD and writes `PRD_PATH=<absolute-path>` as the first line of `observe-output.md`. Every downstream agent reads that line to locate the PRD — no path argument needed at any step.
 
 **Context passing:** Each step writes an output file (`think-output.md`, `plan-output.md`, `execute-output.md`) that the next step reads via `reads:` frontmatter in the chain directory.
 

@@ -92,24 +92,71 @@ with open(prd_path) as f:
             prog = line.split(':', 1)[1].strip()
             if '/' in prog: criteria_count = int(prog.split('/')[1])
 
+# --- Parse verify output for actual pass/fail counts ---
+criteria_passed = 0
+criteria_failed = 0
+verify_path = os.path.join(os.path.dirname(prd_path), '..', 'verify-output.md')  # chain dir
+verify_path = os.path.normpath(verify_path)
+try:
+    with open(verify_path) as vf:
+        for vline in vf:
+            import re
+            m = re.search(r'PASS:\s*(\d+)', vline, re.IGNORECASE)
+            if m: criteria_passed = int(m.group(1))
+            m = re.search(r'FAIL:\s*(\d+)', vline, re.IGNORECASE)
+            if m: criteria_failed += int(m.group(1))
+            m = re.search(r'PARTIAL:\s*(\d+)', vline, re.IGNORECASE)
+            if m: criteria_failed += int(m.group(1))
+except FileNotFoundError:
+    pass  # verify-output.md may not exist; leave counts at 0
+
+# --- Derive agents_invoked from chain outputs that actually exist ---
+# Only list agents whose output files are present (proof they actually ran).
+chain_dir = os.path.dirname(verify_path)  # reuse the resolved dir
+agent_outputs = [
+    ('algorithm-observe',  'observe-output.md'),
+    ('algorithm-think',    'think-output.md'),
+    ('algorithm-plan',     'plan-output.md'),
+    ('algorithm-build',    'build-output.md'),
+    ('algorithm-execute',  'execute-output.md'),
+    ('algorithm-verify',   'verify-output.md'),
+    ('algorithm-learn',    None),   # this agent itself — always include
+    ('algorithm-summarize','summary-output.md'),
+]
+agents_invoked = [
+    name for name, outfile in agent_outputs
+    if outfile is None or os.path.exists(os.path.join(chain_dir, outfile))
+]
+
+# --- The three reflection answers must be written above (Step 3) BEFORE
+#     running this script. Replace the placeholder strings below with your
+#     actual reflections derived from verify-output.md and the session.
+#     The script will REFUSE to write if they still contain "UPDATE:".
+reflection_q1 = "UPDATE: what should have been done differently"
+reflection_q2 = "UPDATE: what a smarter algorithm would have done"
+reflection_q3 = "UPDATE: what capabilities were missed"
+
+for r in [reflection_q1, reflection_q2, reflection_q3]:
+    if r.startswith("UPDATE:"):
+        print("ERROR: Replace all reflection_qN placeholder strings before running this script.")
+        print("See Step 3 — write your actual reflections first, then update the values above.")
+        raise SystemExit(1)
+
 entry = {
     "timestamp": subprocess.check_output(['date', '-u', '+%Y-%m-%dT%H:%M:%S+00:00']).decode().strip(),
     "effort_level": effort,
     "task_description": task_desc,
     "work_type": "feature",
     "criteria_count": criteria_count,
-    "criteria_passed": 0,   # UPDATE with actual count from verify-output
-    "criteria_failed": 0,   # UPDATE with actual count from verify-output
+    "criteria_passed": criteria_passed,
+    "criteria_failed": criteria_failed,
     "prd_id": slug,
-    "implied_sentiment": 7,  # UPDATE based on conversation tone (1-10)
-    "within_budget": True,   # UPDATE based on actual elapsed time
-    "agents_invoked": [
-        "algorithm-observe", "algorithm-think", "algorithm-plan",
-        "algorithm-build", "algorithm-execute", "algorithm-verify", "algorithm-learn"
-    ],
-    "reflection_q1": "UPDATE: what should have been done differently",
-    "reflection_q2": "UPDATE: what a smarter algorithm would have done",
-    "reflection_q3": "UPDATE: what capabilities were missed"
+    "implied_sentiment": 7,  # UPDATE: estimate 1-10 from conversation tone before running
+    "within_budget": True,   # UPDATE: set False if elapsed time exceeded effort budget
+    "agents_invoked": agents_invoked,
+    "reflection_q1": reflection_q1,
+    "reflection_q2": reflection_q2,
+    "reflection_q3": reflection_q3
 }
 
 out_path = f"{mem_dir}/LEARNING/REFLECTIONS/algorithm-reflections.jsonl"
@@ -119,7 +166,10 @@ print(f"Wrote reflection to {out_path}")
 PYEOF
 ```
 
-**Important:** Before running the script, replace the placeholder values — `criteria_passed`, `criteria_failed`, `implied_sentiment`, `within_budget`, and all three `reflection_qN` fields — with actual values derived from verify-output.md and your reflections above. Do not write placeholder text to the JSONL.
+**Important:** Before running the script:
+- Replace `reflection_q1/q2/q3` with your actual reflection text from Step 3 (the script will refuse to run if they still start with `"UPDATE:"`).
+- Update `implied_sentiment` (1-10 based on conversation tone) and `within_budget` (True/False).
+- `criteria_passed` / `criteria_failed` and `agents_invoked` are derived automatically from output files.
 
 ## Step 5 — Mark PRD complete
 

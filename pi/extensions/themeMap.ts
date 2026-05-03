@@ -60,12 +60,15 @@ export function applyExtensionTheme(fileUrl: string, ctx: ExtensionContext): boo
 
 	const name = extensionName(fileUrl);
 	
-	// If there are multiple extensions stacked in 'ipi', they each fire session_start
-	// and try to apply their own mapped theme. The LAST one to fire wins.
-	// Since system-select is last in the ipi alias array, it was setting 'catppuccin-mocha'.
-	
-	// We want to skip theme application for all secondary extensions if they are stacked,
-	// so the primary extension (first in the array) dictates the theme.
+	// When Pi is launched with -e flags (e.g. `pi -e damage-control.ts -e tilldone.ts`),
+	// primaryExtensionName() returns the first -e value and we skip theme application
+	// for all other stacked extensions — the first extension in the array owns the theme.
+	//
+	// When extensions are auto-linked by install.sh (no -e flag), primaryExtensionName()
+	// returns null, the guard below is bypassed, and EVERY loaded extension applies its
+	// own theme. The last one to fire at session_start wins. This is expected behaviour
+	// for the auto-link case — configure your preferred theme in settings.json if you
+	// want a stable theme when running with auto-linked extensions.
 	const primaryExt = primaryExtensionName();
 	if (primaryExt && primaryExt !== name) {
 		return true; // Pretend we succeeded, but don't overwrite the primary theme

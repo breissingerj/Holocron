@@ -1,9 +1,12 @@
 /**
- * Purpose Gate — Forces the engineer to declare intent before working
+ * Purpose Gate — Prompts the engineer to declare intent before working
  *
- * On session start, immediately asks "What is the purpose of this agent?"
- * via a text input dialog. A persistent widget shows the purpose for the
- * rest of the session, keeping focus. Blocks all prompts until answered.
+ * On session start, shows a "What is the purpose of this agent?" text input.
+ * If answered, a persistent widget displays the purpose and it is injected
+ * into the system prompt for the full session, keeping focus.
+ *
+ * Purpose is OPTIONAL — dismissing the dialog (empty input) lets the user
+ * continue without declaring one. Input is never blocked by this extension.
  *
  * Usage: pi -e extensions/purpose-gate.ts
  */

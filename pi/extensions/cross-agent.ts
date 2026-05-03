@@ -70,8 +70,10 @@ function expandArgs(template: string, args: string): string {
 	const parts = args.split(/\s+/).filter(Boolean);
 	let result = template;
 	result = result.replace(/\$ARGUMENTS|\$@/g, args);
-	for (let i = 0; i < parts.length; i++) {
-		result = result.replaceAll(`$${i + 1}`, parts[i]);
+	// Iterate from highest index to lowest so that $10, $11 etc. are replaced
+	// before $1 — preventing $1 from greedily matching the leading digit of $10.
+	for (let i = parts.length; i >= 1; i--) {
+		result = result.replaceAll(`$${i}`, parts[i - 1] ?? "");
 	}
 	return result;
 }

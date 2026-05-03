@@ -89,10 +89,12 @@ export default function (pi: ExtensionAPI) {
 
 		const regex = new RegExp(`^${regexPattern}$|^${regexPattern}/|/${regexPattern}$|/${regexPattern}/`);
 
-		// Match against absolute path and relative-to-cwd path
+		// Match against absolute path and relative-to-cwd path.
+		// Intentionally no substring fallback — includes() on short patterns like
+		// "etc" or "lib" would match unrelated paths (e.g. /path/etcetera/file).
 		const relativePath = path.relative(cwd, targetPath);
 
-		return regex.test(targetPath) || regex.test(relativePath) || targetPath.includes(resolvedPattern) || relativePath.includes(resolvedPattern);
+		return regex.test(targetPath) || regex.test(relativePath);
 	}
 
 	pi.on("session_start", async (_event, ctx) => {
@@ -188,9 +190,13 @@ export default function (pi: ExtensionAPI) {
 
 				if (!violationReason) {
 					for (const rop of rules.readOnlyPaths) {
-						// Heuristic: check if command might modify a read-only path
-						// Redirects, sed -i, rm, mv to, etc.
-						if (command.includes(rop) && (/[\s>|]/.test(command) || command.includes("rm") || command.includes("mv") || command.includes("sed"))) {
+						// Only flag when the command contains explicit write/redirect indicators.
+						// Checking for plain whitespace produced massive false positives
+						// (any command with spaces + path would be flagged as a write).
+						const writeOp = /[>|]|\btee\b|\btruncate\b|\bsed\s+-i|\bchmod\b|\bchown\b|\binstall\b/.test(command);
+						const rmOp = /\brm\b/.test(command);
+						const mvOp = /\bmv\b/.test(command);
+						if (command.includes(rop) && (writeOp || rmOp || mvOp)) {
 							violationReason = `Bash command may modify read-only path: ${rop}`;
 							break;
 						}
@@ -199,7 +205,10 @@ export default function (pi: ExtensionAPI) {
 
 				if (!violationReason) {
 					for (const ndp of rules.noDeletePaths) {
-						if (command.includes(ndp) && (command.includes("rm") || command.includes("mv"))) {
+						// Use word-boundary regex to avoid substring matches:
+						// "rm" must not match inside "form", "warm", "performance", etc.
+						const isDelete = /\brm\b/.test(command) || /\bmv\b/.test(command);
+						if (command.includes(ndp) && isDelete) {
 							violationReason = `Bash command attempts to delete/move protected path: ${ndp}`;
 							break;
 						}
