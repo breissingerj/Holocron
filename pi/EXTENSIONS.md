@@ -125,6 +125,8 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 **What it does:** Shared utility required by all five lifted extensions. Exports `applyExtensionDefaults(import.meta.url, ctx)` which applies a default theme per extension and sets the terminal title. Not a standalone extension — must be co-located with any of the above files.
 
+**Theme ownership (auto-link mode):** When pi is launched with `-e` flags, the first `-e` extension owns the theme and all others skip `setTheme`. When extensions are auto-linked by `install.sh` (no `-e` flags), every extension calls `setTheme` on `session_start` — **the last one to fire wins** and the result is load-order-dependent. If you use auto-linked extensions and want a stable, predictable theme, set `defaultTheme` in `pi/settings.json` (the extension theme map is then overridden by the user config).
+
 ---
 
 ---
@@ -189,6 +191,12 @@ Multi-model parallel research. Checks `PERPLEXITY_API_KEY`, `GEMINI_API_KEY`, an
 ## npm Packages
 
 ---
+
+## Settings Template
+
+`pi/settings.json` is a template committed to the repo and symlinked to `~/.pi/agent/settings.json` by `install.sh`. If a private `pi-settings.json` exists in `$HOLOCRON_MEMORY_DIR`, that takes precedence.
+
+> **Model string note:** `defaultModel` is pinned to a snapshot model string (e.g. `claude-sonnet-4-6`). Anthropic deprecates snapshot models periodically. When a model is deprecated, pi will fail silently or with a provider error at startup. Update this value whenever a newer snapshot is available, or switch to a stable alias if the pi provider supports it.
 
 ---
 

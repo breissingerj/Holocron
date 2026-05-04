@@ -1,6 +1,17 @@
 ---
 description: Run the full 7-phase Holocron Algorithm (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN)
 ---
+<!--
+  This file is the INLINE / FALLBACK algorithm prompt used when the cross-agent extension
+  surfaces it as a slash command from .claude/commands/. It runs in the current session.
+
+  The CANONICAL pipeline is the pi-subagents chain at pi/agents/algorithm.chain.md,
+  invoked via: /run-chain algorithm -- <task>
+  That chain isolates each phase in its own subagent with structured output files.
+
+  Use this file when you need a quick single-session run without the chain overhead,
+  or when pi-subagents is unavailable.
+-->
 
 ## The Algorithm 3.7.0 (Pi)
 

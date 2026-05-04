@@ -317,6 +317,11 @@ export default function prdSidebar(pi: ExtensionAPI): void {
 	}
 
 	// ── Session-specific PRD tracking via tool_result ──────────────────────
+	// event.input carries the *tool call* parameters, not the tool's output.
+	// For write/edit tools, input.path is the file path that was written —
+	// exactly what we need to detect when the OBSERVE agent creates the PRD.
+	// This fires after every tool result, so asPrdPath() validates the path
+	// is strictly WORK/{slug}/PRD.md before pinning it to this session.
 	pi.on("tool_result", async (event) => {
 		const pinned = asPrdPath((event.input as Record<string, unknown>)?.path);
 		if (!pinned) return;

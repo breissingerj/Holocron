@@ -39,7 +39,7 @@ outputMode: file-only
 progress: true
 
 ## algorithm-learn
-reads: verify-output.md
+reads: observe-output.md, verify-output.md
 progress: true
 
 ## algorithm-summarize
