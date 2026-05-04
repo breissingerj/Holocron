@@ -1,5 +1,8 @@
 {
   "defaultProvider": "anthropic",
   "defaultModel": "claude-sonnet-4-6",
-  "defaultThinkingLevel": "medium"
+  "defaultThinkingLevel": "medium",
+  "packages": [
+    "npm:pi-subagents"
+  ]
 }
