@@ -18,7 +18,11 @@ You are the LEARN agent in the Holocron Algorithm pipeline — phase 7 of 8.
 ```bash
 # PRD path is written to observe-output.md by the OBSERVE agent
 PRD_PATH=$(grep "^PRD_PATH:" "{chain_dir}/observe-output.md" 2>/dev/null | sed 's/PRD_PATH: *//')
-[ -z "$PRD_PATH" ] && echo "ERROR: PRD_PATH not found in observe-output.md" && exit 1
+# Direct-invocation fallback: find most recently modified PRD in WORK/
+if [ -z "$PRD_PATH" ] && [ -n "$HOLOCRON_MEMORY_DIR" ]; then
+  PRD_PATH=$(ls -t "$HOLOCRON_MEMORY_DIR/WORK/"*/PRD.md 2>/dev/null | head -1)
+fi
+[ -z "$PRD_PATH" ] && echo "ERROR: Cannot locate active PRD (set HOLOCRON_MEMORY_DIR)" && exit 1
 echo "PRD: $PRD_PATH"
 ```
 
@@ -92,27 +96,33 @@ with open(prd_path) as f:
             prog = line.split(':', 1)[1].strip()
             if '/' in prog: criteria_count = int(prog.split('/')[1])
 
-# --- Parse verify output for actual pass/fail counts ---
+import re
+
+# --- Parse pass/fail counts from the PRD ## Verification section ---
+# This works for both chain and direct-invocation modes because all
+# phase agents write their evidence directly into the PRD.
 criteria_passed = 0
 criteria_failed = 0
-verify_path = os.path.join(os.path.dirname(prd_path), '..', 'verify-output.md')  # chain dir
-verify_path = os.path.normpath(verify_path)
 try:
-    with open(verify_path) as vf:
-        for vline in vf:
-            import re
-            m = re.search(r'PASS:\s*(\d+)', vline, re.IGNORECASE)
-            if m: criteria_passed = int(m.group(1))
-            m = re.search(r'FAIL:\s*(\d+)', vline, re.IGNORECASE)
-            if m: criteria_failed += int(m.group(1))
-            m = re.search(r'PARTIAL:\s*(\d+)', vline, re.IGNORECASE)
-            if m: criteria_failed += int(m.group(1))
+    with open(prd_path) as pf:
+        in_verify = False
+        for vline in pf:
+            if vline.strip().startswith('## Verification'): in_verify = True; continue
+            if in_verify and vline.startswith('## '): break
+            if in_verify:
+                m = re.search(r'PASS[:\s]+(\d+)', vline, re.IGNORECASE)
+                if m: criteria_passed = int(m.group(1))
+                m = re.search(r'FAIL[:\s]+(\d+)', vline, re.IGNORECASE)
+                if m: criteria_failed += int(m.group(1))
+                m = re.search(r'PARTIAL[:\s]+(\d+)', vline, re.IGNORECASE)
+                if m: criteria_failed += int(m.group(1))
 except FileNotFoundError:
-    pass  # verify-output.md may not exist; leave counts at 0
+    pass
 
-# --- Derive agents_invoked from chain outputs that actually exist ---
-# Only list agents whose output files are present (proof they actually ran).
-chain_dir = os.path.dirname(verify_path)  # reuse the resolved dir
+# --- Derive agents_invoked ---
+# Chain mode: check which phase output files exist in {chain_dir}.
+# Direct mode: fall back to the standard algorithm agent list.
+chain_dir_path = os.path.normpath(os.path.join(os.environ.get('chain_dir', ''), '.'))
 agent_outputs = [
     ('algorithm-observe',  'observe-output.md'),
     ('algorithm-think',    'think-output.md'),
@@ -120,12 +130,15 @@ agent_outputs = [
     ('algorithm-build',    'build-output.md'),
     ('algorithm-execute',  'execute-output.md'),
     ('algorithm-verify',   'verify-output.md'),
-    ('algorithm-learn',    None),   # this agent itself — always include
-    ('algorithm-summarize','summary-output.md'),
+    ('algorithm-learn',    None),
 ]
-agents_invoked = [
+chain_agents = [
     name for name, outfile in agent_outputs
-    if outfile is None or os.path.exists(os.path.join(chain_dir, outfile))
+    if outfile is None or os.path.exists(os.path.join(chain_dir_path, outfile))
+]
+# In direct-invocation mode no output files exist — default to full standard set
+agents_invoked = chain_agents if len(chain_agents) > 1 else [
+    name for name, _ in agent_outputs
 ]
 
 # --- The three reflection answers must be written above (Step 3) BEFORE

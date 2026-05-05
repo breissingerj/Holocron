@@ -1,19 +1,16 @@
 ---
-description: Run the full 7-phase Holocron Algorithm (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN)
+description: Run the Holocron Algorithm — OBSERVE inline, then dispatch specialist subagents for each phase (with optional parallelism for independent workstreams)
 ---
 <!--
-  This file is the INLINE / FALLBACK algorithm prompt used when the cross-agent extension
-  surfaces it as a slash command from .claude/commands/. It runs in the current session.
+  OBSERVE runs inline in the main session.
+  All subsequent phases (THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN)
+  are dispatched as subagents via the `subagent` tool.
 
-  The CANONICAL pipeline is the pi-subagents chain at pi/agents/algorithm.chain.md,
-  invoked via: /run-chain algorithm -- <task>
-  That chain isolates each phase in its own subagent with structured output files.
-
-  Use this file when you need a quick single-session run without the chain overhead,
-  or when pi-subagents is unavailable.
+  The main session synthesizes results automatically via slash-synthesis.ts.
+  Use this command from any AI coding agent (pi, Claude Code, etc.).
 -->
 
-## The Algorithm 3.7.0 (Pi)
+## The Algorithm 3.8.0 (Dynamic Orchestration)
 
 Core: transition from CURRENT STATE to IDEAL STATE using verifiable criteria (ISC). Goal: **Euphoric Surprise** — 9-10 ratings.
 
@@ -27,270 +24,225 @@ Core: transition from CURRENT STATE to IDEAL STATE using verifiable criteria (IS
 | **Deep** | <32min | 40-80 | 6-10 | Complex design |
 | **Comprehensive** | <120min | 64-150 | 8-15 | No time pressure |
 
-**Min Capabilities** = minimum number of distinct capabilities to **actually invoke** during execution. "Invoke" means ONE thing: a real action — reading and following a skill's SKILL.md, delegating to a subagent, or using a tool. Writing text that resembles a skill's output is NOT invocation. Listing a capability but never acting on it is a **CRITICAL FAILURE** — worse than not listing it, because it's dishonest. When in doubt, invoke MORE capabilities not fewer.
+**Min Capabilities** = minimum number of distinct capabilities to **actually invoke**. Listing without acting is a **CRITICAL FAILURE**.
 
-### Time Budget per Phase
-
-TIME CHECK at every phase — if elapsed >150% of budget, auto-compress.
-
-### Voice Announcements
-
-At Algorithm entry and every phase transition, announce via the voice script (not background):
+### Voice
 
 ```bash
 bash ~/.pi/agent/scripts/voice.sh "MESSAGE"
 ```
-
-**Algorithm entry:** `"Entering the Algorithm"` — immediately before OBSERVE begins.
-**Phase transitions:** `"Entering the PHASE_NAME phase."` — as the first action at each phase, before the PRD edit.
-
-These are direct, synchronous calls. Do not send to background.
-
-**CRITICAL: Only the primary agent may execute voice calls.** Subagents must NEVER make voice calls. Voice is exclusively for the main conversation agent.
+**Algorithm entry:** `"Entering the Algorithm"` — before OBSERVE.
+**Phase transitions (inline phases only):** `"Entering the PHASE_NAME phase."` — first action at each inline phase.
+**Subagent phases:** voice is suppressed inside subagents automatically.
 
 ### PRD as System of Record
 
-**The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `$HOLOCRON_MEMORY_DIR/WORK/{slug}/` is the single source of truth.
+PRD.md lives at `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md`. It is the shared context — every subagent reads and writes to it. The main agent creates it in OBSERVE and owns the path.
 
-**What the AI writes directly:**
-- YAML frontmatter (task, slug, effort, phase, progress, mode, started, updated; optional: iteration)
-- All prose sections (Context, Criteria, Decisions, Verification)
-- Criteria checkboxes (`- [ ] ISC-1: text` and `- [x] ISC-1: text`)
-- Progress counter in frontmatter (`progress: 3/8`)
-- Phase transitions in frontmatter (`phase: execute`)
+- Frontmatter: `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated`
+- Body: `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`
+- Criteria: `- [ ] ISC-1: text` (unchecked) / `- [x] ISC-1: text` (done)
+- Progress: `progress: 3/8` — updated as criteria are satisfied
 
-**Every criterion must be ATOMIC** — one verifiable end-state per criterion, 8-12 words, binary testable.
+### ISC Decomposition (Splitting Test)
 
-**Anti-criteria** (ISC-A prefix): what must NOT happen.
+Every criterion = one atomic verifiable thing. Apply before finalizing:
 
-### ISC Decomposition Methodology
+1. **"And" test** — contains "and" joining two verifiable things → split
+2. **Independent failure test** — can A pass while B fails? → two criteria
+3. **Scope word test** — "all", "every", "complete" → enumerate what "all" means
+4. **Domain boundary test** — crosses UI/API/data/logic → one criterion per boundary
 
-**The core principle: each ISC criterion = one atomic verifiable thing.** If a criterion can fail in two independent ways, it's two criteria.
+---
 
-**The Splitting Test — apply to EVERY criterion before finalizing:**
-
-1. **"And" / "With" test**: If it contains "and", "with", "including", or "plus" joining two verifiable things → split
-2. **Independent failure test**: Can part A pass while part B fails? → they're separate criteria
-3. **Scope word test**: "All", "every", "complete", "full" → enumerate what "all" means
-4. **Domain boundary test**: Does it cross UI/API/data/logic boundaries? → one criterion per boundary
-
-### Execution of The Algorithm
-
-**ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
+━━━ 👁️ OBSERVE ━━━ (inline — main agent)
 
 **Voice:** `bash ~/.pi/agent/scripts/voice.sh "Entering the Algorithm"`
 
-**Console output at Algorithm entry (MANDATORY):**
+**Console output (MANDATORY):**
 ```
-♻︎ Entering the ALGORITHM… (v3.7.0) ═════════════
+♻︎ Entering the ALGORITHM… (v3.8.0) ═════════════
 🗒️ TASK: [8 word description]
 ```
 
-**Console output at each phase transition (MANDATORY):** Output the phase header line as the FIRST thing at each phase, before voice and PRD edit.
-
-**PRD stub (MANDATORY — immediately after voice):**
-Evaluate `$HOLOCRON_MEMORY_DIR` to an absolute path first (`echo $HOLOCRON_MEMORY_DIR` in bash), then:
-1. `mkdir -p $HOLOCRON_MEMORY_DIR/WORK/{slug}/` (slug: `YYYYMMDD-HHMMSS_kebab-task-description`)
-2. Write `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md` with frontmatter only:
-```yaml
----
-task: [8 word description]
-slug: [the slug]
-effort: standard
-phase: observe
-progress: 0/0
-mode: interactive
-started: [ISO timestamp]
-updated: [ISO timestamp]
----
+**PRD stub (MANDATORY):** Evaluate `$HOLOCRON_MEMORY_DIR` absolutely first, then:
+```bash
+WORK_DIR=$(echo $HOLOCRON_MEMORY_DIR)/WORK/YYYYMMDD-HHMMSS_kebab-slug
+mkdir -p "$WORK_DIR"
+# Write PRD.md with frontmatter only (effort/phase/progress to be filled next)
 ```
 
-━━━ 👁️ OBSERVE ━━━ 1/7
+**OBSERVE work:**
 
-**FIRST ACTION:** Voice announce `"Entering the Observe phase."`, then Edit PRD frontmatter `updated: {timestamp}`. Then thinking-only; tool calls only for context recovery (read/search ≤34s).
-
-- **Prioritize Official Specs**: Check official docs (via fetch) and type definitions before guessing API contracts.
-- **Check Conventions**: Read convention files (`AGENTS.md`, `CHANGELOG.md`) before assuming testing or structural formats.
-- **Front-Load Scripted Discovery**: Run a comprehensive grep sweep or targeted script to map the problem space upfront.
-
-- REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
+- REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted
 
 OUTPUT:
-
+```
 🔎 REVERSE ENGINEERING:
- 🔎 [What did they explicitly say they wanted (multiple, granular, one per line)?]
- 🔎 [What did they explicitly say they didn't want (multiple, granular, one per line)?]
- 🔎 [What is obvious they don't want that they didn't say (multiple, granular, one per line)?]
- 🔎 [How fast do they want the result (a factor in EFFORT LEVEL)?]
+ 🔎 [Explicit wants — multiple, granular, one per line]
+ 🔎 [Explicit not-wanted]
+ 🔎 [Implied not-wanted]
+ 🔎 [Desired speed — factor in EFFORT LEVEL]
+```
 
 - EFFORT LEVEL:
 
 OUTPUT:
+```
+💪🏼 EFFORT LEVEL: [TIER] | [8 word reasoning]
+```
 
-💪🏼 EFFORT LEVEL: [EFFORT LEVEL] | [8 word reasoning]
+- ISC CRITERIA GENERATION — write into PRD:
+  - Set `effort`, add `## Context`, `## Criteria`, `## Decisions`, `## Verification`
+  - Add criteria as checkboxes. Apply the Splitting Test to every criterion.
+  - Set `progress: 0/N`
 
-- IDEAL STATE Criteria Generation — write directly into PRD:
-  - Edit stub PRD.md to add full content: update `effort`, add sections (Context, Criteria, Decisions, Verification)
-  - Add criteria as `- [ ] ISC-1: criterion text` checkboxes in `## Criteria`
-  - **Apply the Splitting Test** to every criterion before writing
-  - Set frontmatter `progress: 0/N` where N = total criteria count
-  - **WRITE TO PRD (MANDATORY):** Write context into `## Context` describing what this task is and why it matters
-
-OUTPUT:
-
-[Show the ISC criteria list from the PRD]
+OUTPUT: `[Show ISC criteria list]`
 
 **ISC COUNT GATE (MANDATORY):**
 
-| Tier | Floor | If below floor... |
-|------|-------|-------------------|
-| Standard | 8 | Decompose further using Splitting Test |
-| Extended | 16 | Decompose further — you almost certainly have compound criteria |
-| Advanced | 24 | Decompose by domain boundaries, enumerate "all" scopes |
-| Deep | 40 | Full domain decomposition + edge cases + error states |
-| Comprehensive | 64 | Every independently verifiable sub-requirement gets its own ISC |
+| Tier | Floor | Action if below |
+|------|-------|-----------------|
+| Standard | 8 | Decompose further |
+| Extended | 16 | Almost certainly compound criteria |
+| Advanced | 24 | Decompose by domain boundaries |
+| Deep | 40 | Full decomposition + edge cases |
+| Comprehensive | 64 | Every sub-requirement gets its own ISC |
 
-**If ISC count < floor: DO NOT proceed.** Re-read each criterion, apply the Splitting Test, decompose, rewrite, recount.
+If ISC count < floor: **DO NOT proceed.** Decompose and recount.
 
-- CAPABILITY SELECTION (CRITICAL, MANDATORY):
+- CAPABILITY SELECTION:
 
-Select from the skills listing AND the platform capabilities below. Use as many perfectly selected capabilities as you can while staying within the effort SLA.
-
-**INVOCATION OBLIGATION: Selecting a capability creates a binding commitment to use it.** Every selected capability MUST be invoked during BUILD or EXECUTE. Selecting without acting is **dishonest**.
-
-PLATFORM CAPABILITIES (consider alongside skills):
-
-| Capability | When to Select | How to Invoke |
-|------------|---------------|---------------|
-| **research-orchestrator** | Multi-source research, competitive analysis, deep investigation | Subagent tool — delegates to gemini/openai/perplexity researchers in parallel |
-| **gemini-researcher** | Single deep web research pass via Gemini | Subagent tool with agent: gemini-researcher |
-| **openai-researcher** | Single deep web research pass via OpenAI | Subagent tool with agent: openai-researcher |
-| **perplexity-researcher** | Real-time web search with citations | Subagent tool with agent: perplexity-researcher |
-| **Bash** | Run tests, builds, linters, git commands, scripts | Bash tool — full shell access |
-| **Read/Write/Edit** | File manipulation, code changes | Read/Write/Edit tools — always available |
-| **Skills** | Domain-specific workflows (Research, Security, Thinking, Telos, etc.) | Read skill's SKILL.md first, then follow its workflow; skills at `~/.pi/agent/skills/` |
-| **Subagent (parallel)** | Multiple independent workstreams, competing research hypotheses | Subagent tool called multiple times in one message — each runs concurrently |
-
-- **Parallelize aggressively** — invoke multiple subagents in a single message for independent research or parallel exploration.
-- **Use skills** for any domain-specific workflow — check `~/.pi/agent/skills/` before building logic inline.
-- **Batch reads** — maximize parallelization in OBSERVE; batch independent file reads and tool calls together.
+| Capability | When | How to Invoke |
+|------------|------|---------------|
+| **algorithm-think** | Always | subagent tool |
+| **algorithm-plan** | Standard+ effort, multi-step changes | subagent tool |
+| **algorithm-build** | Preparation / context gathering | subagent tool (parallel if workstreams) |
+| **algorithm-execute** | File edits, implementation | subagent tool (parallel if workstreams) |
+| **algorithm-verify** | Standard+ effort | subagent tool |
+| **algorithm-learn** | Always | subagent tool (last) |
+| **research-orchestrator** | Multi-source research | subagent tool |
+| **Skills** | Domain workflows | Read SKILL.md first |
 
 OUTPUT:
-
+```
 🏹 CAPABILITIES SELECTED:
- 🏹 [List each selected CAPABILITY, which Algorithm phase it will be invoked in, and an 8-word reason]
+ 🏹 [capability] — [phase] — [8-word reason]
 
-🏹 CAPABILITY RATIONALE:
- 🏹 [12-24 words on why only those CAPABILITIES were selected]
-
-- If any CAPABILITIES were selected for OBSERVE, execute them now and update the ISC in the PRD with results
-
-━━━ 🧠 THINK ━━━ 2/7
-
-**FIRST ACTION:** Voice announce `"Entering the Think phase."`, then Edit PRD frontmatter `phase: think, updated: {timestamp}`. Pressure test and enhance the ISC:
-
-OUTPUT:
-
-🧠 RISKIEST ASSUMPTIONS: [2-12 riskiest assumptions.]
-🧠 PREMORTEM: [2-12 ways the current approach could fail.]
-🧠 PREREQUISITES CHECK: [Prerequisites that may be missing.]
-
-- **ISC REFINEMENT:** Re-read every criterion through the Splitting Test. Are any still compound? Split them. Did the premortem reveal uncovered failure modes? Add criteria for them. Update the PRD.
-- **WRITE TO PRD (MANDATORY):** Edit `## Context` directly, adding risks under a `### Risks` subsection.
-
-━━━ 📋 PLAN ━━━ 3/7
-
-**FIRST ACTION:** Voice announce `"Entering the Plan phase."`, then Edit PRD frontmatter `phase: plan, updated: {timestamp}`.
-
-OUTPUT:
-
-📐 PLANNING:
-
-[Prerequisite validation. Update ISC in PRD if necessary. Reanalyze CAPABILITIES.]
-
-- **Pre-flight Checks**: Check existing test coverage and target environment state before executing edits.
-- **Pre-compute Diffs & Dependencies**: For multi-file refactors, script a dry-run diff or dependency tree before executing.
-- **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context`.
-
-━━━ 🔨 BUILD ━━━ 4/7
-
-**FIRST ACTION:** Voice announce `"Entering the Build phase."`, then Edit PRD frontmatter `phase: build, updated: {timestamp}`. **INVOKE each selected capability.** Every skill: read its SKILL.md and follow the workflow. Every subagent delegation: actually delegate. There is NO text-only alternative.
-
-- Any preparation required before execution.
-- **WRITE TO PRD:** When making non-obvious decisions, edit `## Decisions` directly.
-
-━━━ ⚡ EXECUTE ━━━ 5/7
-
-**FIRST ACTION:** Voice announce `"Entering the Execute phase."`, then Edit PRD frontmatter `phase: execute, updated: {timestamp}`. Perform the work.
-
-- Execute the work.
-- **Code Modification Strategy:** For complex TypeScript/JavaScript, prefer AST-aware approaches over regex/string replacement.
-- As each criterion is satisfied, IMMEDIATELY edit the PRD: change `- [ ]` to `- [x]`, update frontmatter `progress:`. Do NOT wait for VERIFY.
-
-━━━ ✅ VERIFY ━━━ 6/7
-
-**FIRST ACTION:** Voice announce `"Entering the Verify phase."`, then Edit PRD frontmatter `phase: verify, updated: {timestamp}`.
-
-OUTPUT:
-
-✅ VERIFICATION:
-
-- For EACH ISC criterion, test that it's actually complete.
-- For each criterion, edit PRD: mark `- [x]` if not already, add evidence to `## Verification`.
-- **Capability invocation check:** For EACH capability selected in OBSERVE, confirm it was actually invoked. Text output alone does NOT count.
-
-**🔍 CONFIDENCE CHECK (Extended+ effort, MANDATORY):**
-
-```
-🔍 CONFIDENCE CHECK:
-- Hardest decision: [The trickiest call — where it could have gone differently]
-- Rejected alternatives: [What was considered and why it lost]
-- Least confident: [What part to look at most closely]
+🏹 CAPABILITY RATIONALE: [12-24 words]
 ```
 
-━━━ 📚 LEARN ━━━ 7/7
+- Execute any OBSERVE-phase capabilities now. Update ISC if findings require it.
 
-**FIRST ACTION:** Voice announce `"Entering the Learn phase."`, then Edit PRD frontmatter `phase: learn, updated: {timestamp}`. After reflection, set `phase: complete`.
+---
+
+━━━ 🎯 ORCHESTRATION PLAN ━━━ (inline — main agent)
+
+After OBSERVE, output your dispatch plan before calling any subagents.
+
+**Route selection:**
+
+| Route | Phases | Use when |
+|-------|--------|----------|
+| **CREATIVE** | Think → Build | Pure generation (text, prompts, docs) — no verification needed |
+| **STANDARD** | Think → Plan → Execute → Verify | Single focused change, ≤3 files |
+| **FULL** | Think → Plan → Build → Execute → Verify | Multi-file implementation, Standard+ |
+| **CUSTOM** | Any subset + parallelism | Task explicitly demands it |
+
+All routes end with **LEARN** (always last).
+
+**Workstream analysis:**
+
+A workstream is a chunk of work that is **fully independent** of another — different files, different domains, no shared edit conflict. If the task has ≥2 independent workstreams, dispatch parallel subagents for BUILD and/or EXECUTE.
+
+Examples of parallel workstreams:
+- Code changes to `src/` + prompt engineering in `agents/` → parallel `algorithm-build` agents
+- Backend API changes + frontend UI changes → parallel `algorithm-execute` agents
+- Research subtask A + research subtask B → parallel researcher agents
 
 OUTPUT:
-
-🧠 LEARNING:
-
- [🧠 What should I have done differently in the execution of the algorithm?]
- [🧠 What would a smarter algorithm have done instead?]
- [🧠 What capabilities should I have used that I didn't?]
- [🧠 What would a smarter AI have designed as a better algorithm for this task?]
-
-- **WRITE TO PRD (MANDATORY):** Set frontmatter `phase: complete`.
-
-- **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** Evaluate `$HOLOCRON_MEMORY_DIR` absolute path, then:
-
-```bash
-echo '{"timestamp":"[ISO-8601]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug]","implied_sentiment":[1-10],"agents_invoked":["agent names used"],"reflection_q1":"[Q1]","reflection_q2":"[Q2]","reflection_q3":"[Q3]","within_budget":[true/false]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+```
+🎯 ORCHESTRATION PLAN:
+  Route: [ROUTE] — [8 word rationale]
+  Workstreams: [1 — single | N — describe each]
+  Dispatch sequence:
+    1. [agent(s)] [parallel? Y/N] — [task summary]
+    2. [agent(s)] ...
+    ...
+    N. algorithm-learn — reflection + JSONL
 ```
 
-`work_type` valid values: `feature`, `system_improvement`, `research`, `debugging`.
+---
+
+━━━ 🚀 DISPATCH ━━━ (inline — main agent calls subagents)
+
+Call subagents via the `subagent` tool. **Do not execute THINK, PLAN, BUILD, EXECUTE, VERIFY, or LEARN phases inline.**
+
+**PRD_PATH propagation:** The subagents auto-discover the active PRD via `$HOLOCRON_MEMORY_DIR/WORK/` (most recently modified). Since OBSERVE just created it, they will find it. No explicit passing needed.
+
+**Sequential phases** — one at a time, await each before calling the next:
+```
+subagent(agent: "algorithm-think")
+# await result
+subagent(agent: "algorithm-plan")
+# await result
+```
+
+**Parallel workstreams** — call multiple subagents IN THE SAME MESSAGE for concurrent execution:
+```
+# Both fire simultaneously — do this when workstreams are independent
+subagent(agent: "algorithm-build", task: "Workstream A: [description]")
+subagent(agent: "algorithm-build", task: "Workstream B: [description]")
+# await both results before proceeding
+```
+
+**Workstream task format** — when splitting BUILD/EXECUTE across multiple agents, prefix each task with the workstream scope:
+```
+"Workstream A (src/api/): implement new endpoint handler"
+"Workstream B (agents/): update algorithm-observe.md with new capability"
+```
+
+**Standard dispatch sequence:**
+1. `algorithm-think` (sequential)
+2. `algorithm-plan` (sequential, skip for CREATIVE route)
+3. `algorithm-build` × N (parallel if N > 1, skip for STANDARD/CREATIVE)
+4. `algorithm-execute` × N (parallel if N > 1)
+5. `algorithm-verify` (sequential, skip for CREATIVE route)
+6. `algorithm-learn` (always last, sequential)
+
+After all subagents complete, the main session synthesizes via `slash-synthesis.ts` automatically.
+
+---
+
+### Phase Agent Reference
+
+Brief summary of what each subagent does (for task composition):
+
+| Agent | Role | Reads | Writes |
+|-------|------|-------|--------|
+| `algorithm-think` | Premortem, ISC refinement, risk analysis | PRD | PRD (risks section) |
+| `algorithm-plan` | Prerequisites, dependency-ordered plan | PRD | PRD (plan section) |
+| `algorithm-build` | Invoke capabilities, gather context, prep work | PRD | PRD (decisions), any prep files |
+| `algorithm-execute` | File edits, implementation, mark ISC done | PRD, plan | PRD (criteria ✓, progress) |
+| `algorithm-verify` | Independent test of each ISC criterion | PRD | PRD (verification section) |
+| `algorithm-learn` | Reflection, JSONL write, mark PRD complete | PRD | PRD (`phase: complete`), REFLECTIONS JSONL |
 
 ---
 
 ### Critical Rules (Zero Exceptions)
 
-- **Mandatory output format** — Every response MUST use exactly one of the output formats defined in AGENTS.md (ALGORITHM, NATIVE, or MINIMAL). No freeform output.
-- **Response format before questions** — Always complete the current response format output FIRST, then ask questions at the end.
-- **Context compaction at phase transitions** — At each phase boundary (Extended+ effort), if accumulated tool outputs exceed ~60% of working context, self-summarize before proceeding. Preserve: ISC status, key results, next actions. Discard: verbose tool output, intermediate reasoning.
-- **No phantom capabilities** — every selected capability MUST be actually invoked.
-- **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. Always use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR`.
-- **ISC Count Gate is mandatory** — Cannot exit OBSERVE below tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64).
+- **OBSERVE is inline, everything else is a subagent** — Do not execute THINK through LEARN in the main session.
+- **No phantom capabilities** — every selected capability MUST be invoked.
+- **PRD is shared state** — all subagents read/write the same PRD. Never write session files to the current project directory.
+- **Parallel = same message** — to run two subagents concurrently, call both in the same response turn.
+- **Sequential = await** — call, await the result, then call the next. Do not fire VERIFY before EXECUTE completes.
+- **LEARN is always last** — never skip it; it captures the reflection JSONL.
+- **ISC Count Gate is mandatory** — cannot exit OBSERVE below tier floor.
 - **Atomic criteria only** — every criterion must pass the Splitting Test.
 
 ### Context Recovery
 
-If you don't know your current phase or criteria status:
-1. Read the most recent PRD from `$HOLOCRON_MEMORY_DIR/WORK/` (by mtime)
-2. PRD frontmatter has phase, progress, effort, mode, task, slug, started, updated
+If you don't know the current phase or criteria status:
+1. Read the most recent PRD: `ls -t $HOLOCRON_MEMORY_DIR/WORK/*/PRD.md | head -1`
+2. PRD frontmatter has phase, progress, effort, task, slug, started, updated
 3. PRD body has criteria checkboxes, decisions, verification evidence
-
-### PRD.md Format
-
-**Frontmatter:** task, slug, effort, phase, progress, mode, started, updated (+ optional: iteration)
-**Body:** `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`

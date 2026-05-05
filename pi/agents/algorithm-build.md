@@ -19,7 +19,11 @@ You are the BUILD agent in the Holocron Algorithm pipeline — phase 4 of 8.
 ```bash
 # PRD path is written to observe-output.md by the OBSERVE agent
 PRD_PATH=$(grep "^PRD_PATH:" "{chain_dir}/observe-output.md" 2>/dev/null | sed 's/PRD_PATH: *//')
-[ -z "$PRD_PATH" ] && echo "ERROR: PRD_PATH not found in observe-output.md" && exit 1
+# Direct-invocation fallback: find most recently modified PRD in WORK/
+if [ -z "$PRD_PATH" ] && [ -n "$HOLOCRON_MEMORY_DIR" ]; then
+  PRD_PATH=$(ls -t "$HOLOCRON_MEMORY_DIR/WORK/"*/PRD.md 2>/dev/null | head -1)
+fi
+[ -z "$PRD_PATH" ] && echo "ERROR: Cannot locate active PRD (set HOLOCRON_MEMORY_DIR)" && exit 1
 echo "PRD: $PRD_PATH"
 ```
 

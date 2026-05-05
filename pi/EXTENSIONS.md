@@ -217,8 +217,7 @@ Each agent auto-discovers the active PRD from `$HOLOCRON_MEMORY_DIR` via the `PR
 | `algorithm-execute.md` | EXECUTE (5/8) | Reads PRD + plan, implements the work, reports which ISC criteria were satisfied with evidence |
 | `algorithm-verify.md` | VERIFY (6/8) | Independently tests each ISC criterion (does not trust executor's claims), produces PASS/FAIL table + Confidence Check |
 | `algorithm-learn.md` | LEARN (7/8) | Produces learning reflections, writes JSONL to `LEARNING/REFLECTIONS/`, marks PRD phase complete |
-| `algorithm-summarize.md` | SUMMARIZE (8/8) | Synthesizes a concise session brief from all phase outputs — decisions, verification results, follow-up items |
-| `algorithm.chain.md` | Full chain | Wires all 8 phases in sequence, passing `observe-output.md` path and intermediate outputs between steps |
+| `algorithm.chain.md` | Full chain | Wires all 7 phases in sequence. The main session synthesizes results automatically via `slash-synthesis.ts`. |
 
 **PRD discovery:** OBSERVE creates the PRD and writes `PRD_PATH=<absolute-path>` as the first line of `observe-output.md`. Every downstream agent reads that line to locate the PRD — no path argument needed at any step.
 
