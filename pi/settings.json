@@ -1,0 +1,9 @@
+{
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-6",
+  "defaultThinkingLevel": "medium",
+  "packages": [
+    "npm:pi-subagents"
+  ],
+  "lastChangelogVersion": "0.71.1"
+}

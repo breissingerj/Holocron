@@ -111,6 +111,41 @@ merge_link_skills() {
   fi
 }
 
+# merge_link_chains — links individual *.chain.md files from src into dest.
+# Chains are stored separately from agents; pi-subagents discovers them from
+# ~/.pi/agent/chains/ (getUserChainDir), not from ~/.pi/agent/agents/.
+merge_link_chains() {
+  local src="$1"
+  local dest="$2"
+  local label="$3"
+
+  [[ -d "$src" ]] || return
+
+  if [[ -L "$dest" ]]; then
+    echo "  ✦  $label: converting directory symlink to real directory…"
+    rm "$dest"
+    mkdir -p "$dest"
+  else
+    mkdir -p "$dest"
+  fi
+
+  local linked=0
+  for f in "$src"/*.chain.md; do
+    [[ -e "$f" ]] || continue
+    local fname
+    fname="$(basename "$f")"
+    if [[ -L "$dest/$fname" ]]; then
+      : # already linked — skip silently
+    elif [[ -e "$dest/$fname" ]]; then
+      echo "  ⚠  $label/$fname exists as a real file — skipping"
+    else
+      ln -s "$f" "$dest/$fname"
+      linked=$((linked + 1))
+    fi
+  done
+  echo "  ✓  $label → $dest ($linked linked)"
+}
+
 # merge_link_agents — links individual agent .md files from src into dest.
 # If dest is a directory symlink, it is converted to a real directory first.
 # Supports merging agents from multiple source directories (public + private).
@@ -488,14 +523,45 @@ if [[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]]; then
   done
 fi
 
-# pi/extensions/ → pi extensions (none yet — add subdirs to pi/extensions/ when ready)
-# install.sh will auto-link them into ~/.pi/agent/extensions/ on next run.
+# pi/extensions/ → link each subdir and flat .ts file into ~/.pi/agent/extensions/
+# Subdirs are multi-file extensions; flat .ts files are single-file extensions.
+# Dirs prefixed with _ (e.g. _lib) are internal helpers, not extensions — skip them.
+if [[ -d "$HOLOCRON_DIR/pi/extensions" ]]; then
+  mkdir -p "$PI_DIR/extensions"
+  for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
+    [[ -d "$ext_dir" ]] || continue
+    ext_name="$(basename "$ext_dir")"
+    [[ "$ext_name" == _* ]] && continue
+    link_dir "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
+  done
+  for ext_file in "$HOLOCRON_DIR/pi/extensions"/*.ts; do
+    [[ -f "$ext_file" ]] || continue
+    ext_name="$(basename "$ext_file")"
+    link_file "$ext_file" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
+  done
+fi
 
-# NOTE: ~/.pi/agent/settings.json is user-configured (provider defaults, auth).
-# install.sh intentionally does not create or overwrite it. If you want to wire
-# Holocron resources via settings.json instead of symlinks, see pi.dev settings docs.
-# in pi-mono and add entries manually.
-echo "  ℹ  settings.json left untouched (user-configured)"
+# pi/agents/ → link agent .md files (non-chain) into ~/.pi/agent/agents/
+if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
+  merge_link_agents "$HOLOCRON_DIR/pi/agents" "$PI_DIR/agents" "pi/agents"
+fi
+
+# pi/agents/ → link *.chain.md files into ~/.pi/agent/chains/
+# pi-subagents discovers chains from ~/.pi/agent/chains/ (getUserChainDir),
+# not from agents/. Without this, /run-chain won't show completions for them.
+if [[ -d "$HOLOCRON_DIR/pi/agents" ]]; then
+  merge_link_chains "$HOLOCRON_DIR/pi/agents" "$PI_DIR/chains" "pi/chains"
+fi
+
+# pi/settings.json — prefer private copy from memory repo; fall back to Holocron template.
+# Mirrors the same pattern used for ~/.claude/settings.json.
+if [[ -n "$HOLOCRON_MEMORY_DIR" && -f "$HOLOCRON_MEMORY_DIR/pi-settings.json" ]]; then
+  link_file "$HOLOCRON_MEMORY_DIR/pi-settings.json" "$PI_DIR/settings.json" "pi-settings.json (from memory repo)"
+elif [[ -f "$HOLOCRON_DIR/pi/settings.json" ]]; then
+  link_file "$HOLOCRON_DIR/pi/settings.json" "$PI_DIR/settings.json" "pi/settings.json (template)"
+else
+  echo "  ℹ  settings.json left untouched (no template or memory repo copy found)"
+fi
 
 echo ""
 

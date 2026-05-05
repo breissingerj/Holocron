@@ -1,0 +1,255 @@
+import type { ExtensionAPI, ToolCallEvent } from "@mariozechner/pi-coding-agent";
+import { isToolCallEventType } from "@mariozechner/pi-coding-agent";
+// Minimal inline YAML parser for the damage-control-rules schema.
+// Handles top-level keys with string lists or object lists — no external deps.
+function yamlParse(content: string): Record<string, unknown> {
+	const result: Record<string, unknown> = {};
+	let currentKey: string | null = null;
+	let currentItem: Record<string, unknown> | null = null;
+
+	const stripQ = (s: string) => s.replace(/^(['"])(.*)\1$/, "$2").trim();
+	const toBool = (s: string) => s === "true" ? true : s === "false" ? false : stripQ(s);
+
+	for (const raw of content.split("\n")) {
+		const line = raw.trimEnd();
+		if (!line.trim() || line.trim().startsWith("#")) continue;
+
+		// Top-level key: "bashToolPatterns:"
+		const top = line.match(/^([a-zA-Z]\w*):\s*$/);
+		if (top) { currentKey = top[1]; result[currentKey] = []; currentItem = null; continue; }
+		if (!currentKey) continue;
+		const arr = result[currentKey] as unknown[];
+
+		// List item: "  - value" or "  - key: value"
+		const item = line.match(/^ {2}- (.+)$/);
+		if (item) {
+			const kv = item[1].match(/^([a-zA-Z]\w*):\s*(.*)$/);
+			if (kv) { currentItem = {}; arr.push(currentItem); (currentItem as any)[kv[1]] = toBool(kv[2]); }
+			else { arr.push(stripQ(item[1])); currentItem = null; }
+			continue;
+		}
+
+		// Continuation property: "    key: value"
+		const prop = line.match(/^ {4}([a-zA-Z]\w*):\s*(.*)$/);
+		if (prop && currentItem) (currentItem as any)[prop[1]] = toBool(prop[2]);
+	}
+	return result;
+}
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
+import { applyExtensionDefaults } from "./themeMap.ts";
+
+interface Rule {
+	pattern: string;
+	reason: string;
+	ask?: boolean;
+}
+
+interface Rules {
+	bashToolPatterns: Rule[];
+	zeroAccessPaths: string[];
+	readOnlyPaths: string[];
+	noDeletePaths: string[];
+}
+
+export default function (pi: ExtensionAPI) {
+	// Skip in subagent child processes — rules are enforced in the parent session only.
+	if (process.env["PI_SUBAGENT_CHILD"] === "1") return;
+
+	let rules: Rules = {
+		bashToolPatterns: [],
+		zeroAccessPaths: [],
+		readOnlyPaths: [],
+		noDeletePaths: [],
+	};
+
+	function resolvePath(p: string, cwd: string): string {
+		if (p.startsWith("~")) {
+			p = path.join(os.homedir(), p.slice(1));
+		}
+		return path.resolve(cwd, p);
+	}
+
+	function isPathMatch(targetPath: string, pattern: string, cwd: string): boolean {
+		// Simple glob-to-regex or substring match
+		// Expand tilde in pattern if present
+		const resolvedPattern = pattern.startsWith("~") ? path.join(os.homedir(), pattern.slice(1)) : pattern;
+
+		// If pattern ends with /, it's a directory match
+		if (resolvedPattern.endsWith("/")) {
+			const absolutePattern = path.isAbsolute(resolvedPattern) ? resolvedPattern : path.resolve(cwd, resolvedPattern);
+			return targetPath.startsWith(absolutePattern);
+		}
+
+		// Handle basic wildcards *
+		const regexPattern = resolvedPattern
+			.replace(/[.+^${}()|[\]\\]/g, "\\$&") // escape regex chars
+			.replace(/\*/g, ".*"); // convert * to .*
+
+		const regex = new RegExp(`^${regexPattern}$|^${regexPattern}/|/${regexPattern}$|/${regexPattern}/`);
+
+		// Match against absolute path and relative-to-cwd path.
+		// Intentionally no substring fallback — includes() on short patterns like
+		// "etc" or "lib" would match unrelated paths (e.g. /path/etcetera/file).
+		const relativePath = path.relative(cwd, targetPath);
+
+		return regex.test(targetPath) || regex.test(relativePath);
+	}
+
+	pi.on("session_start", async (_event, ctx) => {
+		applyExtensionDefaults(import.meta.url, ctx);
+		const projectRulesPath = path.join(ctx.cwd, ".pi", "damage-control-rules.yaml");
+		const globalRulesPath = path.join(os.homedir(), ".pi", "damage-control-rules.yaml");
+		const rulesPath = fs.existsSync(projectRulesPath) ? projectRulesPath : fs.existsSync(globalRulesPath) ? globalRulesPath : null;
+		try {
+			if (rulesPath) {
+				const content = fs.readFileSync(rulesPath, "utf8");
+				const loaded = yamlParse(content) as Partial<Rules>;
+				rules = {
+					bashToolPatterns: loaded.bashToolPatterns || [],
+					zeroAccessPaths: loaded.zeroAccessPaths || [],
+					readOnlyPaths: loaded.readOnlyPaths || [],
+					noDeletePaths: loaded.noDeletePaths || [],
+				};
+				const source = rulesPath === projectRulesPath ? "project" : "global";
+				ctx.ui.notify(`🛡️ Damage-Control: Loaded ${rules.bashToolPatterns.length + rules.zeroAccessPaths.length + rules.readOnlyPaths.length + rules.noDeletePaths.length} rules (${source}).`);
+			} else {
+				ctx.ui.notify("🛡️ Damage-Control: No rules found at .pi/damage-control-rules.yaml (project or global)");
+			}
+		} catch (err) {
+			ctx.ui.notify(`🛡️ Damage-Control: Failed to load rules: ${err instanceof Error ? err.message : String(err)}`);
+		}
+
+		ctx.ui.setStatus(`🛡️ Damage-Control Active: ${rules.bashToolPatterns.length + rules.zeroAccessPaths.length + rules.readOnlyPaths.length + rules.noDeletePaths.length} Rules`);
+	});
+
+	pi.on("tool_call", async (event, ctx) => {
+		let violationReason: string | null = null;
+		let shouldAsk = false;
+
+		// 1. Check Zero Access Paths for all tools that use path or glob
+		const checkPaths = (pathsToCheck: string[]) => {
+			for (const p of pathsToCheck) {
+				const resolved = resolvePath(p, ctx.cwd);
+				for (const zap of rules.zeroAccessPaths) {
+					if (isPathMatch(resolved, zap, ctx.cwd)) {
+						return `Access to zero-access path restricted: ${zap}`;
+					}
+				}
+			}
+			return null;
+		};
+
+		// Extract paths from tool input
+		const inputPaths: string[] = [];
+		if (isToolCallEventType("read", event) || isToolCallEventType("write", event) || isToolCallEventType("edit", event)) {
+			inputPaths.push(event.input.path);
+		} else if (isToolCallEventType("grep", event) || isToolCallEventType("find", event) || isToolCallEventType("ls", event)) {
+			inputPaths.push(event.input.path || ".");
+		}
+
+		if (isToolCallEventType("grep", event) && event.input.glob) {
+			// Check glob field as well
+			for (const zap of rules.zeroAccessPaths) {
+				if (event.input.glob.includes(zap) || isPathMatch(event.input.glob, zap, ctx.cwd)) {
+					violationReason = `Glob matches zero-access path: ${zap}`;
+					break;
+				}
+			}
+		}
+
+		if (!violationReason) {
+			violationReason = checkPaths(inputPaths);
+		}
+
+		// 2. Tool-specific logic
+		if (!violationReason) {
+			if (isToolCallEventType("bash", event)) {
+				const command = event.input.command;
+
+				// Check bashToolPatterns
+				for (const rule of rules.bashToolPatterns) {
+					const regex = new RegExp(rule.pattern);
+					if (regex.test(command)) {
+						violationReason = rule.reason;
+						shouldAsk = !!rule.ask;
+						break;
+					}
+				}
+
+				// Check if bash command interacts with restricted paths
+				if (!violationReason) {
+					for (const zap of rules.zeroAccessPaths) {
+						if (command.includes(zap)) {
+							violationReason = `Bash command references zero-access path: ${zap}`;
+							break;
+						}
+					}
+				}
+
+				if (!violationReason) {
+					for (const rop of rules.readOnlyPaths) {
+						// Only flag when the command contains explicit write/redirect indicators.
+						// Checking for plain whitespace produced massive false positives
+						// (any command with spaces + path would be flagged as a write).
+						const writeOp = /[>|]|\btee\b|\btruncate\b|\bsed\s+-i|\bchmod\b|\bchown\b|\binstall\b/.test(command);
+						const rmOp = /\brm\b/.test(command);
+						const mvOp = /\bmv\b/.test(command);
+						if (command.includes(rop) && (writeOp || rmOp || mvOp)) {
+							violationReason = `Bash command may modify read-only path: ${rop}`;
+							break;
+						}
+					}
+				}
+
+				if (!violationReason) {
+					for (const ndp of rules.noDeletePaths) {
+						// Use word-boundary regex to avoid substring matches:
+						// "rm" must not match inside "form", "warm", "performance", etc.
+						const isDelete = /\brm\b/.test(command) || /\bmv\b/.test(command);
+						if (command.includes(ndp) && isDelete) {
+							violationReason = `Bash command attempts to delete/move protected path: ${ndp}`;
+							break;
+						}
+					}
+				}
+			} else if (isToolCallEventType("write", event) || isToolCallEventType("edit", event)) {
+				// Check Read-Only paths
+				for (const p of inputPaths) {
+					const resolved = resolvePath(p, ctx.cwd);
+					for (const rop of rules.readOnlyPaths) {
+						if (isPathMatch(resolved, rop, ctx.cwd)) {
+							violationReason = `Modification of read-only path restricted: ${rop}`;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (violationReason) {
+			if (shouldAsk) {
+				const confirmed = await ctx.ui.confirm("🛡️ Damage-Control Confirmation", `Dangerous command detected: ${violationReason}\n\nCommand: ${isToolCallEventType("bash", event) ? event.input.command : JSON.stringify(event.input)}\n\nDo you want to proceed?`, { timeout: 30000 });
+
+				if (!confirmed) {
+					ctx.ui.setStatus(`⚠️ Last Violation Blocked: ${violationReason.slice(0, 30)}...`);
+					pi.appendEntry("damage-control-log", { tool: event.toolName, input: event.input, rule: violationReason, action: "blocked_by_user" });
+					ctx.abort();
+					return { block: true, reason: `🛑 BLOCKED by Damage-Control: ${violationReason} (User denied)\n\nDO NOT attempt to work around this restriction. DO NOT retry with alternative commands, paths, or approaches that achieve the same result. Report this block to the user exactly as stated and ask how they would like to proceed.` };
+				} else {
+					pi.appendEntry("damage-control-log", { tool: event.toolName, input: event.input, rule: violationReason, action: "confirmed_by_user" });
+					return { block: false };
+				}
+			} else {
+				ctx.ui.notify(`🛑 Damage-Control: Blocked ${event.toolName} due to ${violationReason}`);
+				ctx.ui.setStatus(`⚠️ Last Violation: ${violationReason.slice(0, 30)}...`);
+				pi.appendEntry("damage-control-log", { tool: event.toolName, input: event.input, rule: violationReason, action: "blocked" });
+				ctx.abort();
+				return { block: true, reason: `🛑 BLOCKED by Damage-Control: ${violationReason}\n\nDO NOT attempt to work around this restriction. DO NOT retry with alternative commands, paths, or approaches that achieve the same result. Report this block to the user exactly as stated and ask how they would like to proceed.` };
+			}
+		}
+
+		return { block: false };
+	});
+}
