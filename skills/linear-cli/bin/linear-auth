@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""
+linear-auth — OAuth 2.0 token manager for the Linear GraphQL API.
+
+Usage:
+  linear-auth login              # Run the OAuth web flow (saves tokens to ~/.config/linear/credentials.json)
+  linear-auth status             # Print current auth state
+  linear-auth token              # Print the current valid access token (refreshes if needed)
+  linear-auth refresh            # Force-refresh the access token
+  linear-auth revoke             # Revoke + delete saved tokens
+  linear-auth set-key <key>      # Save a personal API key instead of OAuth tokens
+"""
+
+import sys
+import os
+import json
+import time
+import base64
+import urllib.request
+import urllib.parse
+import urllib.error
+import http.server
+import threading
+import webbrowser
+import secrets
+
+CREDS_FILE = os.path.expanduser("~/.config/linear/credentials.json")
+TOKEN_URL = "https://api.linear.app/oauth/token"
+REVOKE_URL = "https://api.linear.app/oauth/revoke"
+AUTH_URL = "https://linear.app/oauth/authorize"
+REDIRECT_PORT = 3737
+REDIRECT_URI = f"http://localhost:{REDIRECT_PORT}/oauth/callback"
+
+
+def load_creds():
+    if os.path.exists(CREDS_FILE):
+        with open(CREDS_FILE) as f:
+            return json.load(f)
+    return {}
+
+
+def save_creds(creds):
+    os.makedirs(os.path.dirname(CREDS_FILE), mode=0o700, exist_ok=True)
+    with open(CREDS_FILE, "w") as f:
+        json.dump(creds, f, indent=2)
+    os.chmod(CREDS_FILE, 0o600)
+
+
+def post_form(url, params, auth_header=None):
+    body = urllib.parse.urlencode(params).encode()
+    req = urllib.request.Request(url, data=body)
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    if auth_header:
+        req.add_header("Authorization", auth_header)
+    with urllib.request.urlopen(req) as resp:
+        return json.loads(resp.read())
+
+
+def refresh_token(creds):
+    client_id = creds.get("client_id")
+    client_secret = creds.get("client_secret")
+    refresh_tok = creds.get("refresh_token")
+    if not refresh_tok:
+        die("No refresh token stored. Run: linear-auth login")
+    params = {
+        "grant_type": "refresh_token",
+        "refresh_token": refresh_tok,
+    }
+    if client_secret:
+        creds_b64 = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+        data = post_form(TOKEN_URL, params, auth_header=f"Basic {creds_b64}")
+    else:
+        params["client_id"] = client_id
+        data = post_form(TOKEN_URL, params)
+    creds["access_token"] = data["access_token"]
+    creds["refresh_token"] = data.get("refresh_token", refresh_tok)
+    creds["expires_at"] = int(time.time()) + data.get("expires_in", 86399)
+    save_creds(creds)
+    return creds["access_token"]
+
+
+def get_valid_token():
+    creds = load_creds()
+    if not creds:
+        die("Not authenticated. Run: linear-auth login  (or: linear-auth set-key <key>)")
+    # Personal API key — no expiry
+    if "api_key" in creds:
+        return creds["api_key"]
+    if "access_token" not in creds:
+        die("No access token. Run: linear-auth login")
+    expires_at = creds.get("expires_at", 0)
+    # Refresh if within 5 minutes of expiry
+    if time.time() >= expires_at - 300:
+        return refresh_token(creds)
+    return creds["access_token"]
+
+
+def die(msg):
+    print(f"ERROR: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+# ── Commands ────────────────────────────────────────────────────────────────
+
+def cmd_login():
+    client_id = os.environ.get("LINEAR_CLIENT_ID") or input("OAuth Client ID: ").strip()
+    client_secret = os.environ.get("LINEAR_CLIENT_SECRET") or input("OAuth Client Secret: ").strip()
+    if not client_id or not client_secret:
+        die("CLIENT_ID and CLIENT_SECRET are required.")
+
+    state = secrets.token_urlsafe(24)
+    scope = "read,write,issues:create,comments:create"
+
+    auth_params = {
+        "response_type": "code",
+        "client_id": client_id,
+        "redirect_uri": REDIRECT_URI,
+        "state": state,
+        "scope": scope,
+    }
+    url = f"{AUTH_URL}?{urllib.parse.urlencode(auth_params)}"
+
+    # Tiny local HTTP server to capture the redirect
+    code_holder = {}
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def do_GET(self):
+            parsed = urllib.parse.urlparse(self.path)
+            qs = urllib.parse.parse_qs(parsed.query)
+            if qs.get("state", [None])[0] != state:
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b"State mismatch - possible CSRF.")
+                return
+            code_holder["code"] = qs.get("code", [None])[0]
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"<h2>linear-auth: Authorization complete. You may close this tab.</h2>")
+            threading.Thread(target=self.server.shutdown, daemon=True).start()
+
+    server = http.server.HTTPServer(("localhost", REDIRECT_PORT), Handler)
+    print(f"Opening browser for OAuth…\n  {url}")
+    webbrowser.open(url)
+    server.serve_forever()
+
+    code = code_holder.get("code")
+    if not code:
+        die("No code received from Linear.")
+
+    # Exchange code for tokens
+    creds_b64 = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+    data = post_form(TOKEN_URL, {
+        "code": code,
+        "redirect_uri": REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }, auth_header=f"Basic {creds_b64}")
+
+    creds = {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "access_token": data["access_token"],
+        "refresh_token": data.get("refresh_token"),
+        "expires_at": int(time.time()) + data.get("expires_in", 86399),
+        "scope": data.get("scope", scope),
+        "token_type": data.get("token_type", "Bearer"),
+    }
+    save_creds(creds)
+    print(f"✓ Authenticated. Tokens saved to {CREDS_FILE}")
+    print(f"  Scope: {creds['scope']}")
+
+
+def cmd_status():
+    creds = load_creds()
+    if not creds:
+        print("Not authenticated.")
+        return
+    if "api_key" in creds:
+        key = creds["api_key"]
+        print(f"Auth type : personal API key")
+        print(f"Key       : {key[:8]}…{key[-4:]}")
+        return
+    expires_at = creds.get("expires_at", 0)
+    remaining = expires_at - time.time()
+    status = "EXPIRED" if remaining <= 0 else f"expires in {int(remaining//60)}m"
+    print(f"Auth type : OAuth2")
+    print(f"Client ID : {creds.get('client_id', '?')}")
+    print(f"Scope     : {creds.get('scope', '?')}")
+    print(f"Token     : {status}")
+    print(f"Refresh   : {'present' if creds.get('refresh_token') else 'missing'}")
+
+
+def cmd_token():
+    print(get_valid_token())
+
+
+def cmd_refresh():
+    creds = load_creds()
+    if "api_key" in creds:
+        die("Personal API keys don't expire — nothing to refresh.")
+    tok = refresh_token(creds)
+    print(f"✓ Refreshed. New access token: {tok[:12]}…")
+
+
+def cmd_revoke():
+    creds = load_creds()
+    tok = creds.get("access_token") or creds.get("api_key")
+    if tok:
+        try:
+            post_form(REVOKE_URL, {"token": tok, "token_type_hint": "access_token"})
+            print("✓ Token revoked on Linear's servers.")
+        except Exception as e:
+            print(f"Warning: revocation request failed ({e}). Deleting local creds anyway.")
+    if os.path.exists(CREDS_FILE):
+        os.remove(CREDS_FILE)
+        print(f"✓ Deleted {CREDS_FILE}")
+    else:
+        print("No credentials file found.")
+
+
+def cmd_set_key(key):
+    save_creds({"api_key": key})
+    print(f"✓ Personal API key saved to {CREDS_FILE}")
+
+
+# ── Entrypoint ───────────────────────────────────────────────────────────────
+
+COMMANDS = {
+    "login": lambda: cmd_login(),
+    "status": lambda: cmd_status(),
+    "token": lambda: cmd_token(),
+    "refresh": lambda: cmd_refresh(),
+    "revoke": lambda: cmd_revoke(),
+}
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if not args:
+        print(__doc__)
+        sys.exit(0)
+    cmd = args[0]
+    if cmd == "set-key":
+        if len(args) < 2:
+            die("Usage: linear-auth set-key <api-key>")
+        cmd_set_key(args[1])
+    elif cmd in COMMANDS:
+        COMMANDS[cmd]()
+    else:
+        die(f"Unknown command: {cmd}\nRun linear-auth --help for usage.")
