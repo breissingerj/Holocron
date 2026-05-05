@@ -52,6 +52,42 @@ Aligns with Holocron's ISC principle (verifiable criteria before executing) and 
 
 ---
 
+### subagent-progress
+
+| Field | Value |
+|-------|-------|
+| **File** | `pi/extensions/subagent-progress.ts` |
+| **Source** | Holocron original |
+| **License** | MIT |
+| **Authored** | 2026-05-04 |
+
+**What it does:** Live card-grid progress tracker for [pi-subagents](https://www.npmjs.com/package/pi-subagents). Hooks into `tool_execution_start`, `tool_execution_update`, and `tool_execution_end` events and renders a real-time status grid below the editor while any `subagent` tool call is running.
+
+- **Single agent** → one full-width card
+- **Parallel** (`tasks: [...]`) → cards side-by-side
+- **Chain** (`chain: [...]`) → cards left-to-right with `──▶` arrows between steps
+- Multiple concurrent `subagent` calls (LLM parallelizing two chains in one turn) each get their own labelled section stacked vertically
+- Elapsed timer ticks at 500 ms; last work line updates from streaming partial output
+- Chain step transitions detected from pi-subagents' compact progress text patterns (`done X → running Y`, `✓ X`)
+- Completed runs linger 8 s then auto-clear
+
+**Card layout (5 lines):**
+```
+┌──────────────────┐
+│ Scout            │   agent name
+│ ● running 1.5s   │   status + elapsed
+│  reading auth.ts │   last work line
+└──────────────────┘
+```
+
+**Commands / shortcuts:**
+- `/subagent-progress` — show / refresh the grid
+- `Ctrl+Shift+G` — toggle grid visibility
+
+**Dependencies:** Requires `pi-subagents` npm package (`npm:pi-subagents` in `pi/settings.json`). Uses `themeMap.ts` for default theme.
+
+---
+
 ### tool-counter
 
 | Field | Value |
