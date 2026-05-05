@@ -482,7 +482,7 @@ for mapping in "${PI_SKILL_MAPPINGS[@]}"; do
 done
 
 # Compliant skills (already lowercase) — link directly
-declare -a PI_COMPLIANT_SKILLS=("acli" "langsmith-cli" "mermaid" "op-1password" "playwright-cli" "volume")
+declare -a PI_COMPLIANT_SKILLS=("acli" "langsmith-cli" "linear-cli" "mermaid" "op-1password" "playwright-cli" "volume")
 for skill in "${PI_COMPLIANT_SKILLS[@]}"; do
   src="$HOLOCRON_DIR/skills/$skill"
   [[ -d "$src" ]] || continue
