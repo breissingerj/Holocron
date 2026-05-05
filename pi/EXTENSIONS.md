@@ -52,6 +52,29 @@ Aligns with Holocron's ISC principle (verifiable criteria before executing) and 
 
 ---
 
+### slash-synthesis
+
+| Field | Value |
+|-------|-------|
+| **File** | `pi/extensions/slash-synthesis.ts` |
+| **Source** | Holocron original |
+| **License** | MIT |
+| **Authored** | 2026-05-05 |
+
+**What it does:** Closes the feedback loop for slash-driven subagent runs.
+
+pi-subagents' slash commands (`/run-chain`, `/run`, `/chain`, `/parallel`) inject their results into the session with `display: true` but *without* `triggerTurn: true`. The chain output lands in context but the main LLM never gets a turn to respond — the session just goes idle.
+
+This extension listens for `subagent:slash:response` and sends a hidden synthesis prompt with `triggerTurn: true` and `deliverAs: "followUp"`, causing the main agent to immediately process the chain results and respond with a synthesis of what was accomplished, key findings, and next actions.
+
+**Toggle:**
+- `/synthesis-on` — enable (default)
+- `/synthesis-off` — disable (results land in context silently)
+
+**Note:** When the main LLM itself calls the `subagent` tool, synthesis happens automatically (the tool result is processed in the normal turn). This extension is only needed for the slash-command path.
+
+---
+
 ### subagent-progress
 
 | Field | Value |
