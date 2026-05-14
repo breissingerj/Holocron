@@ -190,6 +190,51 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 ---
 
+### graphiti-memory
+
+| Field | Value |
+|-------|-------|
+| **Directory** | `pi/extensions/graphiti-memory/` |
+| **Source** | Holocron original |
+| **License** | MIT |
+| **Authored** | 2026-05-14 |
+
+**What it does:** Registers Graphiti temporal knowledge graph tools backed by FalkorDB at `graphiti.breissinger.dev:6379`. The extension calls a `uv run --script` Python CLI (`graphiti_cli.py`) which uses `graphiti-core[falkordb,anthropic]` for entity extraction + OpenAI for embeddings.
+
+**Tools (callable by LLM):**
+- `graphiti_add` — ingest text/message/json episodes into the graph with automatic entity extraction, relationship mapping, and temporal contradiction resolution
+- `graphiti_search` — hybrid BM25 + vector search over stored facts and entity nodes, scoped by group_id
+- `graphiti_status` — ping FalkorDB and report connected graphs
+
+**Commands:**
+- `/graphiti-status` — show connection and graph info
+- `/graphiti-build-indices` — one-time index setup (run after deploying a fresh FalkorDB instance)
+- `/graphiti-migrate` — bulk ingest all `$HOLOCRON_MEMORY_DIR/memory/*.md` files into the graph (slow — LLM per file)
+
+**group_id namespaces:**
+
+| group_id | Contents |
+|---|---|
+| `holocron-user` | Personal preferences, Jack-specific facts |
+| `holocron-lahzo` | Work context, team, repos, architecture |
+| `holocron-projects` | Personal project state |
+| `holocron-system` | Holocron/tooling configuration |
+| `holocron-learning` | Reflections and learned patterns |
+
+**Required env vars:**
+- `ANTHROPIC_API_KEY` — for entity/relationship extraction (claude-3-5-haiku-20241022)
+- `OPENAI_API_KEY` — for embeddings (text-embedding-3-small)
+- `FALKORDB_HOST` — defaults to `graphiti.breissinger.dev`
+- `FALKORDB_PORT` — defaults to `6379`
+
+**First-time setup:**
+```
+/graphiti-build-indices   # creates vector + full-text indices
+/graphiti-migrate         # ingest existing Holocron markdown files
+```
+
+---
+
 ## Agent Pipelines
 
 Custom agent files and chain pipelines stored in `pi/agents/`. Install by copying to `~/.pi/agent/agents/`.
