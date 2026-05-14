@@ -42,20 +42,22 @@ LLM_MODEL         = os.environ.get("GRAPHITI_LLM_MODEL",   "claude-3-5-haiku-202
 EMBED_MODEL       = os.environ.get("GRAPHITI_EMBED_MODEL",  "text-embedding-3-small")
 
 # Group ID → filename keyword map for migration
+# NOTE: group_ids use underscores, not hyphens — FalkorDB RediSearch treats
+# hyphens as negation operators in field filter values, causing syntax errors.
 GROUP_MAP = {
-    "lahzo":       "holocron-lahzo",
-    "promeniq":    "holocron-lahzo",
-    "multiverse":  "holocron-lahzo",
-    "wilkins":     "holocron-lahzo",
-    "analytics":   "holocron-lahzo",
-    "monorepo":    "holocron-lahzo",
-    "prompting":   "holocron-lahzo",
-    "holocron":    "holocron-system",
-    "pai":         "holocron-system",
-    "opencode":    "holocron-system",
-    "notifications": "holocron-system",
-    "user-career": "holocron-user",
-    "reviews":     "holocron-user",
+    "lahzo":       "holocron_lahzo",
+    "promeniq":    "holocron_lahzo",
+    "multiverse":  "holocron_lahzo",
+    "wilkins":     "holocron_lahzo",
+    "analytics":   "holocron_lahzo",
+    "monorepo":    "holocron_lahzo",
+    "prompting":   "holocron_lahzo",
+    "holocron":    "holocron_system",
+    "pai":         "holocron_system",
+    "opencode":    "holocron_system",
+    "notifications": "holocron_system",
+    "user-career": "holocron_user",
+    "reviews":     "holocron_user",
 }
 
 
@@ -159,14 +161,17 @@ async def cmd_search(args) -> dict:
         group_ids = [g.strip() for g in args.groups.split(",")] if getattr(args, "groups", None) else None
         num_results = getattr(args, "num_results", 10) or 10
 
+        # graphiti-core >=0.29 returns a plain list of EntityEdge objects
         results = await g.search(
             query=args.query,
             group_ids=group_ids,
             num_results=num_results,
         )
 
+        edges = results if isinstance(results, list) else getattr(results, 'edges', results)
+
         facts = []
-        for edge in (results.edges or []):
+        for edge in edges:
             facts.append({
                 "fact": edge.fact,
                 "valid_at":   edge.valid_at.isoformat()   if edge.valid_at   else None,
@@ -175,12 +180,6 @@ async def cmd_search(args) -> dict:
             })
 
         nodes = []
-        for node in (results.nodes or []):
-            nodes.append({
-                "name":    node.name,
-                "summary": getattr(node, "summary", None),
-                "uuid":    str(node.uuid),
-            })
 
         return {
             "success":     True,
@@ -220,7 +219,7 @@ async def cmd_migrate(args) -> dict:
                 continue
 
             stem = md_file.stem.lower()
-            group = next((v for k, v in GROUP_MAP.items() if k in stem), "holocron-user")
+            group = next((v for k, v in GROUP_MAP.items() if k in stem), "holocron_user")
             episode_name = f"holocron_{md_file.stem}"
 
             print(f"  → {md_file.name} [{group}]", file=sys.stderr, flush=True)

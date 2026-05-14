@@ -91,10 +91,10 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     promptGuidelines: [
       "Use graphiti_add when the user says 'remember', 'note that', 'save this', or explicitly wants something stored long-term.",
       "Use graphiti_add after discovering important project architecture, team structure, or user preferences worth persisting.",
-      "Use group_id='holocron-user' for personal preferences and Jack-specific facts.",
-      "Use group_id='holocron-lahzo' for Lahzo work context, team members, repo details, and project facts.",
-      "Use group_id='holocron-projects' for active personal project state.",
-      "Use group_id='holocron-system' for Holocron/tooling configuration facts.",
+      "Use group_id='holocron_user' for personal preferences and Jack-specific facts.",
+      "Use group_id='holocron_lahzo' for Lahzo work context, team members, repo details, and project facts.",
+      "Use group_id='holocron_projects' for active personal project state.",
+      "Use group_id='holocron_system' for Holocron/tooling configuration facts.",
     ],
     parameters: Type.Object({
       text: Type.String({
@@ -102,7 +102,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       }),
       group_id: Type.String({
         description:
-          "Namespace: holocron-user | holocron-lahzo | holocron-projects | holocron-system | holocron-learning",
+          "Namespace: holocron_user | holocron_lahzo | holocron_projects | holocron_system | holocron_learning",
       }),
       name: Type.Optional(
         Type.String({ description: "Human-readable episode label (auto-generated if omitted)" })
@@ -157,7 +157,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       group_ids: Type.Optional(
         Type.Array(Type.String(), {
           description:
-            "Scope to specific groups: holocron-user, holocron-lahzo, holocron-projects, holocron-system, holocron-learning. Omit to search all.",
+            "Scope to specific groups: holocron_user, holocron_lahzo, holocron_projects, holocron_system, holocron_learning. Omit to search all.",
         })
       ),
       num_results: Type.Optional(
