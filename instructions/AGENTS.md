@@ -10,6 +10,37 @@ Before doing any work, read and internalize `~/.config/opencode/instructions/ste
 
 ---
 
+## Graphiti Context Priming
+
+Before starting any NATIVE or ALGORITHM mode task, search Graphiti for relevant context using the `graphiti_search` and `graphiti_search_nodes` tools. Do this silently — do not narrate the search or list the raw results. Incorporate what you find directly into your working context.
+
+**When to prime:**
+- ALGORITHM mode: always, before reading algorithm.md
+- NATIVE mode: always, before executing the task
+- MINIMAL mode (greetings, ratings, acks): skip
+
+**What to search:**
+
+Run 1–3 targeted queries scoped to the task. Do not run exhaustive or generic queries.
+
+| Task domain | Suggested query + scope |
+|---|---|
+| Lahzo/work task | task topic → `databases: ["holocron_lahzo"]` |
+| Personal prefs / workflow | relevant preference → `databases: ["holocron_user"]` |
+| Holocron / tooling config | tool or config topic → `databases: ["holocron_system"]` |
+| Personal projects | project name → `databases: ["holocron_projects"]` |
+| Reflection / patterns | pattern or lesson → `databases: ["holocron_learning"]` |
+| Unclear domain | omit `databases` — fan-out search across all graphs |
+
+Use `graphiti_search` (facts/edges) for specific claims, constraints, and past decisions. Use `graphiti_search_nodes` (entity summaries) when you want to understand what an entity _is_ — a person, tool, project, or concept — rather than what happened with it.
+
+**How to use results:**
+- Treat retrieved facts as trusted long-term memory — weight them alongside the current conversation
+- If a retrieved fact contradicts something the user just said, flag the conflict and ask for clarification
+- If nothing relevant is returned, proceed without comment — do not mention that the search was empty
+
+---
+
 ## Execution Modes
 
 Every response uses exactly one mode. **BEFORE ANY WORK**, classify the request and select a mode:
