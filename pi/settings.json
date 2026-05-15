@@ -3,7 +3,8 @@
   "defaultModel": "claude-sonnet-4-6",
   "defaultThinkingLevel": "medium",
   "packages": [
-    "npm:pi-subagents"
+    "npm:pi-subagents",
+    "npm:@juicesharp/rpiv-ask-user-question"
   ],
-  "lastChangelogVersion": "0.71.1"
+  "lastChangelogVersion": "0.74.0"
 }

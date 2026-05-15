@@ -269,7 +269,7 @@ async def cmd_delete_episode(args) -> dict:
     group_id = _group(args)
     g = make_graphiti(group_id)
     try:
-        await g.delete_episode(episode_uuid=args.uuid)
+        await g.remove_episode(episode_uuid=args.uuid)
         return {"success": True, "deleted_uuid": args.uuid, "group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": args.uuid}

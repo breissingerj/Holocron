@@ -23,6 +23,7 @@
 import { StringEnum } from "@mariozechner/pi-ai";
 import type { ExtensionAPI, ExtensionContext, Theme } from "@mariozechner/pi-coding-agent";
 import { DynamicBorder } from "@mariozechner/pi-coding-agent";
+import type { OverlayHandle, TUI } from "@mariozechner/pi-tui";
 import { Container, matchesKey, Text, truncateToWidth, visibleWidth } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
 import { applyExtensionDefaults } from "./themeMap.ts";
@@ -154,6 +155,66 @@ class TillDoneListComponent {
 	}
 }
 
+// ── Sidebar renderer (module-level, closes over mutable task vars via args) ──
+
+function renderSidebarLines(
+	width: number,
+	theme: Theme,
+	tasks: Task[],
+	listTitle: string | undefined,
+	listDescription: string | undefined,
+): string[] {
+	const innerW = Math.max(1, width - 2);
+	const border = (s: string) => theme.fg("borderMuted", s);
+	const padLine = (s: string): string => {
+		const t = truncateToWidth(s, innerW, "");
+		return t + " ".repeat(Math.max(0, innerW - visibleWidth(t)));
+	};
+	const lines: string[] = [];
+
+	const titleStr = listTitle ?? "TillDone";
+	const done = tasks.filter((t) => t.status === "done").length;
+	const total = tasks.length;
+	const progressStr = total > 0 ? theme.fg("dim", ` [${done}/${total}]`) : "";
+
+	lines.push(border("╭" + "─".repeat(innerW) + "╮"));
+	lines.push(
+		border("│") +
+		padLine(theme.fg("accent", " " + titleStr) + progressStr) +
+		border("│"),
+	);
+
+	if (listDescription) {
+		lines.push(border("│") + padLine(theme.fg("muted", " " + listDescription)) + border("│"));
+	}
+
+	lines.push(border("├" + "─".repeat(innerW) + "┤"));
+
+	if (tasks.length === 0) {
+		lines.push(border("│") + padLine(theme.fg("dim", " No tasks")) + border("│"));
+	} else {
+		for (const task of tasks) {
+			const icon =
+				task.status === "done"
+					? theme.fg("success", STATUS_ICON.done)
+					: task.status === "inprogress"
+						? theme.fg("accent", STATUS_ICON.inprogress)
+						: theme.fg("dim", STATUS_ICON.idle);
+			const idStr = theme.fg("dim", `#${task.id}`);
+			const textStr =
+				task.status === "done"
+					? theme.fg("dim", task.text)
+					: task.status === "inprogress"
+						? theme.fg("success", task.text)
+						: theme.fg("muted", task.text);
+			lines.push(border("│") + padLine(` ${icon} ${idStr} ${textStr}`) + border("│"));
+		}
+	}
+
+	lines.push(border("╰" + "─".repeat(innerW) + "╯"));
+	return lines;
+}
+
 // ── Extension entry point ──────────────────────────────────────────────
 
 export default function (pi: ExtensionAPI) {
@@ -165,6 +226,8 @@ export default function (pi: ExtensionAPI) {
 	let listTitle: string | undefined;
 	let listDescription: string | undefined;
 	let nudgedThisCycle = false;
+	let sidebarTui: TUI | null = null;
+	let sidebarHandle: OverlayHandle | null = null;
 
 	// ── Snapshot for details ───────────────────────────────────────────
 
@@ -178,6 +241,41 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	// ── UI refresh ─────────────────────────────────────────────────────
+
+	// ── Sidebar launch (fire-and-forget non-capturing overlay) ───────────
+
+	const launchSidebar = (ctx: ExtensionContext) => {
+		if (!ctx.hasUI) return;
+
+		ctx.ui
+			.custom<void>(
+				(tui, theme, _kb, _done) => {
+					sidebarTui = tui;
+					return {
+						render(width: number): string[] {
+							return renderSidebarLines(width, theme, tasks, listTitle, listDescription);
+						},
+						invalidate() {},
+					};
+				},
+				{
+					overlay: true,
+					overlayOptions: {
+						anchor: "right-center",
+						width: 36,
+						minWidth: 28,
+						margin: { right: 1, top: 1, bottom: 1 },
+						nonCapturing: true,
+						visible: (termWidth) => termWidth >= 100,
+					},
+					onHandle: (handle) => {
+						sidebarHandle = handle;
+						handle.setHidden(tasks.length === 0);
+					},
+				},
+			)
+			.catch(() => {});
+	};
 
 	const refreshWidget = (ctx: ExtensionContext) => {
 		const current = tasks.find((t) => t.status === "inprogress");
@@ -217,75 +315,7 @@ export default function (pi: ExtensionAPI) {
 		}, { placement: "belowEditor" });
 	};
 
-	const refreshFooter = (ctx: ExtensionContext) => {
-		ctx.ui.setFooter((tui, theme, footerData) => {
-			const unsub = footerData.onBranchChange(() => tui.requestRender());
 
-			return {
-				dispose: unsub,
-				invalidate() {},
-				render(width: number): string[] {
-					const done = tasks.filter((t) => t.status === "done").length;
-					const active = tasks.filter((t) => t.status === "inprogress").length;
-					const idle = tasks.filter((t) => t.status === "idle").length;
-					const total = tasks.length;
-
-					// ── Line 1: list title + progress (left), counts (right) ──
-					const titleDisplay = listTitle
-						? theme.fg("accent", ` ${listTitle} `)
-						: theme.fg("dim", " TillDone ");
-
-					const l1Left = total === 0
-						? titleDisplay + theme.fg("muted", "no tasks")
-						: titleDisplay +
-							theme.fg("warning", "[") +
-							theme.fg("success", `${done}`) +
-							theme.fg("dim", "/") +
-							theme.fg("success", `${total}`) +
-							theme.fg("warning", "]");
-
-					const l1Right = total === 0
-						? ""
-						: theme.fg("dim", STATUS_ICON.idle + " ") + theme.fg("muted", `${idle}`) +
-							theme.fg("dim", "  ") +
-							theme.fg("accent", STATUS_ICON.inprogress + " ") + theme.fg("accent", `${active}`) +
-							theme.fg("dim", "  ") +
-							theme.fg("success", STATUS_ICON.done + " ") + theme.fg("success", `${done}`) +
-							theme.fg("dim", " ");
-
-					const pad1 = " ".repeat(Math.max(1, width - visibleWidth(l1Left) - visibleWidth(l1Right)));
-					const line1 = truncateToWidth(l1Left + pad1 + l1Right, width, "");
-
-					if (total === 0) return [line1];
-
-					// ── Rows: inprogress first, then most recent done, max 5 ──
-					const activeTasks = tasks.filter((t) => t.status === "inprogress");
-					const doneTasks = tasks.filter((t) => t.status === "done").reverse();
-					const visible = [...activeTasks, ...doneTasks].slice(0, 5);
-					const remaining = total - visible.length;
-
-					const rows = visible.map((t) => {
-						const icon = t.status === "done"
-							? theme.fg("success", STATUS_ICON.done)
-							: theme.fg("accent", STATUS_ICON.inprogress);
-						const text = t.status === "done"
-							? theme.fg("dim", t.text)
-							: theme.fg("success", t.text);
-						return truncateToWidth(` ${icon} ${text}`, width, "");
-					});
-
-					if (remaining > 0) {
-						rows.push(truncateToWidth(
-							` ${theme.fg("dim", `  +${remaining} more`)}`,
-							width, "",
-						));
-					}
-
-					return [line1, ...rows];
-				},
-			};
-		});
-	};
 
 	const refreshUI = (ctx: ExtensionContext) => {
 		if (tasks.length === 0) {
@@ -297,7 +327,8 @@ export default function (pi: ExtensionAPI) {
 		}
 
 		refreshWidget(ctx);
-		refreshFooter(ctx);
+		sidebarHandle?.setHidden(tasks.length === 0);
+		sidebarTui?.requestRender();
 	};
 
 	// ── State reconstruction from session ──────────────────────────────
@@ -328,6 +359,13 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", async (_event, ctx) => {
 		applyExtensionDefaults(import.meta.url, ctx);
 		reconstructState(ctx);
+		launchSidebar(ctx);
+	});
+
+	pi.on("session_shutdown", async () => {
+		sidebarHandle?.hide();
+		sidebarHandle = null;
+		sidebarTui = null;
 	});
 	pi.on("session_switch", async (_event, ctx) => reconstructState(ctx));
 	pi.on("session_fork", async (_event, ctx) => reconstructState(ctx));
