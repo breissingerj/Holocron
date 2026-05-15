@@ -199,37 +199,46 @@ Makes other agents' commands and skills available in pi without manual re-regist
 | **License** | MIT |
 | **Authored** | 2026-05-14 |
 
-**What it does:** Registers Graphiti temporal knowledge graph tools backed by FalkorDB at `graphiti.breissinger.dev:6379`. The extension calls a `uv run --script` Python CLI (`graphiti_cli.py`) which uses `graphiti-core[falkordb,anthropic]` for entity extraction + OpenAI for embeddings.
+**What it does:** Registers full-parity Graphiti temporal knowledge graph tools backed by FalkorDB at `graphiti.breissinger.dev:6379`. The extension calls a `uv run --script` Python CLI (`graphiti_cli.py`) which uses `graphiti-core[falkordb,anthropic]` for entity extraction (with structured entity type hints) + OpenAI for embeddings. Implements all capabilities of the upstream Graphiti MCP server.
 
 **Tools (callable by LLM):**
-- `graphiti_add` — ingest text/message/json episodes into the graph with automatic entity extraction, relationship mapping, and temporal contradiction resolution
-- `graphiti_search` — hybrid BM25 + vector search over stored facts and entity nodes, scoped by group_id
+- `graphiti_add` — ingest text/message/json episodes with automatic entity extraction using structured entity types (Preference, Requirement, Procedure, Location, Event, Organization, Document, etc.) and temporal contradiction resolution
+- `graphiti_search` — hybrid BM25 + vector search over stored **facts (edges)** across all graphs in parallel
+- `graphiti_search_nodes` — search for **entity node summaries** (what entities are, not just what happened between them)
+- `graphiti_get_episodes` — list recent episodes in a graph; returns UUIDs for deletion
+- `graphiti_delete_episode` — delete an episode and its derived edges/nodes by UUID
+- `graphiti_get_entity_edge` — retrieve a specific fact/edge by UUID with full temporal metadata
+- `graphiti_delete_entity_edge` — surgically delete a single incorrect fact by UUID
 - `graphiti_status` — ping FalkorDB and report connected graphs
 
 **Commands:**
 - `/graphiti-status` — show connection and graph info
 - `/graphiti-build-indices` — one-time index setup (run after deploying a fresh FalkorDB instance)
-- `/graphiti-migrate` — bulk ingest all `$HOLOCRON_MEMORY_DIR/memory/*.md` files into the graph (slow — LLM per file)
+- `/graphiti-migrate` — bulk ingest all `$HOLOCRON_MEMORY_DIR/memory/*.md` files (concurrent — up to 3 parallel LLM calls)
+- `/graphiti-clear [graph]` — ⚠️ destructive: wipe a graph and rebuild indices (confirm dialog required)
 
 **group_id namespaces:**
 
 | group_id | Contents |
 |---|---|
-| `holocron-user` | Personal preferences, Jack-specific facts |
-| `holocron-lahzo` | Work context, team, repos, architecture |
-| `holocron-projects` | Personal project state |
-| `holocron-system` | Holocron/tooling configuration |
-| `holocron-learning` | Reflections and learned patterns |
+| `holocron_user` | Personal preferences, Jack-specific facts, career |
+| `holocron_lahzo` | Work context, team, repos, architecture |
+| `holocron_projects` | Personal project state (non-Lahzo) |
+| `holocron_system` | Holocron/tooling configuration, voice, backup |
+| `holocron_learning` | Reflections, learned patterns, session ratings |
+
+> **Note:** graph names use underscores (`holocron_user`) not hyphens — FalkorDB RediSearch treats hyphens as negation operators.
 
 **Required env vars:**
-- `ANTHROPIC_API_KEY` — for entity/relationship extraction (claude-3-5-haiku-20241022)
-- `OPENAI_API_KEY` — for embeddings (text-embedding-3-small)
+- `ANTHROPIC_API_KEY` — for entity/relationship extraction (`claude-haiku-4-5-20251001`)
+- `OPENAI_API_KEY` — for embeddings (`text-embedding-3-small`)
 - `FALKORDB_HOST` — defaults to `graphiti.breissinger.dev`
 - `FALKORDB_PORT` — defaults to `6379`
+- `GRAPHITI_SEMAPHORE` — migrate concurrency (default `3`)
 
 **First-time setup:**
 ```
-/graphiti-build-indices   # creates vector + full-text indices
+/graphiti-build-indices   # creates vector + full-text indices on all 5 graphs
 /graphiti-migrate         # ingest existing Holocron markdown files
 ```
 
