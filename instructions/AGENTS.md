@@ -36,7 +36,7 @@ Use `graphiti_search` (facts/edges) for specific claims, constraints, and past d
 
 **How to use results:**
 - Treat retrieved facts as trusted long-term memory — weight them alongside the current conversation
-- If a retrieved fact contradicts something the user just said, flag the conflict and ask for clarification
+- If a retrieved fact contradicts something the user just said, flag the conflict, ask for clarification, and offer to update Graphiti with the correct information using `graphiti_add` (which will overwrite the stale fact via temporal contradiction resolution) or `graphiti_delete_entity_edge` for surgical removal of the outdated edge
 - If nothing relevant is returned, proceed without comment — do not mention that the search was empty
 
 ---
