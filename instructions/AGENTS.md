@@ -10,6 +10,30 @@ Before doing any work, read and internalize `~/.config/opencode/instructions/ste
 
 ---
 
+## Graphiti Context Priming
+
+Before starting any NATIVE or ALGORITHM mode task, search Graphiti for relevant context using the `graphiti_search` and `graphiti_search_nodes` tools. Do this silently — do not narrate the search or list the raw results. Incorporate what you find directly into your working context.
+
+**When to prime:**
+- ALGORITHM mode: always, before reading algorithm.md
+- NATIVE mode: always, before executing the task
+- MINIMAL mode (greetings, ratings, acks): skip
+
+**What to search:**
+
+All data lives in a single unified graph (group `jbreissinger`) — no routing decisions needed. Run 1–3 targeted queries based on the task. Do not run exhaustive or generic queries.
+
+- Use `graphiti_search` for specific facts, constraints, and past decisions (returns edges with temporal bounds)
+- Use `graphiti_search_nodes` when you want to understand what an entity _is_ — a person, tool, project, or concept — rather than what happened with it (returns entity summaries)
+- Queries should be specific: `"Jack editor preference"` not `"preferences"`; `"Lahzo funnel team SMS task"` not `"work"`
+
+**How to use results:**
+- Treat retrieved facts as trusted long-term memory — weight them alongside the current conversation
+- If a retrieved fact contradicts something the user just said, flag the conflict, ask for clarification, and offer to update Graphiti with the correct information using `graphiti_add` (which will overwrite the stale fact via temporal contradiction resolution) or `graphiti_delete_entity_edge` for surgical removal of the outdated edge
+- If nothing relevant is returned, proceed without comment — do not mention that the search was empty
+
+---
+
 ## Execution Modes
 
 Every response uses exactly one mode. **BEFORE ANY WORK**, classify the request and select a mode:
