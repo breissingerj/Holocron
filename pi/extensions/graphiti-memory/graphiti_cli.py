@@ -28,8 +28,7 @@ Environment variables:
   FALKORDB_HOST          (default: graphiti.breissinger.dev)
   FALKORDB_PORT          (default: 6379)
   FALKORDB_PASSWORD      (default: none)
-  ANTHROPIC_API_KEY      (required for add/migrate)
-  OPENAI_API_KEY         (required for search/add/migrate — embeddings)
+  OPENAI_API_KEY         (required — LLM entity extraction + embeddings)
   GRAPHITI_LLM_MODEL     (default: claude-haiku-4-5-20251001)
   GRAPHITI_EMBED_MODEL   (default: text-embedding-3-small)
   GRAPHITI_SEMAPHORE     (default: 3 — concurrent episodes during migrate)
@@ -49,7 +48,7 @@ from uuid import uuid4
 FALKORDB_HOST     = os.environ.get("FALKORDB_HOST",     "graphiti.breissinger.dev")
 FALKORDB_PORT     = int(os.environ.get("FALKORDB_PORT", "6379"))
 FALKORDB_PASSWORD = os.environ.get("FALKORDB_PASSWORD") or None
-LLM_MODEL         = os.environ.get("GRAPHITI_LLM_MODEL",  "claude-haiku-4-5-20251001")
+LLM_MODEL         = os.environ.get("GRAPHITI_LLM_MODEL",  "gpt-4.1-mini")
 EMBED_MODEL       = os.environ.get("GRAPHITI_EMBED_MODEL", "text-embedding-3-small")
 SEMAPHORE_LIMIT   = int(os.environ.get("GRAPHITI_SEMAPHORE", "3"))
 
@@ -117,13 +116,13 @@ def make_graphiti(database: str):
     """Create a Graphiti instance connected to the given FalkorDB graph."""
     from graphiti_core import Graphiti
     from graphiti_core.driver.falkordb_driver import FalkorDriver
-    from graphiti_core.llm_client.anthropic_client import AnthropicClient
+    from graphiti_core.llm_client.openai_client import OpenAIClient
     from graphiti_core.llm_client.config import LLMConfig
     from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
 
     driver   = FalkorDriver(host=FALKORDB_HOST, port=FALKORDB_PORT,
                             password=FALKORDB_PASSWORD, database=database)
-    llm      = AnthropicClient(config=LLMConfig(model=LLM_MODEL))
+    llm      = OpenAIClient(config=LLMConfig(model=LLM_MODEL))
     embedder = OpenAIEmbedder(config=OpenAIEmbedderConfig(embedding_model=EMBED_MODEL))
     return Graphiti(graph_driver=driver, llm_client=llm, embedder=embedder)
 

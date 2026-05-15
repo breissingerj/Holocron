@@ -230,8 +230,7 @@ Makes other agents' commands and skills available in pi without manual re-regist
 > **Note:** graph names use underscores (`holocron_user`) not hyphens — FalkorDB RediSearch treats hyphens as negation operators.
 
 **Required env vars:**
-- `ANTHROPIC_API_KEY` — for entity/relationship extraction (`claude-haiku-4-5-20251001`)
-- `OPENAI_API_KEY` — for embeddings (`text-embedding-3-small`)
+- `OPENAI_API_KEY` — for entity/relationship extraction (`gpt-4.1-mini`) + embeddings (`text-embedding-3-small`)
 - `FALKORDB_HOST` — defaults to `graphiti.breissinger.dev`
 - `FALKORDB_PORT` — defaults to `6379`
 - `GRAPHITI_SEMAPHORE` — migrate concurrency (default `3`)
