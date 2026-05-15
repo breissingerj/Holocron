@@ -21,18 +21,11 @@ Before starting any NATIVE or ALGORITHM mode task, search Graphiti for relevant 
 
 **What to search:**
 
-Run 1–3 targeted queries scoped to the task. Do not run exhaustive or generic queries.
+All data lives in a single unified graph (group `jbreissinger`) — no routing decisions needed. Run 1–3 targeted queries based on the task. Do not run exhaustive or generic queries.
 
-| Task domain | Suggested query + scope |
-|---|---|
-| Lahzo/work task | task topic → `databases: ["holocron_lahzo"]` |
-| Personal prefs / workflow | relevant preference → `databases: ["holocron_user"]` |
-| Holocron / tooling config | tool or config topic → `databases: ["holocron_system"]` |
-| Personal projects | project name → `databases: ["holocron_projects"]` |
-| Reflection / patterns | pattern or lesson → `databases: ["holocron_learning"]` |
-| Unclear domain | omit `databases` — fan-out search across all graphs |
-
-Use `graphiti_search` (facts/edges) for specific claims, constraints, and past decisions. Use `graphiti_search_nodes` (entity summaries) when you want to understand what an entity _is_ — a person, tool, project, or concept — rather than what happened with it.
+- Use `graphiti_search` for specific facts, constraints, and past decisions (returns edges with temporal bounds)
+- Use `graphiti_search_nodes` when you want to understand what an entity _is_ — a person, tool, project, or concept — rather than what happened with it (returns entity summaries)
+- Queries should be specific: `"Jack editor preference"` not `"preferences"`; `"Lahzo funnel team SMS task"` not `"work"`
 
 **How to use results:**
 - Treat retrieved facts as trusted long-term memory — weight them alongside the current conversation

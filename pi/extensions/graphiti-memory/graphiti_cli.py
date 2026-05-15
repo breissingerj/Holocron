@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
-#   "graphiti-core[falkordb,anthropic]",
+#   "graphiti-core[falkordb]",
 #   "openai",
 # ]
 # ///
@@ -12,24 +12,17 @@ graphiti_cli.py — CLI wrapper for graphiti-core with FalkorDB backend.
 Called by the graphiti-memory pi extension via `uv run --script`.
 All commands output JSON to stdout. Progress/logs go to stderr.
 
-Graph layout (one FalkorDB graph per domain):
-  holocron_user      — personal preferences, Jack-specific facts, career
-  holocron_lahzo     — Lahzo work context, team, repos, architecture
-  holocron_system    — Holocron tooling, config, voice, backup
-  holocron_projects  — personal project state (non-Lahzo)
-  holocron_learning  — reflections, learned patterns, ratings
-
-Search fans out across ALL graphs by default. Scope with --databases to
-restrict to a subset when the relevant domain is already known.
-
-Add routes to the graph matching the group_id (group == database name).
+Single graph: all data lives in one FalkorDB database named by DEFAULT_GROUP_ID.
+group_id is a tenancy/namespace concept — "jbreissinger" is the owner of this
+instance. Additional users can be onboarded by passing --group <their_id>.
 
 Environment variables:
   FALKORDB_HOST          (default: graphiti.breissinger.dev)
   FALKORDB_PORT          (default: 6379)
   FALKORDB_PASSWORD      (default: none)
   OPENAI_API_KEY         (required — LLM entity extraction + embeddings)
-  GRAPHITI_LLM_MODEL     (default: claude-haiku-4-5-20251001)
+  GRAPHITI_GROUP_ID      (default: jbreissinger)
+  GRAPHITI_LLM_MODEL     (default: gpt-4.1-mini)
   GRAPHITI_EMBED_MODEL   (default: text-embedding-3-small)
   GRAPHITI_SEMAPHORE     (default: 3 — concurrent episodes during migrate)
 """
@@ -48,72 +41,39 @@ from uuid import uuid4
 FALKORDB_HOST     = os.environ.get("FALKORDB_HOST",     "graphiti.breissinger.dev")
 FALKORDB_PORT     = int(os.environ.get("FALKORDB_PORT", "6379"))
 FALKORDB_PASSWORD = os.environ.get("FALKORDB_PASSWORD") or None
+DEFAULT_GROUP_ID  = os.environ.get("GRAPHITI_GROUP_ID", "jbreissinger")
 LLM_MODEL         = os.environ.get("GRAPHITI_LLM_MODEL",  "gpt-4.1-mini")
 EMBED_MODEL       = os.environ.get("GRAPHITI_EMBED_MODEL", "text-embedding-3-small")
 SEMAPHORE_LIMIT   = int(os.environ.get("GRAPHITI_SEMAPHORE", "3"))
 
-# Canonical graph names (underscore required — FalkorDB RediSearch treats
-# hyphens as negation operators in field-filter values).
-ALL_DATABASES = [
-    "holocron_user",
-    "holocron_lahzo",
-    "holocron_system",
-    "holocron_projects",
-    "holocron_learning",
-]
-
-# Migration: map filename stem keywords → database name
-GROUP_MAP = {
-    "lahzo":         "holocron_lahzo",
-    "promeniq":      "holocron_lahzo",
-    "multiverse":    "holocron_lahzo",
-    "wilkins":       "holocron_lahzo",
-    "analytics":     "holocron_lahzo",
-    "monorepo":      "holocron_lahzo",
-    "prompting":     "holocron_lahzo",
-    "holocron":      "holocron_system",
-    "pai":           "holocron_system",
-    "opencode":      "holocron_system",
-    "notifications": "holocron_system",
-    "user-career":   "holocron_user",
-    "reviews":       "holocron_user",
-    "projects":      "holocron_projects",
-    "learning":      "holocron_learning",
-    "reflect":       "holocron_learning",
-    "ratings":       "holocron_learning",
-}
-
 # ── Entity types ──────────────────────────────────────────────────────────────
-# Mirrors the built-in entity types from the Graphiti MCP server.
-# Passed to add_episode to guide LLM entity extraction.
 
 _ENTITY_TYPE_DEFS = [
-    ("Preference",    "User preferences, choices, opinions, or selections (prioritized for user-specific information)"),
-    ("Requirement",   "Specific needs, features, or functionality that must be fulfilled"),
-    ("Procedure",     "Standard operating procedures and sequential instructions"),
-    ("Location",      "Physical or virtual places where activities occur"),
-    ("Event",         "Time-bound activities, occurrences, or experiences"),
-    ("Organization",  "Companies, institutions, groups, or formal entities"),
-    ("Document",      "Information content in various forms (books, articles, reports, videos, etc.)"),
-    ("Topic",         "Subject of conversation, interest, or knowledge domain (fallback)"),
-    ("Object",        "Physical items, tools, devices, or possessions (fallback)"),
+    ("Preference",   "User preferences, choices, opinions, or selections"),
+    ("Requirement",  "Specific needs, features, or functionality that must be fulfilled"),
+    ("Procedure",    "Standard operating procedures and sequential instructions"),
+    ("Location",     "Physical or virtual places where activities occur"),
+    ("Event",        "Time-bound activities, occurrences, or experiences"),
+    ("Organization", "Companies, institutions, groups, or formal entities"),
+    ("Document",     "Information content in various forms (books, articles, reports, videos, etc.)"),
+    ("Topic",        "Subject of conversation, interest, or knowledge domain (fallback)"),
+    ("Object",       "Physical items, tools, devices, or possessions (fallback)"),
 ]
 
 
 def _build_entity_types():
-    """Return a list of graphiti-core EntityType objects, or None if not available."""
+    """Return graphiti-core EntityType objects, or None if not available."""
     try:
         from graphiti_core.nodes import EntityType  # type: ignore
         return [EntityType(name=n, description=d) for n, d in _ENTITY_TYPE_DEFS]
     except Exception:
-        # Older graphiti-core versions may not expose EntityType — skip gracefully.
         return None
 
 
 # ── Client factory ────────────────────────────────────────────────────────────
 
-def make_graphiti(database: str):
-    """Create a Graphiti instance connected to the given FalkorDB graph."""
+def make_graphiti(group_id: str = DEFAULT_GROUP_ID):
+    """Create a Graphiti instance connected to the given group's FalkorDB graph."""
     from graphiti_core import Graphiti
     from graphiti_core.driver.falkordb_driver import FalkorDriver
     from graphiti_core.llm_client.openai_client import OpenAIClient
@@ -121,27 +81,32 @@ def make_graphiti(database: str):
     from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
 
     driver   = FalkorDriver(host=FALKORDB_HOST, port=FALKORDB_PORT,
-                            password=FALKORDB_PASSWORD, database=database)
+                            password=FALKORDB_PASSWORD, database=group_id)
     llm      = OpenAIClient(config=LLMConfig(model=LLM_MODEL))
     embedder = OpenAIEmbedder(config=OpenAIEmbedderConfig(embedding_model=EMBED_MODEL))
     return Graphiti(graph_driver=driver, llm_client=llm, embedder=embedder)
 
 
+def _group(args) -> str:
+    """Resolve group_id from args, falling back to DEFAULT_GROUP_ID."""
+    return getattr(args, "group", None) or DEFAULT_GROUP_ID
+
+
 # ── Commands ──────────────────────────────────────────────────────────────────
 
 async def cmd_status(_args) -> dict:
-    """Ping FalkorDB — no LLM calls needed."""
+    """Ping FalkorDB and list all graphs."""
     try:
         from falkordb.asyncio import FalkorDB as FalkorDBClient  # type: ignore
         client = FalkorDBClient(host=FALKORDB_HOST, port=FALKORDB_PORT,
                                 password=FALKORDB_PASSWORD)
         graphs = await client.list_graphs()
         return {
-            "connected": True,
-            "host":      FALKORDB_HOST,
-            "port":      FALKORDB_PORT,
-            "databases": ALL_DATABASES,
-            "graphs":    sorted(graphs) if graphs else [],
+            "connected":       True,
+            "host":            FALKORDB_HOST,
+            "port":            FALKORDB_PORT,
+            "default_group":   DEFAULT_GROUP_ID,
+            "graphs":          sorted(graphs) if graphs else [],
         }
     except Exception as e:
         return {"connected": False, "host": FALKORDB_HOST, "port": FALKORDB_PORT,
@@ -149,48 +114,31 @@ async def cmd_status(_args) -> dict:
 
 
 async def cmd_build_indices(args) -> dict:
-    """Build vector/full-text indices on every graph (idempotent)."""
-    databases = (
-        [d.strip() for d in args.databases.split(",")]
-        if getattr(args, "databases", None)
-        else ALL_DATABASES
-    )
-    results = {}
-    for db in databases:
-        g = make_graphiti(db)
-        try:
-            await g.build_indices_and_constraints()
-            results[db] = "ok"
-        except Exception as e:
-            results[db] = f"error: {e}"
-        finally:
-            await g.close()
-    success = all(v == "ok" for v in results.values())
-    return {"success": success, "databases": results}
+    """Build vector/full-text indices (idempotent)."""
+    group_id = _group(args)
+    g = make_graphiti(group_id)
+    try:
+        await g.build_indices_and_constraints()
+        return {"success": True, "group": group_id}
+    except Exception as e:
+        return {"success": False, "group": group_id, "error": str(e)}
+    finally:
+        await g.close()
 
 
 async def cmd_add(args) -> dict:
-    """Ingest one episode. group_id determines which graph it lands in."""
+    """Ingest one episode into the graph."""
     from graphiti_core.nodes import EpisodeType
 
+    group_id = _group(args)
     source_map = {"text": EpisodeType.text, "message": EpisodeType.message,
                   "json": EpisodeType.json}
-    source = source_map.get(getattr(args, "source", "text"), EpisodeType.text)
-    name   = getattr(args, "name", None) or f"episode_{uuid4().hex[:8]}"
+    source             = source_map.get(getattr(args, "source", "text"), EpisodeType.text)
+    name               = getattr(args, "name", None) or f"episode_{uuid4().hex[:8]}"
     source_description = getattr(args, "source_description", None) or "pi session"
+    entity_types       = None if getattr(args, "no_entity_types", False) else _build_entity_types()
 
-    # group_id IS the database name — route to matching graph
-    database = args.group
-    if database not in ALL_DATABASES:
-        return {"success": False,
-                "error": f"Unknown group '{database}'. Valid: {ALL_DATABASES}"}
-
-    # Entity types: use default set unless caller opts out with --no-entity-types
-    entity_types = None
-    if not getattr(args, "no_entity_types", False):
-        entity_types = _build_entity_types()
-
-    g = make_graphiti(database)
+    g = make_graphiti(group_id)
     try:
         add_kwargs: dict = dict(
             name=name,
@@ -198,7 +146,7 @@ async def cmd_add(args) -> dict:
             source=source,
             source_description=source_description,
             reference_time=datetime.now(timezone.utc),
-            group_id=args.group,
+            group_id=group_id,
         )
         if entity_types is not None:
             add_kwargs["entity_types"] = entity_types
@@ -208,8 +156,7 @@ async def cmd_add(args) -> dict:
             "success":      True,
             "episode_uuid": str(episode.uuid) if episode and hasattr(episode, "uuid") else None,
             "name":         name,
-            "group_id":     args.group,
-            "database":     database,
+            "group_id":     group_id,
             "chars":        len(args.text),
             "entity_types": "default" if entity_types else "none",
         }
@@ -219,158 +166,89 @@ async def cmd_add(args) -> dict:
         await g.close()
 
 
-# ── search_facts (edges) ──────────────────────────────────────────────────────
+async def cmd_search(args) -> dict:
+    """Search facts (edges) in the graph."""
+    group_id    = _group(args)
+    num_results = getattr(args, "num_results", 10) or 10
 
-async def _search_facts_one(database: str, query: str, num_results: int) -> dict:
-    """Search edges (facts) in a single graph."""
-    g = make_graphiti(database)
+    g = make_graphiti(group_id)
     try:
-        results = await g.search(query=query, num_results=num_results)
-        edges = results if isinstance(results, list) else getattr(results, "edges", [])
-        facts = []
-        for edge in edges:
-            facts.append({
+        results = await g.search(query=args.query, num_results=num_results,
+                                 group_ids=[group_id])
+        edges   = results if isinstance(results, list) else getattr(results, "edges", [])
+        facts   = [
+            {
                 "fact":       edge.fact,
-                "database":   database,
                 "valid_at":   edge.valid_at.isoformat()   if edge.valid_at   else None,
                 "invalid_at": edge.invalid_at.isoformat() if edge.invalid_at else None,
                 "uuid":       str(edge.uuid),
-            })
-        return {"database": database, "facts": facts, "error": None}
+            }
+            for edge in edges
+        ]
+        return {"success": True, "query": args.query, "group": group_id,
+                "facts": facts, "total": len(facts)}
     except Exception as e:
-        return {"database": database, "facts": [], "error": str(e)}
-    finally:
-        await g.close()
-
-
-async def cmd_search(args) -> dict:
-    """Fan-out search across all graphs (or a specified subset) in parallel."""
-    databases = (
-        [d.strip() for d in args.databases.split(",")]
-        if getattr(args, "databases", None)
-        else ALL_DATABASES
-    )
-    num_results = getattr(args, "num_results", 10) or 10
-
-    db_results = await asyncio.gather(*[
-        _search_facts_one(db, args.query, num_results)
-        for db in databases
-    ])
-
-    all_facts = []
-    errors    = []
-    for r in db_results:
-        all_facts.extend(r["facts"])
-        if r["error"]:
-            errors.append({"database": r["database"], "error": r["error"]})
-
-    return {
-        "success":            len(errors) < len(databases),
-        "query":              args.query,
-        "databases_searched": databases,
-        "facts":              all_facts,
-        "total":              len(all_facts),
-        "errors":             errors,
-    }
-
-
-# ── search_nodes (entity summaries) ──────────────────────────────────────────
-
-async def _search_nodes_one(database: str, query: str, num_results: int) -> dict:
-    """Search entity node summaries in a single graph."""
-    g = make_graphiti(database)
-    try:
-        # graphiti-core exposes get_nodes_by_query for node-level search.
-        # Fall back to extracting nodes from a combined search result if the
-        # dedicated method isn't available in older versions.
-        nodes_raw = []
-        if hasattr(g, "get_nodes_by_query"):
-            nodes_raw = await g.get_nodes_by_query(query, limit=num_results)
-        elif hasattr(g, "_search_node_distance"):
-            nodes_raw = await g._search_node_distance(query=query, limit=num_results)
-        else:
-            # Fallback: run standard search and extract any node objects
-            results = await g.search(query=query, num_results=num_results)
-            nodes_raw = getattr(results, "nodes", [])
-
-        nodes = []
-        for node in nodes_raw:
-            nodes.append({
-                "name":        getattr(node, "name",    None),
-                "summary":     getattr(node, "summary", None),
-                "entity_type": getattr(node, "entity_type", getattr(node, "labels", None)),
-                "database":    database,
-                "uuid":        str(node.uuid) if hasattr(node, "uuid") else None,
-                "created_at":  node.created_at.isoformat() if getattr(node, "created_at", None) else None,
-            })
-        return {"database": database, "nodes": nodes, "error": None}
-    except Exception as e:
-        return {"database": database, "nodes": [], "error": str(e)}
+        return {"success": False, "error": str(e), "facts": [], "total": 0}
     finally:
         await g.close()
 
 
 async def cmd_search_nodes(args) -> dict:
-    """Fan-out node-summary search across all graphs (or a specified subset)."""
-    databases = (
-        [d.strip() for d in args.databases.split(",")]
-        if getattr(args, "databases", None)
-        else ALL_DATABASES
-    )
+    """Search entity node summaries in the graph."""
+    group_id    = _group(args)
     num_results = getattr(args, "num_results", 10) or 10
 
-    db_results = await asyncio.gather(*[
-        _search_nodes_one(db, args.query, num_results)
-        for db in databases
-    ])
+    g = make_graphiti(group_id)
+    try:
+        nodes_raw = []
+        if hasattr(g, "get_nodes_by_query"):
+            nodes_raw = await g.get_nodes_by_query(args.query, limit=num_results)
+        elif hasattr(g, "_search_node_distance"):
+            nodes_raw = await g._search_node_distance(query=args.query, limit=num_results)
+        else:
+            results   = await g.search(query=args.query, num_results=num_results,
+                                        group_ids=[group_id])
+            nodes_raw = getattr(results, "nodes", [])
 
-    all_nodes = []
-    errors    = []
-    for r in db_results:
-        all_nodes.extend(r["nodes"])
-        if r["error"]:
-            errors.append({"database": r["database"], "error": r["error"]})
+        nodes = [
+            {
+                "name":        getattr(n, "name",    None),
+                "summary":     getattr(n, "summary", None),
+                "entity_type": getattr(n, "entity_type", getattr(n, "labels", None)),
+                "uuid":        str(n.uuid) if hasattr(n, "uuid") else None,
+                "created_at":  n.created_at.isoformat() if getattr(n, "created_at", None) else None,
+            }
+            for n in nodes_raw
+        ]
+        return {"success": True, "query": args.query, "group": group_id,
+                "nodes": nodes, "total": len(nodes)}
+    except Exception as e:
+        return {"success": False, "error": str(e), "nodes": [], "total": 0}
+    finally:
+        await g.close()
 
-    return {
-        "success":            len(errors) < len(databases),
-        "query":              args.query,
-        "databases_searched": databases,
-        "nodes":              all_nodes,
-        "total":              len(all_nodes),
-        "errors":             errors,
-    }
-
-
-# ── Episode management ────────────────────────────────────────────────────────
 
 async def cmd_get_episodes(args) -> dict:
-    """Get the most recent episodes for a specific group."""
-    database = args.group
-    if database not in ALL_DATABASES:
-        return {"success": False,
-                "error": f"Unknown group '{database}'. Valid: {ALL_DATABASES}"}
+    """List the most recent episodes."""
+    group_id = _group(args)
+    limit    = getattr(args, "limit", 10) or 10
 
-    limit = getattr(args, "limit", 10) or 10
-    g = make_graphiti(database)
+    g = make_graphiti(group_id)
     try:
-        episodes_raw = await g.get_episodes(group_ids=[database], last_n=limit)
-        episodes = []
-        for ep in episodes_raw:
-            episodes.append({
-                "uuid":        str(ep.uuid) if hasattr(ep, "uuid") else None,
-                "name":        getattr(ep, "name",    None),
-                "source":      str(getattr(ep, "source", None)),
+        episodes_raw = await g.get_episodes(group_ids=[group_id], last_n=limit)
+        episodes = [
+            {
+                "uuid":               str(ep.uuid) if hasattr(ep, "uuid") else None,
+                "name":               getattr(ep, "name", None),
+                "source":             str(getattr(ep, "source", None)),
                 "source_description": getattr(ep, "source_description", None),
-                "content":     (getattr(ep, "content", None) or "")[:200],  # truncate for display
-                "created_at":  ep.created_at.isoformat() if getattr(ep, "created_at", None) else None,
-                "group_id":    getattr(ep, "group_id", database),
-            })
-        return {
-            "success":  True,
-            "group":    database,
-            "episodes": episodes,
-            "total":    len(episodes),
-        }
+                "content":            (getattr(ep, "content", None) or "")[:200],
+                "created_at":         ep.created_at.isoformat() if getattr(ep, "created_at", None) else None,
+            }
+            for ep in episodes_raw
+        ]
+        return {"success": True, "group": group_id, "episodes": episodes,
+                "total": len(episodes)}
     except Exception as e:
         return {"success": False, "error": str(e)}
     finally:
@@ -378,47 +256,37 @@ async def cmd_get_episodes(args) -> dict:
 
 
 async def cmd_delete_episode(args) -> dict:
-    """Delete an episode (and its extracted edges/nodes) by UUID."""
-    database = args.group
-    if database not in ALL_DATABASES:
-        return {"success": False,
-                "error": f"Unknown group '{database}'. Valid: {ALL_DATABASES}"}
-
-    g = make_graphiti(database)
+    """Delete an episode by UUID."""
+    group_id = _group(args)
+    g = make_graphiti(group_id)
     try:
         await g.delete_episode(episode_uuid=args.uuid)
-        return {"success": True, "deleted_uuid": args.uuid, "group": database}
+        return {"success": True, "deleted_uuid": args.uuid, "group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": args.uuid}
     finally:
         await g.close()
 
 
-# ── Entity edge management ────────────────────────────────────────────────────
-
 async def cmd_get_entity_edge(args) -> dict:
-    """Retrieve a single entity edge (fact) by UUID from a specific graph."""
-    database = args.group
-    if database not in ALL_DATABASES:
-        return {"success": False,
-                "error": f"Unknown group '{database}'. Valid: {ALL_DATABASES}"}
-
-    g = make_graphiti(database)
+    """Retrieve a specific entity edge by UUID."""
+    group_id = _group(args)
+    g = make_graphiti(group_id)
     try:
         edge = await g.get_entity_edge(uuid=args.uuid)
         if edge is None:
-            return {"success": False, "error": f"Edge {args.uuid} not found in {database}"}
+            return {"success": False, "error": f"Edge {args.uuid} not found"}
         return {
-            "success":    True,
-            "uuid":       str(edge.uuid),
-            "fact":       edge.fact,
-            "database":   database,
+            "success":          True,
+            "uuid":             str(edge.uuid),
+            "fact":             edge.fact,
+            "group":            group_id,
             "source_node_uuid": str(getattr(edge, "source_node_uuid", "")) or None,
             "target_node_uuid": str(getattr(edge, "target_node_uuid", "")) or None,
-            "valid_at":   edge.valid_at.isoformat()   if edge.valid_at   else None,
-            "invalid_at": edge.invalid_at.isoformat() if edge.invalid_at else None,
-            "created_at": edge.created_at.isoformat() if getattr(edge, "created_at", None) else None,
-            "episodes":   [str(e) for e in getattr(edge, "episodes", [])],
+            "valid_at":         edge.valid_at.isoformat()   if edge.valid_at   else None,
+            "invalid_at":       edge.invalid_at.isoformat() if edge.invalid_at else None,
+            "created_at":       edge.created_at.isoformat() if getattr(edge, "created_at", None) else None,
+            "episodes":         [str(e) for e in getattr(edge, "episodes", [])],
         }
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": args.uuid}
@@ -427,60 +295,43 @@ async def cmd_get_entity_edge(args) -> dict:
 
 
 async def cmd_delete_entity_edge(args) -> dict:
-    """Delete a specific entity edge (fact) by UUID."""
-    database = args.group
-    if database not in ALL_DATABASES:
-        return {"success": False,
-                "error": f"Unknown group '{database}'. Valid: {ALL_DATABASES}"}
-
-    g = make_graphiti(database)
+    """Delete a specific entity edge by UUID."""
+    group_id = _group(args)
+    g = make_graphiti(group_id)
     try:
         await g.delete_entity_edge(uuid=args.uuid)
-        return {"success": True, "deleted_uuid": args.uuid, "group": database}
+        return {"success": True, "deleted_uuid": args.uuid, "group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": args.uuid}
     finally:
         await g.close()
 
 
-# ── Graph maintenance ─────────────────────────────────────────────────────────
-
 async def cmd_clear_graph(args) -> dict:
-    """Wipe all data from a graph and rebuild its indices."""
-    databases = (
-        [d.strip() for d in args.databases.split(",")]
-        if getattr(args, "databases", None)
-        else ALL_DATABASES
-    )
-    results = {}
-    for db in databases:
-        g = make_graphiti(db)
-        try:
-            # clear_data removes all nodes/edges; build_indices_and_constraints restores schema
-            if hasattr(g, "clear_data"):
-                await g.clear_data()
-            else:
-                # Fallback: delete graph via driver if clear_data not available
-                try:
-                    await g.driver.delete_graph(db)  # type: ignore[attr-defined]
-                except Exception:
-                    pass
-            await g.build_indices_and_constraints()
-            results[db] = "cleared"
-        except Exception as e:
-            results[db] = f"error: {e}"
-        finally:
-            await g.close()
-    success = all(v == "cleared" for v in results.values())
-    return {"success": success, "databases": results}
+    """Wipe all data from the graph and rebuild indices."""
+    group_id = _group(args)
+    g = make_graphiti(group_id)
+    try:
+        if hasattr(g, "clear_data"):
+            await g.clear_data()
+        else:
+            try:
+                await g.driver.delete_graph(group_id)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        await g.build_indices_and_constraints()
+        return {"success": True, "group": group_id, "status": "cleared"}
+    except Exception as e:
+        return {"success": False, "group": group_id, "error": str(e)}
+    finally:
+        await g.close()
 
-
-# ── Bulk migration ────────────────────────────────────────────────────────────
 
 async def cmd_migrate(args) -> dict:
-    """Bulk ingest Holocron markdown files. Each file routes to its graph."""
+    """Bulk ingest Holocron markdown files into the graph."""
     from graphiti_core.nodes import EpisodeType
 
+    group_id   = _group(args)
     memory_dir = Path(args.dir)
     if not memory_dir.exists():
         return {"success": False, "error": f"Directory not found: {memory_dir}"}
@@ -489,8 +340,8 @@ async def cmd_migrate(args) -> dict:
     if not md_files:
         return {"success": False, "error": f"No .md files found in {memory_dir}"}
 
-    entity_types = _build_entity_types()
-    semaphore    = asyncio.Semaphore(SEMAPHORE_LIMIT)
+    entity_types   = _build_entity_types()
+    semaphore      = asyncio.Semaphore(SEMAPHORE_LIMIT)
     ingested_count = 0
     skipped_count  = 0
     errors: list[dict] = []
@@ -506,14 +357,10 @@ async def cmd_migrate(args) -> dict:
             print(f"  SKIP {md_file.name} (< 50 chars)", file=sys.stderr)
             return
 
-        stem     = md_file.stem.lower()
-        group    = next((v for k, v in GROUP_MAP.items() if k in stem), "holocron_user")
-        database = group
-
-        print(f"  → {md_file.name} [{database}]", file=sys.stderr, flush=True)
+        print(f"  → {md_file.name}", file=sys.stderr, flush=True)
 
         async with semaphore:
-            g = make_graphiti(database)
+            g = make_graphiti(group_id)
             try:
                 add_kwargs: dict = dict(
                     name=f"holocron_{md_file.stem}",
@@ -523,7 +370,7 @@ async def cmd_migrate(args) -> dict:
                     reference_time=datetime.fromtimestamp(
                         md_file.stat().st_mtime, tz=timezone.utc
                     ),
-                    group_id=group,
+                    group_id=group_id,
                 )
                 if entity_types is not None:
                     add_kwargs["entity_types"] = entity_types
@@ -543,6 +390,7 @@ async def cmd_migrate(args) -> dict:
 
     return {
         "success":  len(errors) == 0,
+        "group":    group_id,
         "ingested": ingested_count,
         "skipped":  skipped_count,
         "total":    len(md_files),
@@ -558,73 +406,67 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
+    def add_group_arg(p, help_suffix=""):
+        p.add_argument("--group", default=None,
+                       help=f"group_id / graph namespace (default: {DEFAULT_GROUP_ID}){help_suffix}")
+
     # status
     sub.add_parser("status")
 
     # build-indices
     p_idx = sub.add_parser("build-indices")
-    p_idx.add_argument("--databases", default=None,
-                       help=f"Comma-separated subset to index (default: all — {ALL_DATABASES})")
+    add_group_arg(p_idx)
 
     # add
     p_add = sub.add_parser("add")
     p_add.add_argument("--text",               required=True)
-    p_add.add_argument("--group",              required=True,
-                       help=f"Target graph/group. One of: {ALL_DATABASES}")
     p_add.add_argument("--name",               default=None)
     p_add.add_argument("--source",             default="text",
                        choices=["text", "message", "json"])
     p_add.add_argument("--source-description", default=None)
-    p_add.add_argument("--no-entity-types",    action="store_true",
-                       help="Skip passing entity type hints to the LLM (faster, lower extraction quality)")
+    p_add.add_argument("--no-entity-types",    action="store_true")
+    add_group_arg(p_add)
 
-    # search (facts / edges)
+    # search
     p_search = sub.add_parser("search")
     p_search.add_argument("--query",       required=True)
-    p_search.add_argument("--databases",   default=None,
-                          help=f"Comma-separated graphs to search (default: all — {ALL_DATABASES})")
     p_search.add_argument("--num-results", type=int, default=10)
+    add_group_arg(p_search)
 
-    # search-nodes (entity node summaries)
+    # search-nodes
     p_sn = sub.add_parser("search-nodes")
     p_sn.add_argument("--query",       required=True)
-    p_sn.add_argument("--databases",   default=None,
-                      help=f"Comma-separated graphs to search (default: all — {ALL_DATABASES})")
     p_sn.add_argument("--num-results", type=int, default=10)
+    add_group_arg(p_sn)
 
     # get-episodes
     p_gep = sub.add_parser("get-episodes")
-    p_gep.add_argument("--group",  required=True,
-                       help=f"Graph to query. One of: {ALL_DATABASES}")
-    p_gep.add_argument("--limit",  type=int, default=10,
-                       help="Max episodes to return (default 10)")
+    p_gep.add_argument("--limit", type=int, default=10)
+    add_group_arg(p_gep)
 
     # delete-episode
     p_dep = sub.add_parser("delete-episode")
-    p_dep.add_argument("--uuid",   required=True)
-    p_dep.add_argument("--group",  required=True,
-                       help=f"Graph containing the episode. One of: {ALL_DATABASES}")
+    p_dep.add_argument("--uuid", required=True)
+    add_group_arg(p_dep)
 
     # get-entity-edge
     p_gee = sub.add_parser("get-entity-edge")
-    p_gee.add_argument("--uuid",  required=True)
-    p_gee.add_argument("--group", required=True,
-                       help=f"Graph containing the edge. One of: {ALL_DATABASES}")
+    p_gee.add_argument("--uuid", required=True)
+    add_group_arg(p_gee)
 
     # delete-entity-edge
     p_dee = sub.add_parser("delete-entity-edge")
-    p_dee.add_argument("--uuid",  required=True)
-    p_dee.add_argument("--group", required=True,
-                       help=f"Graph containing the edge. One of: {ALL_DATABASES}")
+    p_dee.add_argument("--uuid", required=True)
+    add_group_arg(p_dee)
 
     # clear-graph
     p_clr = sub.add_parser("clear-graph")
-    p_clr.add_argument("--databases", default=None,
-                       help=f"Comma-separated graphs to clear (default: ALL — {ALL_DATABASES})")
+    add_group_arg(p_clr, " — defaults to entire personal graph, use with caution")
 
     # migrate
     p_migrate = sub.add_parser("migrate")
     p_migrate.add_argument("--dir", required=True)
+    add_group_arg(p_migrate)
 
     args = parser.parse_args()
 

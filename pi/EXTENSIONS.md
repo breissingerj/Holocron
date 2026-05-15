@@ -199,13 +199,15 @@ Makes other agents' commands and skills available in pi without manual re-regist
 | **License** | MIT |
 | **Authored** | 2026-05-14 |
 
-**What it does:** Registers full-parity Graphiti temporal knowledge graph tools backed by FalkorDB at `graphiti.breissinger.dev:6379`. The extension calls a `uv run --script` Python CLI (`graphiti_cli.py`) which uses `graphiti-core[falkordb,anthropic]` for entity extraction (with structured entity type hints) + OpenAI for embeddings. Implements all capabilities of the upstream Graphiti MCP server.
+**What it does:** Registers full-parity Graphiti temporal knowledge graph tools backed by FalkorDB at `graphiti.breissinger.dev:6379`. The extension calls a `uv run --script` Python CLI (`graphiti_cli.py`) which uses `graphiti-core[falkordb]` for entity extraction (with structured entity type hints) + OpenAI for both LLM and embeddings. Implements all capabilities of the upstream Graphiti MCP server.
+
+**Single unified graph:** All data lives under `group_id = jbreissinger`. No routing decisions — everything goes into one graph so cross-domain entity linking and contradiction resolution work across all context (work, personal, tooling, reflections). Additional users can be onboarded by passing `--group <their_id>` to the CLI.
 
 **Tools (callable by LLM):**
 - `graphiti_add` — ingest text/message/json episodes with automatic entity extraction using structured entity types (Preference, Requirement, Procedure, Location, Event, Organization, Document, etc.) and temporal contradiction resolution
-- `graphiti_search` — hybrid BM25 + vector search over stored **facts (edges)** across all graphs in parallel
+- `graphiti_search` — hybrid BM25 + vector search over stored **facts (edges)**
 - `graphiti_search_nodes` — search for **entity node summaries** (what entities are, not just what happened between them)
-- `graphiti_get_episodes` — list recent episodes in a graph; returns UUIDs for deletion
+- `graphiti_get_episodes` — list recent episodes; returns UUIDs for deletion
 - `graphiti_delete_episode` — delete an episode and its derived edges/nodes by UUID
 - `graphiti_get_entity_edge` — retrieve a specific fact/edge by UUID with full temporal metadata
 - `graphiti_delete_entity_edge` — surgically delete a single incorrect fact by UUID
@@ -214,30 +216,19 @@ Makes other agents' commands and skills available in pi without manual re-regist
 **Commands:**
 - `/graphiti-status` — show connection and graph info
 - `/graphiti-build-indices` — one-time index setup (run after deploying a fresh FalkorDB instance)
-- `/graphiti-migrate` — bulk ingest all `$HOLOCRON_MEMORY_DIR/memory/*.md` files (concurrent — up to 3 parallel LLM calls)
-- `/graphiti-clear [graph]` — ⚠️ destructive: wipe a graph and rebuild indices (confirm dialog required)
-
-**group_id namespaces:**
-
-| group_id | Contents |
-|---|---|
-| `holocron_user` | Personal preferences, Jack-specific facts, career |
-| `holocron_lahzo` | Work context, team, repos, architecture |
-| `holocron_projects` | Personal project state (non-Lahzo) |
-| `holocron_system` | Holocron/tooling configuration, voice, backup |
-| `holocron_learning` | Reflections, learned patterns, session ratings |
-
-> **Note:** graph names use underscores (`holocron_user`) not hyphens — FalkorDB RediSearch treats hyphens as negation operators.
+- `/graphiti-migrate` — bulk ingest all `$HOLOCRON_MEMORY_DIR/memory/*.md` files (up to 3 concurrent LLM calls)
+- `/graphiti-clear` — ⚠️ destructive: wipe the graph and rebuild indices (confirm dialog required)
 
 **Required env vars:**
-- `OPENAI_API_KEY` — for entity/relationship extraction (`gpt-4.1-mini`) + embeddings (`text-embedding-3-small`)
+- `OPENAI_API_KEY` — LLM entity extraction (`gpt-4.1-mini`) + embeddings (`text-embedding-3-small`)
 - `FALKORDB_HOST` — defaults to `graphiti.breissinger.dev`
 - `FALKORDB_PORT` — defaults to `6379`
+- `GRAPHITI_GROUP_ID` — defaults to `jbreissinger`
 - `GRAPHITI_SEMAPHORE` — migrate concurrency (default `3`)
 
 **First-time setup:**
 ```
-/graphiti-build-indices   # creates vector + full-text indices on all 5 graphs
+/graphiti-build-indices   # creates vector + full-text indices
 /graphiti-migrate         # ingest existing Holocron markdown files
 ```
 
