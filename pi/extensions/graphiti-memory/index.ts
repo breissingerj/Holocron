@@ -278,6 +278,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       limit: Type.Optional(
         Type.Number({ description: "Max episodes to return (default 10)" })
       ),
+      full: Type.Optional(
+        Type.Boolean({ description: "Return full episode content instead of truncating at 200 chars (default false)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -287,6 +290,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
 
       const args = ["get-episodes"];
       if (params.limit) args.push("--limit", String(params.limit));
+      if (params.full)  args.push("--full");
 
       const { stdout } = await runCli(args, 30_000);
       const result = parseResult(stdout);

@@ -230,23 +230,32 @@ async def cmd_search_nodes(args) -> dict:
 
 async def cmd_get_episodes(args) -> dict:
     """List the most recent episodes."""
-    group_id = _group(args)
-    limit    = getattr(args, "limit", 10) or 10
+    from datetime import timezone
+    group_id  = _group(args)
+    limit     = getattr(args, "limit", 10) or 10
+    full      = getattr(args, "full", False)
 
     g = make_graphiti(group_id)
     try:
-        episodes_raw = await g.get_episodes(group_ids=[group_id], last_n=limit)
-        episodes = [
-            {
+        # retrieve_episodes requires a reference_time; use far-future to get latest N
+        ref_time = datetime.now(timezone.utc).replace(year=2099)
+        episodes_raw = await g.retrieve_episodes(
+            reference_time=ref_time,
+            last_n=limit,
+            group_ids=[group_id],
+        )
+        episodes = []
+        for ep in episodes_raw:
+            content = getattr(ep, "content", None) or ""
+            episodes.append({
                 "uuid":               str(ep.uuid) if hasattr(ep, "uuid") else None,
                 "name":               getattr(ep, "name", None),
                 "source":             str(getattr(ep, "source", None)),
                 "source_description": getattr(ep, "source_description", None),
-                "content":            (getattr(ep, "content", None) or "")[:200],
+                "content":            content if full else content[:200],
+                "truncated":          not full and len(content) > 200,
                 "created_at":         ep.created_at.isoformat() if getattr(ep, "created_at", None) else None,
-            }
-            for ep in episodes_raw
-        ]
+            })
         return {"success": True, "group": group_id, "episodes": episodes,
                 "total": len(episodes)}
     except Exception as e:
@@ -442,6 +451,8 @@ def main():
     # get-episodes
     p_gep = sub.add_parser("get-episodes")
     p_gep.add_argument("--limit", type=int, default=10)
+    p_gep.add_argument("--full",  action="store_true",
+                       help="Return full episode content instead of truncating at 200 chars")
     add_group_arg(p_gep)
 
     # delete-episode
