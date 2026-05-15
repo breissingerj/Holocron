@@ -1,0 +1,15 @@
+{
+  "name": "google-drive",
+  "version": "1.0.0",
+  "description": "Google Drive tools for pi — Application Default Credentials via gcloud (no GCP project required)",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "google-auth-library": "^10.6.2",
+    "googleapis": "^171.4.0"
+  }
+}

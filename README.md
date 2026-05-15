@@ -60,6 +60,16 @@ cd Holocron
 .\install.ps1
 ```
 
+### Pi packages
+
+Install the following global pi packages after running `install.sh`:
+
+```bash
+# Structured ask-user questionnaire — lets the agent ask typed questions
+# instead of guessing, with option lists instead of free-form replies.
+pi package install https://pi.dev/packages/@juicesharp/rpiv-ask-user-question
+```
+
 The install scripts symlink `skills/`, `commands/`, `plugins/`, and `instructions/` into the target harness directory (e.g. `~/.opencode/`). Running it again is safe — existing links are skipped.
 
 **Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Pi extensions will live in `pi/extensions/` when built; `install.sh` will auto-link them into `~/.pi/agent/extensions/`.
