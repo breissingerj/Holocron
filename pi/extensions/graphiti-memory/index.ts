@@ -4,8 +4,10 @@
  * Registers tools and commands for the Graphiti temporal knowledge graph
  * backed by FalkorDB at graphiti.breissinger.dev.
  *
- * Single graph: all data lives under group_id "jbreissinger".
- * Additional users can be onboarded by passing --group <their_id> to the CLI.
+ * Default graph: all data lives under group_id "jbreissinger".
+ * Any tool that accepts an optional `group` parameter can target a different
+ * FalkorDB graph (e.g. "rivian_demo"). The graph is created automatically on
+ * first write; call graphiti_build_indices after creating a new graph.
  *
  * Tools (callable by LLM):
  *   graphiti_add              — ingest a fact, preference, or context into the graph
@@ -15,6 +17,7 @@
  *   graphiti_delete_episode   — delete an episode by UUID
  *   graphiti_get_entity_edge  — retrieve a specific fact/edge by UUID
  *   graphiti_delete_entity_edge — delete a specific fact/edge by UUID
+ *   graphiti_build_indices     — build/rebuild indices for a graph (required for new graphs)
  *   graphiti_status           — check connection and graph info
  *
  * Commands:
@@ -90,6 +93,47 @@ function parseResult(stdout: string): Record<string, unknown> {
 
 export default function graphitiMemory(pi: ExtensionAPI) {
 
+  // ── Tool: graphiti_build_indices ────────────────────────────────────────────
+  pi.registerTool({
+    name: "graphiti_build_indices",
+    label: "Graphiti: Build Indices",
+    description:
+      "Build or rebuild vector and full-text indices for a Graphiti graph group. " +
+      "Required after creating a new graph group for the first time (e.g. a demo or project-specific graph). " +
+      "Safe to re-run on existing groups — the operation is idempotent.",
+    promptSnippet: "Build indices for a Graphiti graph (required for new graphs)",
+    promptGuidelines: [
+      "Call graphiti_build_indices with the group name immediately after the first graphiti_add to a new group.",
+      "If search returns errors on a freshly created group, re-run build_indices.",
+      "Omit group to rebuild indices on the default jbreissinger graph.",
+    ],
+    parameters: Type.Object({
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace to build indices for (default: jbreissinger)" })
+      ),
+    }),
+
+    async execute(_id, params, _signal, onUpdate) {
+      const target = params.group ?? DEFAULT_GROUP;
+      onUpdate?.({
+        content: [{ type: "text", text: `Building indices for graph "${target}"…` }],
+      });
+
+      const args = ["build-indices"];
+      if (params.group) args.push("--group", params.group);
+
+      const { stdout } = await runCli(args, 60_000);
+      const result = parseResult(stdout);
+
+      return {
+        content: [{ type: "text", text: result.success
+          ? `✅ Indices built for group: "${result.group ?? target}"`
+          : `❌ Failed: ${result.error}` }],
+        details: result,
+      };
+    },
+  });
+
   // ── Tool: graphiti_add ──────────────────────────────────────────────────────
   pi.registerTool({
     name: "graphiti_add",
@@ -104,7 +148,8 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     promptGuidelines: [
       "Use graphiti_add when the user says 'remember', 'note that', 'save this', or explicitly wants something stored long-term.",
       "Use graphiti_add after discovering important project architecture, team structure, or user preferences worth persisting.",
-      "No routing decisions needed — all data goes into the same unified graph.",
+      "Omit group to write to the default jbreissinger graph. Pass group='rivian_demo' (or any name) to write to an isolated graph.",
+      "After writing to a new group for the first time, call graphiti_build_indices with that group name.",
       "Use source_description to record provenance: 'user conversation', 'standup notes', 'code review', etc.",
       "Use source='json' for structured data, source='message' for conversation turns, source='text' (default) for prose.",
     ],
@@ -121,6 +166,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       source: Type.Optional(
         Type.String({ description: "Episode type: text (default) | message | json" })
       ),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace to write to (default: jbreissinger). Use a custom group like 'rivian_demo' to isolate data in a separate graph. Call graphiti_build_indices for the group after the first write." })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -132,12 +180,14 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       if (params.name)               args.push("--name",               params.name);
       if (params.source_description) args.push("--source-description", params.source_description);
       if (params.source)             args.push("--source",             params.source);
+      if (params.group)              args.push("--group",              params.group);
 
       const { stdout } = await runCli(args, 120_000);
       const result = parseResult(stdout);
 
+      const targetGroup = params.group ?? DEFAULT_GROUP;
       const summary = result.success
-        ? `✅ Ingested — ${result.chars} chars, episode: ${result.episode_uuid ?? "n/a"}`
+        ? `✅ Ingested — ${result.chars} chars, group: "${result.group_id ?? targetGroup}", episode: ${result.episode_uuid ?? "n/a"}`
         : `❌ Failed: ${result.error}`;
 
       return { content: [{ type: "text", text: summary }], details: result };
@@ -164,6 +214,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       num_results: Type.Optional(
         Type.Number({ description: "Max results to return (default 10)" })
       ),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace to search (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -173,6 +226,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
 
       const args = ["search", "--query", params.query];
       if (params.num_results) args.push("--num-results", String(params.num_results));
+      if (params.group)       args.push("--group",       params.group);
 
       const { stdout } = await runCli(args, 60_000);
       const result = parseResult(stdout);
@@ -226,6 +280,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       num_results: Type.Optional(
         Type.Number({ description: "Max results to return (default 10)" })
       ),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace to search (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -235,6 +292,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
 
       const args = ["search-nodes", "--query", params.query];
       if (params.num_results) args.push("--num-results", String(params.num_results));
+      if (params.group)       args.push("--group",       params.group);
 
       const { stdout } = await runCli(args, 60_000);
       const result = parseResult(stdout);
@@ -281,6 +339,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       full: Type.Optional(
         Type.Boolean({ description: "Return full episode content instead of truncating at 200 chars (default false)" })
       ),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace to list episodes from (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -291,6 +352,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       const args = ["get-episodes"];
       if (params.limit) args.push("--limit", String(params.limit));
       if (params.full)  args.push("--full");
+      if (params.group) args.push("--group", params.group);
 
       const { stdout } = await runCli(args, 30_000);
       const result = parseResult(stdout);
@@ -334,6 +396,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     ],
     parameters: Type.Object({
       uuid: Type.String({ description: "Episode UUID to delete" }),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace the episode belongs to (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -341,7 +406,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Deleting episode ${params.uuid}…` }],
       });
 
-      const { stdout } = await runCli(["delete-episode", "--uuid", params.uuid], 30_000);
+      const args = ["delete-episode", "--uuid", params.uuid];
+      if (params.group) args.push("--group", params.group);
+      const { stdout } = await runCli(args, 30_000);
       const result = parseResult(stdout);
 
       return {
@@ -367,6 +434,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     ],
     parameters: Type.Object({
       uuid: Type.String({ description: "Edge UUID to retrieve" }),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace the edge belongs to (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -374,7 +444,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Fetching edge ${params.uuid}…` }],
       });
 
-      const { stdout } = await runCli(["get-entity-edge", "--uuid", params.uuid], 30_000);
+      const args = ["get-entity-edge", "--uuid", params.uuid];
+      if (params.group) args.push("--group", params.group);
+      const { stdout } = await runCli(args, 30_000);
       const result = parseResult(stdout);
 
       if (!result.success) {
@@ -408,6 +480,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     ],
     parameters: Type.Object({
       uuid: Type.String({ description: "Edge UUID to delete" }),
+      group: Type.Optional(
+        Type.String({ description: "Graph group/namespace the edge belongs to (default: jbreissinger)" })
+      ),
     }),
 
     async execute(_id, params, _signal, onUpdate) {
@@ -415,7 +490,9 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Deleting edge ${params.uuid}…` }],
       });
 
-      const { stdout } = await runCli(["delete-entity-edge", "--uuid", params.uuid], 30_000);
+      const args = ["delete-entity-edge", "--uuid", params.uuid];
+      if (params.group) args.push("--group", params.group);
+      const { stdout } = await runCli(args, 30_000);
       const result = parseResult(stdout);
 
       return {
