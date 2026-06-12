@@ -5,6 +5,7 @@ add live-document references with read-through caching. Refresh is queued and
 drained by the in-process worker — never inline on the read path.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -16,8 +17,24 @@ from .graph import build_entity_types, close_all_graphiti, make_graphiti
 from .uris import UriError
 
 
+class _IndexExistsFilter(logging.Filter):
+    """Suppress the 'Index already exists' INFO lines from FalkorDriver.
+
+    FalkorDriver.__init__ fires build_indices_and_constraints() as a background
+    task on every instantiation. When indices already exist it logs INFO for
+    each one — harmless but noisy. Suppress to WARNING so only real errors
+    surface.
+    """
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "already" not in record.getMessage().lower()
+
+
 @asynccontextmanager
 async def _lifespan(_server):
+    # Silence 'Index already exists' INFO noise from FalkorDriver.
+    _falkor_log = logging.getLogger("graphiti_core.driver.falkordb_driver")
+    _falkor_log.addFilter(_IndexExistsFilter())
+
     config.ensure_dirs()
     pending = engine.startup_recover()
     if pending:
