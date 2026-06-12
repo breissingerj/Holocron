@@ -12,7 +12,7 @@ from mcp.server.fastmcp import FastMCP
 
 from . import config, engine
 from .connectors import NotConfigured
-from .graph import build_entity_types, make_graphiti
+from .graph import build_entity_types, close_all_graphiti, make_graphiti
 from .uris import UriError
 
 
@@ -23,6 +23,7 @@ async def _lifespan(_server):
     if pending:
         engine.ensure_worker()
     yield {}
+    await close_all_graphiti()
 
 
 mcp = FastMCP("graphiti-mcp", lifespan=_lifespan)
@@ -96,8 +97,6 @@ async def graphiti_add(text: str, name: str | None = None,
                 "episode_uuid": str(getattr(episode, "uuid", "")) or None}
     except Exception as e:
         return {"success": False, "error": str(e)}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -140,8 +139,6 @@ async def graphiti_search(query: str, num_results: int = 10,
         return {"success": True, "group": group_id, "facts": facts, "total": len(facts)}
     except Exception as e:
         return {"success": False, "error": str(e), "facts": [], "total": 0}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -180,8 +177,6 @@ async def graphiti_search_nodes(query: str, num_results: int = 10,
         return {"success": True, "group": group_id, "nodes": nodes, "total": len(nodes)}
     except Exception as e:
         return {"success": False, "error": str(e), "nodes": [], "total": 0}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -211,8 +206,6 @@ async def graphiti_get_episodes(limit: int = 10, full: bool = False,
                 "total": len(episodes)}
     except Exception as e:
         return {"success": False, "error": str(e)}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -226,8 +219,6 @@ async def graphiti_delete_episode(uuid: str, group: str | None = None) -> dict:
         return {"success": True, "deleted_uuid": uuid, "group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": uuid}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -248,8 +239,6 @@ async def graphiti_get_entity_edge(uuid: str, group: str | None = None) -> dict:
                 "episodes": [str(e) for e in getattr(edge, "episodes", [])]}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": uuid}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -266,8 +255,6 @@ async def graphiti_delete_entity_edge(uuid: str, group: str | None = None) -> di
         return {"success": True, "deleted_uuid": uuid, "group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "uuid": uuid}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -281,8 +268,6 @@ async def graphiti_build_indices(group: str | None = None) -> dict:
         return {"success": True, "group": group_id}
     except Exception as e:
         return {"success": False, "group": group_id, "error": str(e)}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -317,8 +302,6 @@ async def graphiti_add_triplet(source_node_name: str, edge_name: str, fact: str,
                 "edges": [str(e.uuid) for e in getattr(result, "edges", [])]}
     except Exception as e:
         return {"success": False, "error": str(e)}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -344,8 +327,6 @@ async def graphiti_get_episode_entities(episode_uuids: list[str],
         return {"success": True, "group": group_id, "nodes": nodes, "edges": edges}
     except Exception as e:
         return {"success": False, "error": str(e)}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -361,8 +342,6 @@ async def graphiti_clear_graph(group: str | None = None) -> dict:
         return {"success": True, "cleared_group": group_id}
     except Exception as e:
         return {"success": False, "error": str(e), "group": group_id}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -382,8 +361,6 @@ async def graphiti_build_communities(group: str | None = None) -> dict:
                                 for c in communities]}
     except Exception as e:
         return {"success": False, "error": str(e), "group": group_id}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
@@ -406,8 +383,6 @@ async def graphiti_summarize_saga(saga_name: str, group: str | None = None) -> d
                 "name": saga_node.name, "summary": saga_node.summary}
     except Exception as e:
         return {"success": False, "error": str(e), "group": group_id}
-    finally:
-        await g.close()
 
 
 @mcp.tool()
