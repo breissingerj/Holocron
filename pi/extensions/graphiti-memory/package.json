@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "Graphiti temporal knowledge graph tools for pi — FalkorDB backend",
   "pi": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
   }
 }
