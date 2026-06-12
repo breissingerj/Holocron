@@ -1,0 +1,27 @@
+[project]
+name = "graphiti-mcp"
+version = "0.1.0"
+description = "Custom Graphiti MCP server with live document references and read-through caching"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.0,<2",
+    "graphiti-core[falkordb]",
+    "openai",
+]
+
+[project.scripts]
+graphiti-mcp = "graphiti_mcp.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-asyncio>=0.24"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/graphiti_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
