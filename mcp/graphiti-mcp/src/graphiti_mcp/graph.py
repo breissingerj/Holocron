@@ -41,17 +41,43 @@ def build_entity_types():
         return None
 
 
+# ── Singleton cache (one Graphiti instance per group_id) ─────────────────────
+# FalkorDriver fires loop.create_task(build_indices_and_constraints()) in its
+# __init__. Creating a new driver per tool call floods FalkorDB with concurrent
+# index queries. Cache instances so each group_id initialises exactly once.
+
+_cache: dict[str, "Graphiti"] = {}
+
+
 def make_graphiti(group_id: str | None = None):
-    """Create a Graphiti instance connected to the given group's FalkorDB graph."""
+    """Return (or create) a cached Graphiti instance for the given group.
+
+    Call close_all_graphiti() on server shutdown to release connections.
+    Do NOT call g.close() after individual tool calls — the instance is shared.
+    """
     from graphiti_core import Graphiti
     from graphiti_core.driver.falkordb_driver import FalkorDriver
     from graphiti_core.llm_client.openai_client import OpenAIClient
     from graphiti_core.llm_client.config import LLMConfig
     from graphiti_core.embedder.openai import OpenAIEmbedder, OpenAIEmbedderConfig
 
-    group_id = group_id or config.DEFAULT_GROUP_ID
+    gid = group_id or config.DEFAULT_GROUP_ID
+    if gid in _cache:
+        return _cache[gid]
     driver = FalkorDriver(host=config.FALKORDB_HOST, port=config.FALKORDB_PORT,
-                          password=config.FALKORDB_PASSWORD, database=group_id)
+                          password=config.FALKORDB_PASSWORD, database=gid)
     llm = OpenAIClient(config=LLMConfig(model=config.LLM_MODEL))
     embedder = OpenAIEmbedder(config=OpenAIEmbedderConfig(embedding_model=config.EMBED_MODEL))
-    return Graphiti(graph_driver=driver, llm_client=llm, embedder=embedder)
+    instance = Graphiti(graph_driver=driver, llm_client=llm, embedder=embedder)
+    _cache[gid] = instance
+    return instance
+
+
+async def close_all_graphiti() -> None:
+    """Close all cached Graphiti instances (call from server lifespan shutdown)."""
+    for gid, g in list(_cache.items()):
+        try:
+            await g.close()
+        except Exception:
+            pass
+    _cache.clear()
