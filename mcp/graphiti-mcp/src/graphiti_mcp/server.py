@@ -484,8 +484,26 @@ async def docref_remove(id_or_uri: str) -> dict:
         return {"error": str(e)}
 
 
-def run() -> None:
-    mcp.run(transport="stdio")
+@mcp.custom_route("/health", methods=["GET"])
+async def _health(_request):
+    """Liveness probe for Docker/traefik (only used under HTTP transport)."""
+    from starlette.responses import JSONResponse
+    return JSONResponse({"status": "healthy", "service": "graphiti-mcp"})
+
+
+def run(transport: str = "stdio", host: str | None = None,
+        port: int | None = None) -> None:
+    """Run the MCP server.
+
+    transport: 'stdio' (default, for local agent harnesses) | 'streamable-http'
+    | 'sse'. host/port apply to the HTTP transports (defaults 127.0.0.1:8000);
+    use host=0.0.0.0 in a container so traefik/the host can reach it.
+    """
+    if host is not None:
+        mcp.settings.host = host
+    if port is not None:
+        mcp.settings.port = port
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":

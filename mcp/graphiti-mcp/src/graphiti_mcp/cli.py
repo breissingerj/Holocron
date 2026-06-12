@@ -5,7 +5,9 @@ tools so agents can't trigger re-ingestion autonomously — the read path only
 ever queues.
 
 Usage:
-  graphiti-mcp serve                       run the MCP server (stdio)
+  graphiti-mcp serve [--transport T] [--host H] [--port P]
+                                           run the MCP server (stdio default;
+                                           streamable-http for container deploys)
   graphiti-mcp status                      connectivity + registry summary
   graphiti-mcp register <uri> [--ttl S] [--group G]
   graphiti-mcp get <id-or-uri>             read-through get (may queue refresh)
@@ -54,7 +56,15 @@ def main() -> None:
                                      description="Graphiti MCP server + docref admin")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("serve")
+    p = sub.add_parser("serve")
+    p.add_argument("--transport", default="stdio",
+                   choices=["stdio", "streamable-http", "sse"],
+                   help="transport (default: stdio)")
+    p.add_argument("--host", default=None,
+                   help="bind host for HTTP transports (default 127.0.0.1; "
+                        "use 0.0.0.0 in a container)")
+    p.add_argument("--port", type=int, default=None,
+                   help="bind port for HTTP transports (default 8000)")
     sub.add_parser("status")
     sub.add_parser("list")
     sub.add_parser("drain")
@@ -82,7 +92,7 @@ def main() -> None:
 
     if args.command == "serve":
         from .server import run
-        run()
+        run(transport=args.transport, host=args.host, port=args.port)
         return
 
     if args.command == "status":
