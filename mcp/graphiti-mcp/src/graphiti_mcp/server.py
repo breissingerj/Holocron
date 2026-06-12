@@ -498,11 +498,39 @@ def run(transport: str = "stdio", host: str | None = None,
     transport: 'stdio' (default, for local agent harnesses) | 'streamable-http'
     | 'sse'. host/port apply to the HTTP transports (defaults 127.0.0.1:8000);
     use host=0.0.0.0 in a container so traefik/the host can reach it.
+
+    When host is not a loopback address the FastMCP DNS-rebinding protection is
+    reconfigured to either use the hosts supplied in GRAPHITI_MCP_ALLOWED_HOSTS
+    (comma-separated) or disabled entirely — appropriate for a container running
+    behind a trusted reverse proxy (traefik/nginx) that handles external TLS.
     """
+    import os
+    from mcp.server.transport_security import TransportSecuritySettings
+
+    _LOOPBACK = {"127.0.0.1", "localhost", "::1"}
+    effective_host = host or mcp.settings.host
+
     if host is not None:
         mcp.settings.host = host
     if port is not None:
         mcp.settings.port = port
+
+    if effective_host not in _LOOPBACK and transport != "stdio":
+        raw = os.environ.get("GRAPHITI_MCP_ALLOWED_HOSTS", "").strip()
+        if raw:
+            # Explicit allowlist supplied — use it.
+            allowed = [h.strip() for h in raw.split(",") if h.strip()]
+            mcp.settings.transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=True,
+                allowed_hosts=allowed,
+            )
+        else:
+            # No allowlist — disable DNS-rebinding protection entirely.
+            # Safe when the server runs behind a trusted reverse proxy.
+            mcp.settings.transport_security = TransportSecuritySettings(
+                enable_dns_rebinding_protection=False,
+            )
+
     mcp.run(transport=transport)
 
 

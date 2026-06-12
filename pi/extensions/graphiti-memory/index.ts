@@ -45,7 +45,7 @@ const DEFAULT_GROUP = "jbreissinger";
 // Remote MCP server (custom graphiti-mcp — parity tools + docrefs).
 // Override with GRAPHITI_MCP_URL (e.g. http://localhost:8000/mcp/ for local dev).
 // Optional bearer auth via GRAPHITI_MCP_TOKEN once the traefik route is protected.
-const MCP_URL = process.env.GRAPHITI_MCP_URL ?? "https://graphiti-mcp.breissinger.dev/mcp/";
+const MCP_URL = process.env.GRAPHITI_MCP_URL ?? "https://graphiti-mcp.breissinger.dev/mcp";
 const MCP_TOKEN = process.env.GRAPHITI_MCP_TOKEN;
 
 // ── MCP client (lazy singleton, reused across tool calls) ─────────────────────
