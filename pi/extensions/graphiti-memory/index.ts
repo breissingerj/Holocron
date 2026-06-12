@@ -1,13 +1,16 @@
 /**
  * graphiti-memory — pi extension
  *
- * Registers tools and commands for the Graphiti temporal knowledge graph
- * backed by FalkorDB at graphiti.breissinger.dev.
+ * Thin MCP client over the custom graphiti-mcp server (streamable-HTTP).
+ * All graph access, entity extraction, and OpenAI/embedding calls happen
+ * server-side; this extension only marshals tool args and formats results.
+ *   Endpoint: GRAPHITI_MCP_URL (default https://graphiti-mcp.breissinger.dev/mcp/)
+ *   Auth:     optional Bearer via GRAPHITI_MCP_TOKEN
  *
  * Default graph: all data lives under group_id "jbreissinger".
  * Any tool that accepts an optional `group` parameter can target a different
- * FalkorDB graph (e.g. "rivian_demo"). The graph is created automatically on
- * first write; call graphiti_build_indices after creating a new graph.
+ * graph (e.g. "rivian_demo"). The graph is created automatically on first
+ * write; call graphiti_build_indices after creating a new graph.
  *
  * Tools (callable by LLM):
  *   graphiti_add              — ingest a fact, preference, or context into the graph
@@ -32,61 +35,112 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { join } from "node:path";
-import { existsSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
-const execFileAsync = promisify(execFile);
-
-const __dir = fileURLToPath(new URL(".", import.meta.url));
-const CLI_SCRIPT = join(__dir, "graphiti_cli.py");
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { readdir, readFile } from "node:fs/promises";
+import { join, relative } from "node:path";
 
 const DEFAULT_GROUP = "jbreissinger";
 
-// ── uv binary discovery ───────────────────────────────────────────────────────
+// Remote MCP server (custom graphiti-mcp — parity tools + docrefs).
+// Override with GRAPHITI_MCP_URL (e.g. http://localhost:8000/mcp/ for local dev).
+// Optional bearer auth via GRAPHITI_MCP_TOKEN once the traefik route is protected.
+const MCP_URL = process.env.GRAPHITI_MCP_URL ?? "https://graphiti-mcp.breissinger.dev/mcp/";
+const MCP_TOKEN = process.env.GRAPHITI_MCP_TOKEN;
 
-const UV_CANDIDATES = [
-  "/Users/jbreissinger/.local/bin/uv",
-  "/usr/local/bin/uv",
-  "/opt/homebrew/bin/uv",
-  "/root/.local/bin/uv",
-];
+// ── MCP client (lazy singleton, reused across tool calls) ─────────────────────
 
-function findUv(): string {
-  for (const p of UV_CANDIDATES) {
-    if (existsSync(p)) return p;
-  }
-  return "uv";
+let _client: Client | null = null;
+let _connecting: Promise<Client> | null = null;
+
+function makeTransport(): StreamableHTTPClientTransport {
+  const requestInit: RequestInit = MCP_TOKEN
+    ? { headers: { Authorization: `Bearer ${MCP_TOKEN}` } }
+    : {};
+  return new StreamableHTTPClientTransport(new URL(MCP_URL), { requestInit });
 }
 
-// ── CLI runner ────────────────────────────────────────────────────────────────
-
-async function runCli(
-  args: string[],
-  timeoutMs = 60_000
-): Promise<{ stdout: string; stderr: string }> {
-  const uv = findUv();
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    FALKORDB_HOST:      process.env.FALKORDB_HOST      ?? "graphiti.breissinger.dev",
-    FALKORDB_PORT:      process.env.FALKORDB_PORT      ?? "6379",
-    GRAPHITI_GROUP_ID:  process.env.GRAPHITI_GROUP_ID  ?? DEFAULT_GROUP,
-  };
-  return execFileAsync(uv, ["run", "--script", CLI_SCRIPT, ...args], {
-    env,
-    timeout: timeoutMs,
-    maxBuffer: 10 * 1024 * 1024,
-  });
-}
-
-function parseResult(stdout: string): Record<string, unknown> {
+async function getClient(): Promise<Client> {
+  if (_client) return _client;
+  if (_connecting) return _connecting;
+  _connecting = (async () => {
+    const client = new Client({ name: "graphiti-memory-ext", version: "2.0.0" });
+    await client.connect(makeTransport());
+    _client = client;
+    return client;
+  })();
   try {
-    return JSON.parse(stdout.trim());
-  } catch {
-    return { success: false, raw: stdout.trim() };
+    return await _connecting;
+  } finally {
+    _connecting = null;
   }
+}
+
+async function resetClient(): Promise<void> {
+  const c = _client;
+  _client = null;
+  if (c) { try { await c.close(); } catch { /* ignore */ } }
+}
+
+/**
+ * Call a graphiti tool on the remote MCP server and return its JSON payload.
+ * The server's tools return the same dict shapes the old CLI emitted, so the
+ * per-tool formatting below is unchanged. Reconnects once on transport error
+ * (HTTP sessions can drop between calls).
+ */
+async function callGraphiti(
+  tool: string,
+  args: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+  const invoke = async (): Promise<Record<string, unknown>> => {
+    const client = await getClient();
+    const res = await client.callTool({ name: tool, arguments: pruneUndefined(args) });
+    // Prefer structuredContent (FastMCP dict return); fall back to text JSON.
+    const structured = (res as { structuredContent?: unknown }).structuredContent;
+    if (structured && typeof structured === "object") {
+      return structured as Record<string, unknown>;
+    }
+    const content =
+      (res as { content?: Array<{ type: string; text?: string }> }).content ?? [];
+    const textBlock = content.find((c) => c.type === "text" && typeof c.text === "string");
+    if (textBlock?.text) {
+      try { return JSON.parse(textBlock.text); }
+      catch { return { success: false, raw: textBlock.text }; }
+    }
+    if ((res as { isError?: boolean }).isError) {
+      return { success: false, error: "MCP tool reported an error with no payload" };
+    }
+    return { success: false, error: "empty MCP tool result" };
+  };
+
+  try {
+    return await invoke();
+  } catch {
+    await resetClient(); // one reconnect attempt on a dropped session
+    try {
+      return await invoke();
+    } catch (err2) {
+      return { success: false, error: err2 instanceof Error ? err2.message : String(err2) };
+    }
+  }
+}
+
+function pruneUndefined(o: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) if (v !== undefined) out[k] = v;
+  return out;
+}
+
+/** Recursively list *.md files under a directory (for /graphiti-migrate). */
+async function listMarkdown(dir: string): Promise<string[]> {
+  const out: string[] = [];
+  const entries = await readdir(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const full = join(dir, e.name);
+    if (e.isDirectory()) out.push(...await listMarkdown(full));
+    else if (e.isFile() && e.name.toLowerCase().endsWith(".md")) out.push(full);
+  }
+  return out;
 }
 
 // ── Extension ─────────────────────────────────────────────────────────────────
@@ -119,11 +173,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Building indices for graph "${target}"…` }],
       });
 
-      const args = ["build-indices"];
-      if (params.group) args.push("--group", params.group);
-
-      const { stdout } = await runCli(args, 60_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_build_indices", { group: params.group });
 
       return {
         content: [{ type: "text", text: result.success
@@ -176,18 +226,17 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Adding to Graphiti…` }],
       });
 
-      const args = ["add", "--text", params.text];
-      if (params.name)               args.push("--name",               params.name);
-      if (params.source_description) args.push("--source-description", params.source_description);
-      if (params.source)             args.push("--source",             params.source);
-      if (params.group)              args.push("--group",              params.group);
-
-      const { stdout } = await runCli(args, 120_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_add", {
+        text: params.text,
+        name: params.name,
+        source_description: params.source_description,
+        source: params.source,
+        group: params.group,
+      });
 
       const targetGroup = params.group ?? DEFAULT_GROUP;
       const summary = result.success
-        ? `✅ Ingested — ${result.chars} chars, group: "${result.group_id ?? targetGroup}", episode: ${result.episode_uuid ?? "n/a"}`
+        ? `✅ Ingested — ${result.chars} chars, group: "${result.group ?? result.group_id ?? targetGroup}", episode: ${result.episode_uuid ?? "n/a"}`
         : `❌ Failed: ${result.error}`;
 
       return { content: [{ type: "text", text: summary }], details: result };
@@ -224,12 +273,11 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Searching Graphiti: "${params.query}"…` }],
       });
 
-      const args = ["search", "--query", params.query];
-      if (params.num_results) args.push("--num-results", String(params.num_results));
-      if (params.group)       args.push("--group",       params.group);
-
-      const { stdout } = await runCli(args, 60_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_search", {
+        query: params.query,
+        num_results: params.num_results,
+        group: params.group,
+      });
 
       if (!result.success && !(result.facts as unknown[])?.length) {
         return {
@@ -290,12 +338,11 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Searching Graphiti nodes: "${params.query}"…` }],
       });
 
-      const args = ["search-nodes", "--query", params.query];
-      if (params.num_results) args.push("--num-results", String(params.num_results));
-      if (params.group)       args.push("--group",       params.group);
-
-      const { stdout } = await runCli(args, 60_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_search_nodes", {
+        query: params.query,
+        num_results: params.num_results,
+        group: params.group,
+      });
 
       const nodes = (result.nodes as Array<{
         name: string; summary: string | null; entity_type: string | null; uuid: string | null;
@@ -349,13 +396,11 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Fetching recent episodes…` }],
       });
 
-      const args = ["get-episodes"];
-      if (params.limit) args.push("--limit", String(params.limit));
-      if (params.full)  args.push("--full");
-      if (params.group) args.push("--group", params.group);
-
-      const { stdout } = await runCli(args, 30_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_get_episodes", {
+        limit: params.limit,
+        full: params.full,
+        group: params.group,
+      });
 
       if (!result.success) {
         return { content: [{ type: "text", text: `❌ Failed: ${result.error}` }], details: result };
@@ -406,10 +451,10 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Deleting episode ${params.uuid}…` }],
       });
 
-      const args = ["delete-episode", "--uuid", params.uuid];
-      if (params.group) args.push("--group", params.group);
-      const { stdout } = await runCli(args, 30_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_delete_episode", {
+        uuid: params.uuid,
+        group: params.group,
+      });
 
       return {
         content: [{ type: "text", text: result.success
@@ -444,10 +489,10 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Fetching edge ${params.uuid}…` }],
       });
 
-      const args = ["get-entity-edge", "--uuid", params.uuid];
-      if (params.group) args.push("--group", params.group);
-      const { stdout } = await runCli(args, 30_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_get_entity_edge", {
+        uuid: params.uuid,
+        group: params.group,
+      });
 
       if (!result.success) {
         return { content: [{ type: "text", text: `❌ Failed: ${result.error}` }], details: result };
@@ -490,10 +535,10 @@ export default function graphitiMemory(pi: ExtensionAPI) {
         content: [{ type: "text", text: `Deleting edge ${params.uuid}…` }],
       });
 
-      const args = ["delete-entity-edge", "--uuid", params.uuid];
-      if (params.group) args.push("--group", params.group);
-      const { stdout } = await runCli(args, 30_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_delete_entity_edge", {
+        uuid: params.uuid,
+        group: params.group,
+      });
 
       return {
         content: [{ type: "text", text: result.success
@@ -513,8 +558,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
 
     async execute(_id, _params, _signal, onUpdate) {
       onUpdate?.({ content: [{ type: "text", text: "Checking Graphiti connection…" }] });
-      const { stdout } = await runCli(["status"], 15_000);
-      const result = parseResult(stdout);
+      const result = await callGraphiti("graphiti_status", {});
       const text = result.connected
         ? `✅ Connected to ${result.host}:${result.port}\n  Default group: ${result.default_group}\n  Graphs: ${JSON.stringify(result.graphs)}`
         : `❌ Not connected: ${result.error}`;
@@ -529,8 +573,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       if (!ctx.hasUI) return;
       ctx.ui.notify("Checking Graphiti…", "info");
       try {
-        const { stdout } = await runCli(["status"], 15_000);
-        const r = parseResult(stdout);
+        const r = await callGraphiti("graphiti_status", {});
         const msg = r.connected
           ? `🧠 Graphiti Connected\n  Host: ${r.host}:${r.port}\n  Default group: ${r.default_group}\n  Graphs: ${JSON.stringify(r.graphs)}`
           : `❌ Graphiti unreachable\n  ${r.error}`;
@@ -548,8 +591,7 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       if (!ctx.hasUI) return;
       ctx.ui.notify(`Building Graphiti indices…`, "info");
       try {
-        const { stdout } = await runCli(["build-indices"], 120_000);
-        const r = parseResult(stdout);
+        const r = await callGraphiti("graphiti_build_indices", {});
         ctx.ui.notify(
           r.success ? `✅ Indices built for group: ${r.group}` : `⚠️ Index build failed: ${r.error}`,
           r.success ? "success" : "warning"
@@ -572,27 +614,63 @@ export default function graphitiMemory(pi: ExtensionAPI) {
       }
 
       const memoryPath = join(dir, "memory");
+
+      // Collect .md files locally; ingestion (LLM extraction/embeddings) is
+      // offloaded to the MCP server via graphiti_add.
+      let files: string[];
+      try {
+        files = await listMarkdown(memoryPath);
+      } catch (err: unknown) {
+        ctx.ui.notify(`❌ Cannot read ${memoryPath}: ${err instanceof Error ? err.message : String(err)}`, "error");
+        return;
+      }
+      if (files.length === 0) {
+        ctx.ui.notify(`No .md files found under ${memoryPath}`, "warning");
+        return;
+      }
+
       const ok = await ctx.ui.confirm(
         "Migrate Holocron Memory → Graphiti",
-        `Ingest all .md files from:\n  ${memoryPath}\n\n` +
-        `This triggers 3-6 LLM calls per file (up to 3 concurrent) and may take several minutes.`
+        `Ingest ${files.length} .md file(s) from:\n  ${memoryPath}\n\n` +
+        `Each triggers server-side LLM extraction (up to 3 concurrent) and may take several minutes.`
       );
       if (!ok) return;
 
-      ctx.ui.notify("🔄 Migration running — progress in stderr/logs…", "info");
-      try {
-        const { stdout, stderr } = await runCli(["migrate", "--dir", memoryPath], 600_000);
-        const r = parseResult(stdout);
-        const progressLines = stderr.trim().split("\n").slice(-10).join("\n");
-        ctx.ui.notify(
-          r.success
-            ? `✅ Migration complete\n  Ingested: ${r.ingested}\n  Skipped:  ${r.skipped}\n\n${progressLines}`
-            : `⚠️ Migration finished with errors\n  Ingested: ${r.ingested}  Errors: ${(r.errors as unknown[])?.length}\n\n${progressLines}`,
-          r.success ? "success" : "warning"
-        );
-      } catch (err: unknown) {
-        ctx.ui.notify(`❌ Migration failed: ${err instanceof Error ? err.message : String(err)}`, "error");
-      }
+      ctx.ui.notify(`🔄 Migrating ${files.length} file(s) via MCP server…`, "info");
+
+      let ingested = 0;
+      const errors: string[] = [];
+      const CONCURRENCY = 3;
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < files.length) {
+          const idx = cursor++;
+          const file = files[idx];
+          const rel = relative(memoryPath, file);
+          try {
+            const text = await readFile(file, "utf8");
+            if (!text.trim()) continue;
+            const r = await callGraphiti("graphiti_add", {
+              text,
+              name: rel,
+              source_description: `holocron migration: ${rel}`,
+            });
+            if (r.success) ingested++;
+            else errors.push(`${rel}: ${r.error}`);
+          } catch (err: unknown) {
+            errors.push(`${rel}: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+      const tail = errors.slice(-8).join("\n");
+      ctx.ui.notify(
+        errors.length === 0
+          ? `✅ Migration complete\n  Ingested: ${ingested}/${files.length}`
+          : `⚠️ Migration finished with errors\n  Ingested: ${ingested}/${files.length}  Errors: ${errors.length}\n\n${tail}`,
+        errors.length === 0 ? "success" : "warning"
+      );
     },
   });
 
@@ -610,10 +688,10 @@ export default function graphitiMemory(pi: ExtensionAPI) {
 
       ctx.ui.notify(`🗑 Clearing graph…`, "info");
       try {
-        const { stdout } = await runCli(["clear-graph"], 120_000);
-        const r = parseResult(stdout);
+        const r = await callGraphiti("graphiti_clear_graph", {});
+        if (r.success) await callGraphiti("graphiti_build_indices", {});
         ctx.ui.notify(
-          r.success ? `✅ Graph cleared and indices rebuilt (group: ${r.group})` : `⚠️ Clear failed: ${r.error}`,
+          r.success ? `✅ Graph cleared and indices rebuilt (group: ${r.cleared_group ?? r.group})` : `⚠️ Clear failed: ${r.error}`,
           r.success ? "success" : "warning"
         );
       } catch (err: unknown) {
