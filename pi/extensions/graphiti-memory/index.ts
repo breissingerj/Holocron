@@ -131,6 +131,59 @@ function pruneUndefined(o: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
+// ── Background task report helpers ─────────────────────────────────────────────────
+
+interface BgTask {
+  label: string;
+  started_at: string;
+  status: "running" | "done" | "failed";
+  error: string | null;
+  finished_at: string | null;
+}
+
+interface BackgroundTaskReport {
+  running_count: number;
+  running: BgTask[];
+  recent: BgTask[];
+}
+
+/** Format a BackgroundTaskReport into display lines for status output. */
+function formatTaskReport(report: BackgroundTaskReport | undefined): string[] {
+  if (!report) return [];
+  const lines: string[] = [];
+  const { running, recent } = report;
+
+  if (running.length > 0) {
+    lines.push(`\n🔄 Background tasks running (${running.length}):`);
+    for (const t of running) {
+      const age = elapsed(t.started_at);
+      lines.push(`  ⏳ ${t.label} (running for ${age})`);
+    }
+  } else {
+    lines.push(`\n✅ No background tasks running`);
+  }
+
+  if (recent.length > 0) {
+    lines.push(`\nRecent completed tasks (last ${recent.length}):`);
+    for (const t of [...recent].reverse()) {
+      const icon = t.status === "done" ? "✅" : "❌";
+      const age = t.finished_at ? elapsed(t.finished_at) + " ago" : "";
+      const err = t.error ? ` — ${t.error.slice(0, 80)}` : "";
+      lines.push(`  ${icon} ${t.label} (${t.status}${age ? ", " + age : ""}${err})`);
+    }
+  }
+
+  return lines;
+}
+
+/** Human-readable elapsed time since an ISO-8601 timestamp. */
+function elapsed(iso: string): string {
+  const secs = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return `${secs}s`;
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
+  return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
+}
+
 /** Recursively list *.md files under a directory (for /graphiti-migrate). */
 async function listMarkdown(dir: string): Promise<string[]> {
   const out: string[] = [];
@@ -559,25 +612,29 @@ export default function graphitiMemory(pi: ExtensionAPI) {
     async execute(_id, _params, _signal, onUpdate) {
       onUpdate?.({ content: [{ type: "text", text: "Checking Graphiti connection…" }] });
       const result = await callGraphiti("graphiti_status", {});
-      const text = result.connected
-        ? `✅ Connected to ${result.host}:${result.port}\n  Default group: ${result.default_group}\n  Graphs: ${JSON.stringify(result.graphs)}`
-        : `❌ Not connected: ${result.error}`;
-      return { content: [{ type: "text", text }], details: result };
+      const lines: string[] = [];
+      lines.push(result.connected
+        ? `✅ Connected to ${result.host}:${result.port} | group: ${result.default_group} | graphs: ${JSON.stringify(result.graphs)}`
+        : `❌ Not connected: ${result.error}`);
+      lines.push(...formatTaskReport(result.background_tasks as BackgroundTaskReport | undefined));
+      return { content: [{ type: "text", text: lines.join("\n") }], details: result };
     },
   });
 
   // ── Command: /graphiti-status ───────────────────────────────────────────────
   pi.registerCommand("graphiti-status", {
-    description: "Check FalkorDB connection and show graph info",
+    description: "Check FalkorDB connection + background task status",
     handler: async (_args, ctx) => {
       if (!ctx.hasUI) return;
       ctx.ui.notify("Checking Graphiti…", "info");
       try {
         const r = await callGraphiti("graphiti_status", {});
-        const msg = r.connected
-          ? `🧠 Graphiti Connected\n  Host: ${r.host}:${r.port}\n  Default group: ${r.default_group}\n  Graphs: ${JSON.stringify(r.graphs)}`
-          : `❌ Graphiti unreachable\n  ${r.error}`;
-        ctx.ui.notify(msg, r.connected ? "success" : "error");
+        const lines: string[] = [];
+        lines.push(r.connected
+          ? `🧠 Graphiti | ${r.host}:${r.port} | group: ${r.default_group}`
+          : `❌ Graphiti unreachable\n  ${r.error}`);
+        lines.push(...formatTaskReport(r.background_tasks as BackgroundTaskReport | undefined));
+        ctx.ui.notify(lines.join("\n"), r.connected ? "success" : "error");
       } catch (err: unknown) {
         ctx.ui.notify(`❌ Graphiti error: ${err instanceof Error ? err.message : String(err)}`, "error");
       }

@@ -32,6 +32,11 @@ from .uris import UriError
 _logger = logging.getLogger(__name__)
 _group_semaphores: dict[str, asyncio.Semaphore] = {}
 
+# Task registry: running + last 20 completed tasks, newest-last.
+# Entries: {label, started_at, status, error, finished_at}
+_bg_task_registry: list[dict] = []
+_BG_REGISTRY_KEEP = 20
+
 
 def _group_sem(group_id: str) -> asyncio.Semaphore:
     """Return (or create) the per-group sequential-add semaphore."""
@@ -41,12 +46,37 @@ def _group_sem(group_id: str) -> asyncio.Semaphore:
 
 
 def _bg(coro, label: str) -> None:
-    """Fire a coroutine as a background asyncio task with error logging."""
+    """Fire a coroutine as a tracked background asyncio task.
+
+    Registers the task in _bg_task_registry so graphiti_status can report it.
+    Keeps the last _BG_REGISTRY_KEEP completed entries; running tasks are always
+    visible regardless of that cap.
+    """
+    entry: dict = {
+        "label": label,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "status": "running",
+        "error": None,
+        "finished_at": None,
+    }
+    _bg_task_registry.append(entry)
+
     async def _guarded():
         try:
             await coro
+            entry["status"] = "done"
         except Exception as exc:  # noqa: BLE001
+            entry["status"] = "failed"
+            entry["error"] = str(exc)
             _logger.error("background task %s failed: %s", label, exc)
+        finally:
+            entry["finished_at"] = datetime.now(timezone.utc).isoformat()
+            # Prune completed entries beyond the cap (keep running ones always).
+            completed = [e for e in _bg_task_registry if e["status"] != "running"]
+            if len(completed) > _BG_REGISTRY_KEEP:
+                to_remove = set(id(e) for e in completed[:-_BG_REGISTRY_KEEP])
+                _bg_task_registry[:] = [e for e in _bg_task_registry
+                                         if id(e) not in to_remove]
 
     asyncio.create_task(_guarded(), name=label)
 
@@ -451,7 +481,8 @@ async def graphiti_summarize_saga(saga_name: str, group: str | None = None) -> d
 
 @mcp.tool()
 async def graphiti_status() -> dict:
-    """Check FalkorDB connectivity, list graphs, and report docref/queue state."""
+    """Check FalkorDB connectivity, list graphs, report docref/queue state,
+    and show the status of all background tasks (running + last 20 completed)."""
     out: dict = {"host": config.FALKORDB_HOST, "port": config.FALKORDB_PORT,
                  "default_group": config.DEFAULT_GROUP_ID}
     try:
@@ -469,6 +500,14 @@ async def graphiti_status() -> dict:
         reg.close()
     except Exception as e:
         out.update(registry_error=str(e))
+    # Background task report: snapshot of registry at call time.
+    running = [e for e in _bg_task_registry if e["status"] == "running"]
+    recent  = [e for e in _bg_task_registry if e["status"] != "running"][-10:]
+    out["background_tasks"] = {
+        "running_count": len(running),
+        "running": running,
+        "recent": recent,
+    }
     return out
 
 
