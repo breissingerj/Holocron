@@ -247,11 +247,18 @@ async def graphiti_search_nodes(query: str, num_results: int = 10,
                                 group: str | None = None,
                                 entity_types: list[str] | None = None,
                                 center_node_uuid: str | None = None) -> dict:
-    """Search for entity node summaries — what an entity IS, rather than the
-    facts between entities. Use graphiti_search for specific facts/events.
+    """Search for entity node summaries — what an entity IS, rather than
+    specific facts between entities.  Use graphiti_search for dated facts.
 
-    entity_types filters to specific entity type labels (e.g. Preference,
-    Organization). center_node_uuid re-ranks by graph distance to that node."""
+    INCLUDES COMMUNITY NODES if build_communities has been run: Community
+    nodes are LLM-generated cluster summaries (e.g. 'AI tooling preferences',
+    'Lahzo product context') that give a high-level view of a topic area in
+    one hit.  Pass entity_types=['Community'] to retrieve only those summaries,
+    or omit entity_types to get both entity and community results ranked by
+    relevance.  Run graphiti_build_communities first to populate them.
+
+    entity_types filters to specific labels (Preference, Organization,
+    Community, …). center_node_uuid re-ranks by graph distance to that node."""
     from copy import deepcopy
     from graphiti_core.search.search_config_recipes import (
         NODE_HYBRID_SEARCH_NODE_DISTANCE, NODE_HYBRID_SEARCH_RRF)
@@ -361,7 +368,9 @@ async def graphiti_delete_entity_edge(uuid: str, group: str | None = None) -> di
 @mcp.tool()
 async def graphiti_build_indices(group: str | None = None) -> dict:
     """Build/rebuild vector and full-text indices for a graph group. Required
-    once after the first write to a new group; idempotent."""
+    once after the first write to a new group; idempotent.  This only creates
+    DB indices for fast lookup — it does NOT generate community summaries.
+    Run graphiti_build_communities separately to enable community search."""
     group_id = group or config.DEFAULT_GROUP_ID
     g = make_graphiti(group_id)
     try:
@@ -460,13 +469,27 @@ async def graphiti_clear_graph(group: str | None = None) -> dict:
 
 @mcp.tool()
 async def graphiti_build_communities(group: str | None = None) -> dict:
-    """Detect entity communities and generate higher-level cluster summaries for
-    a group. Expensive — processes the full entity set with Louvain detection
-    then calls the LLM for each cluster summary (may take several minutes).
+    """Detect entity communities and generate higher-level cluster summaries.
 
-    Queued: returns immediately with status='running'; check server logs or
-    re-run later to see results. Use graphiti_search_nodes to query communities
-    once processing completes."""
+    WHY / WHEN TO RUN:
+    Communities are meta-nodes that summarise clusters of related entities
+    (e.g. "AI tooling preferences", "Lahzo product context").  They make
+    graphiti_search_nodes dramatically more useful on large graphs by letting
+    the LLM retrieve a compact, high-level view of a whole topic area rather
+    than individual entity snippets.  Run this:
+      • Once after the graph has a meaningful number of episodes (50+).
+      • Periodically as the graph grows (weekly / after large ingestion runs).
+      • After build_indices when setting up a new group from scratch.
+    There is no benefit to running it more than once per session — communities
+    are replaced in-place each run.
+
+    COST: label propagation over all entities, then one LLM call per pair in
+    each cluster's hierarchical merge, plus one embedding call per community.
+    On the jbreissinger graph (581 entities) this takes ~3 min and ~600 LLM
+    calls.  Larger graphs scale roughly O(n log n) in LLM calls.
+
+    Queued: returns immediately with status='running'; poll graphiti_status or
+    check server logs.  Query results with graphiti_search_nodes once done."""
     group_id = group or config.DEFAULT_GROUP_ID
 
     task_entry: dict | None = None
