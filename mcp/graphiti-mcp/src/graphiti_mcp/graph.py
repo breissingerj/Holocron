@@ -5,6 +5,7 @@ access paths share the exact same graph semantics.
 """
 
 from . import config
+from . import _patches  # noqa: F401  — applies graphiti-core monkey-patches on import
 
 _ENTITY_TYPE_DEFS = [
     ("Preference",   "User preferences, choices, opinions, or selections"),
