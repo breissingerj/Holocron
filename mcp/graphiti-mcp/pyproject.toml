@@ -1,6 +1,6 @@
 [project]
 name = "graphiti-mcp"
-version = "0.1.0"
+version = "0.1.7"
 description = "Custom Graphiti MCP server with live document references and read-through caching"
 requires-python = ">=3.11"
 dependencies = [
