@@ -5,6 +5,7 @@ add live-document references with read-through caching. Refresh is queued and
 drained by the in-process worker — never inline on the read path.
 """
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -15,6 +16,39 @@ from . import config, engine
 from .connectors import NotConfigured
 from .graph import build_entity_types, close_all_graphiti, make_graphiti
 from .uris import UriError
+
+
+# ── Async background task infrastructure ─────────────────────────────────────
+#
+# Long-running tools (add_episode, add_triplet, build_communities) return
+# immediately with a job token and run in background asyncio tasks so the MCP
+# client never times out.
+#
+# Per-group serialisation: graphiti_core's entity deduplication is NOT
+# concurrency-safe within a single group — if two add_episode calls for the
+# same group run simultaneously they can both see "entity does not exist" and
+# create duplicates. One Semaphore per group-id enforces sequential processing.
+
+_logger = logging.getLogger(__name__)
+_group_semaphores: dict[str, asyncio.Semaphore] = {}
+
+
+def _group_sem(group_id: str) -> asyncio.Semaphore:
+    """Return (or create) the per-group sequential-add semaphore."""
+    if group_id not in _group_semaphores:
+        _group_semaphores[group_id] = asyncio.Semaphore(1)
+    return _group_semaphores[group_id]
+
+
+def _bg(coro, label: str) -> None:
+    """Fire a coroutine as a background asyncio task with error logging."""
+    async def _guarded():
+        try:
+            await coro
+        except Exception as exc:  # noqa: BLE001
+            _logger.error("background task %s failed: %s", label, exc)
+
+    asyncio.create_task(_guarded(), name=label)
 
 
 class _IndexExistsFilter(logging.Filter):
@@ -82,9 +116,11 @@ async def graphiti_add(text: str, name: str | None = None,
         ref_time = parse_reference_time(reference_time) or datetime.now(timezone.utc)
     except ValueError as e:
         return {"success": False, "error": f"invalid reference_time: {e}"}
+    # Pre-generate the episode UUID so the caller has it immediately.
+    episode_uuid_str = uuid or str(uuid4())
     entity_types = build_entity_types()
-    g = make_graphiti(group_id)
-    try:
+
+    async def _do_add():
         kwargs: dict = dict(
             name=name or f"episode_{uuid4().hex[:8]}",
             episode_body=text,
@@ -93,11 +129,10 @@ async def graphiti_add(text: str, name: str | None = None,
             reference_time=ref_time,
             group_id=group_id,
             update_communities=update_communities,
+            uuid=episode_uuid_str,
         )
         if entity_types is not None:
             kwargs["entity_types"] = entity_types
-        if uuid is not None:
-            kwargs["uuid"] = uuid
         if excluded_entity_types is not None:
             kwargs["excluded_entity_types"] = excluded_entity_types
         if custom_extraction_instructions is not None:
@@ -108,12 +143,15 @@ async def graphiti_add(text: str, name: str | None = None,
             kwargs["saga"] = saga
         if saga_previous_episode_uuid is not None:
             kwargs["saga_previous_episode_uuid"] = saga_previous_episode_uuid
-        result = await g.add_episode(**kwargs)
-        episode = getattr(result, "episode", result)
-        return {"success": True, "group": group_id, "chars": len(text),
-                "episode_uuid": str(getattr(episode, "uuid", "")) or None}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+        # Acquire per-group semaphore: graphiti-core entity deduplication is
+        # not concurrency-safe within a group — serialise adds to avoid duplicates.
+        async with _group_sem(group_id):
+            g = make_graphiti(group_id)
+            await g.add_episode(**kwargs)
+
+    _bg(_do_add(), label=f"add_episode:{episode_uuid_str[:8]}")
+    return {"success": True, "group": group_id, "chars": len(text),
+            "episode_uuid": episode_uuid_str, "queued": True}
 
 
 @mcp.tool()
@@ -295,30 +333,35 @@ async def graphiti_add_triplet(source_node_name: str, edge_name: str, fact: str,
     """Write a single fact triplet (source entity -> fact -> target entity)
     directly, bypassing LLM extraction. graphiti-core resolves/deduplicates the
     endpoint entities by name and generates embeddings. Use when you have an
-    explicit, structured fact you don't want reinterpreted by the extractor."""
+    explicit, structured fact you don't want reinterpreted by the extractor.
+
+    Queued: returns immediately; embedding + entity resolution runs in the
+    background. Use graphiti_search to verify the fact once processing completes."""
     from uuid import uuid4
     from graphiti_core.nodes import EntityNode
     from graphiti_core.edges import EntityEdge
 
     group_id = group or config.DEFAULT_GROUP_ID
-    g = make_graphiti(group_id)
-    try:
-        now = datetime.now(timezone.utc)
-        source_node = EntityNode(uuid=source_node_uuid or str(uuid4()),
-                                 name=source_node_name, group_id=group_id,
-                                 created_at=now)
-        target_node = EntityNode(uuid=target_node_uuid or str(uuid4()),
-                                 name=target_node_name, group_id=group_id,
-                                 created_at=now)
+    now = datetime.now(timezone.utc)
+    src_uuid = source_node_uuid or str(uuid4())
+    tgt_uuid = target_node_uuid or str(uuid4())
+    edge_uuid = str(uuid4())
+
+    async def _do_triplet():
+        source_node = EntityNode(uuid=src_uuid, name=source_node_name,
+                                 group_id=group_id, created_at=now)
+        target_node = EntityNode(uuid=tgt_uuid, name=target_node_name,
+                                 group_id=group_id, created_at=now)
         edge = EntityEdge(name=edge_name, fact=fact, group_id=group_id,
-                          source_node_uuid=source_node.uuid,
-                          target_node_uuid=target_node.uuid, created_at=now)
-        result = await g.add_triplet(source_node, edge, target_node)
-        return {"success": True, "group": group_id,
-                "nodes": [str(n.uuid) for n in getattr(result, "nodes", [])],
-                "edges": [str(e.uuid) for e in getattr(result, "edges", [])]}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+                          source_node_uuid=src_uuid, target_node_uuid=tgt_uuid,
+                          created_at=now)
+        async with _group_sem(group_id):
+            g = make_graphiti(group_id)
+            await g.add_triplet(source_node, edge, target_node)
+
+    _bg(_do_triplet(), label=f"add_triplet:{edge_uuid[:8]}")
+    return {"success": True, "group": group_id, "queued": True,
+            "source_node_uuid": src_uuid, "target_node_uuid": tgt_uuid}
 
 
 @mcp.tool()
@@ -364,20 +407,24 @@ async def graphiti_clear_graph(group: str | None = None) -> dict:
 @mcp.tool()
 async def graphiti_build_communities(group: str | None = None) -> dict:
     """Detect entity communities and generate higher-level cluster summaries for
-    a group. Relatively expensive — processes the full entity set. Enables broad
-    'who relates to whom' queries."""
+    a group. Expensive — processes the full entity set with Louvain detection
+    then calls the LLM for each cluster summary (may take several minutes).
+
+    Queued: returns immediately with status='running'; check server logs or
+    re-run later to see results. Use graphiti_search_nodes to query communities
+    once processing completes."""
     group_id = group or config.DEFAULT_GROUP_ID
-    g = make_graphiti(group_id)
-    try:
-        communities, community_edges = await g.build_communities(group_ids=[group_id])
-        return {"success": True, "group": group_id,
-                "community_count": len(communities),
-                "edge_count": len(community_edges),
-                "communities": [{"uuid": str(c.uuid), "name": getattr(c, "name", None),
-                                 "summary": getattr(c, "summary", None)}
-                                for c in communities]}
-    except Exception as e:
-        return {"success": False, "error": str(e), "group": group_id}
+
+    async def _do_communities():
+        g = make_graphiti(group_id)
+        communities, edges = await g.build_communities(group_ids=[group_id])
+        _logger.info("build_communities complete: group=%s communities=%d edges=%d",
+                     group_id, len(communities), len(edges))
+
+    _bg(_do_communities(), label=f"build_communities:{group_id}")
+    return {"success": True, "group": group_id, "status": "running",
+            "message": "Community detection started in background. "
+                        "This may take several minutes on large graphs."}
 
 
 @mcp.tool()
