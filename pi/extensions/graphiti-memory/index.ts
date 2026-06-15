@@ -139,6 +139,7 @@ interface BgTask {
   status: "running" | "done" | "failed";
   error: string | null;
   finished_at: string | null;
+  result: Record<string, unknown> | null;
 }
 
 interface BackgroundTaskReport {
@@ -169,11 +170,26 @@ function formatTaskReport(report: BackgroundTaskReport | undefined): string[] {
       const icon = t.status === "done" ? "✅" : "❌";
       const age = t.finished_at ? elapsed(t.finished_at) + " ago" : "";
       const err = t.error ? ` — ${t.error.slice(0, 80)}` : "";
-      lines.push(`  ${icon} ${t.label} (${t.status}${age ? ", " + age : ""}${err})`);
+      const res = t.result ? " — " + formatResult(t.label, t.result) : "";
+      lines.push(`  ${icon} ${t.label} (${t.status}${age ? ", " + age : ""}${err}${res})`);
     }
   }
 
   return lines;
+}
+
+/** Format the result payload of a completed task into a short summary string. */
+function formatResult(label: string, result: Record<string, unknown>): string {
+  if (label.startsWith("build_communities:")) {
+    return `${result.communities ?? "?"} communities, ${result.edges ?? "?"} edges`;
+  }
+  if (label.startsWith("add_episode:")) {
+    return `uuid ${String(result.episode_uuid ?? "").slice(0, 8)}…`;
+  }
+  if (label.startsWith("add_triplet:")) {
+    return `${result.source} → ${result.target}`;
+  }
+  return JSON.stringify(result).slice(0, 80);
 }
 
 /** Human-readable elapsed time since an ISO-8601 timestamp. */

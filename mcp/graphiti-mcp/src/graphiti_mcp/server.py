@@ -45,8 +45,13 @@ def _group_sem(group_id: str) -> asyncio.Semaphore:
     return _group_semaphores[group_id]
 
 
-def _bg(coro, label: str) -> None:
+def _bg(coro, label: str) -> dict:
     """Fire a coroutine as a tracked background asyncio task.
+
+    Returns the mutable task entry dict so callers can write result data into
+    it from inside the background coroutine (asyncio tasks are scheduled, not
+    run, until the next await, so the caller's assignment of the returned dict
+    completes before the task body executes).
 
     Registers the task in _bg_task_registry so graphiti_status can report it.
     Keeps the last _BG_REGISTRY_KEEP completed entries; running tasks are always
@@ -58,6 +63,7 @@ def _bg(coro, label: str) -> None:
         "status": "running",
         "error": None,
         "finished_at": None,
+        "result": None,          # background coroutine may populate this
     }
     _bg_task_registry.append(entry)
 
@@ -79,6 +85,7 @@ def _bg(coro, label: str) -> None:
                                          if id(e) not in to_remove]
 
     asyncio.create_task(_guarded(), name=label)
+    return entry
 
 
 class _IndexExistsFilter(logging.Filter):
@@ -179,7 +186,16 @@ async def graphiti_add(text: str, name: str | None = None,
             g = make_graphiti(group_id)
             await g.add_episode(**kwargs)
 
-    _bg(_do_add(), label=f"add_episode:{episode_uuid_str[:8]}")
+    # _bg is synchronous; the returned entry is assigned before the task runs.
+    task_entry: dict | None = None
+
+    async def _do_add_with_result():
+        await _do_add()
+        if task_entry is not None:
+            task_entry["result"] = {"episode_uuid": episode_uuid_str,
+                                     "chars": len(text), "group": group_id}
+
+    task_entry = _bg(_do_add_with_result(), label=f"add_episode:{episode_uuid_str[:8]}")
     return {"success": True, "group": group_id, "chars": len(text),
             "episode_uuid": episode_uuid_str, "queued": True}
 
@@ -389,7 +405,15 @@ async def graphiti_add_triplet(source_node_name: str, edge_name: str, fact: str,
             g = make_graphiti(group_id)
             await g.add_triplet(source_node, edge, target_node)
 
-    _bg(_do_triplet(), label=f"add_triplet:{edge_uuid[:8]}")
+    task_entry: dict | None = None
+
+    async def _do_triplet_with_result():
+        await _do_triplet()
+        if task_entry is not None:
+            task_entry["result"] = {"source": source_node_name,
+                                     "target": target_node_name, "fact": fact}
+
+    task_entry = _bg(_do_triplet_with_result(), label=f"add_triplet:{edge_uuid[:8]}")
     return {"success": True, "group": group_id, "queued": True,
             "source_node_uuid": src_uuid, "target_node_uuid": tgt_uuid}
 
@@ -445,13 +469,18 @@ async def graphiti_build_communities(group: str | None = None) -> dict:
     once processing completes."""
     group_id = group or config.DEFAULT_GROUP_ID
 
+    task_entry: dict | None = None
+
     async def _do_communities():
         g = make_graphiti(group_id)
         communities, edges = await g.build_communities(group_ids=[group_id])
+        n_c, n_e = len(communities), len(edges)
         _logger.info("build_communities complete: group=%s communities=%d edges=%d",
-                     group_id, len(communities), len(edges))
+                     group_id, n_c, n_e)
+        if task_entry is not None:
+            task_entry["result"] = {"communities": n_c, "edges": n_e}
 
-    _bg(_do_communities(), label=f"build_communities:{group_id}")
+    task_entry = _bg(_do_communities(), label=f"build_communities:{group_id}")
     return {"success": True, "group": group_id, "status": "running",
             "message": "Community detection started in background. "
                         "This may take several minutes on large graphs."}
