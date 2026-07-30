@@ -48,6 +48,18 @@ const DEFAULT_GROUP = "jbreissinger";
 const MCP_URL = process.env.GRAPHITI_MCP_URL ?? "https://graphiti-mcp.breissinger.dev/mcp";
 const MCP_TOKEN = process.env.GRAPHITI_MCP_TOKEN;
 
+// ── Backend toggle ──────────────────────────────────────────────────────────
+// graphiti-mcp.breissinger.dev is home-hosted. Networks that block resolution
+// of/routing to that host (e.g. a corp network with restrictive DNS/egress)
+// make every graphiti_* tool call fail with a fetch error. Rather than let the
+// LLM burn turns retrying doomed network calls, set:
+//   export HOLOCRON_MEMORY_BACKEND=files
+// to disable this extension's tools entirely for the session. Nothing about
+// the Graphiti setup is removed — this is a pure runtime switch. Leave unset
+// (or "graphiti") on networks that can reach the home MCP server.
+const MEMORY_BACKEND = (process.env.HOLOCRON_MEMORY_BACKEND ?? "graphiti").toLowerCase();
+const GRAPHITI_ENABLED = MEMORY_BACKEND !== "files";
+
 // ── MCP client (lazy singleton, reused across tool calls) ─────────────────────
 
 let _client: Client | null = null;
@@ -215,6 +227,34 @@ async function listMarkdown(dir: string): Promise<string[]> {
 // ── Extension ─────────────────────────────────────────────────────────────────
 
 export default function graphitiMemory(pi: ExtensionAPI) {
+
+  // ── Backend disabled: skip all graphiti_* tools, register status-only stub ───
+  if (!GRAPHITI_ENABLED) {
+    pi.on("session_start", async (_event, ctx) => {
+      if (ctx.hasUI) {
+        ctx.ui.notify(
+          "📁 Graphiti disabled (HOLOCRON_MEMORY_BACKEND=files) — using $HOLOCRON_MEMORY_DIR files as source of truth this session. " +
+            "Unset the env var (or set it to \"graphiti\") once graphiti-mcp.breissinger.dev is reachable again.",
+          "warning"
+        );
+      }
+    });
+
+    pi.registerCommand("graphiti-status", {
+      description: "Check FalkorDB connection + background task status",
+      handler: async (_args, ctx) => {
+        if (!ctx.hasUI) return;
+        ctx.ui.notify(
+          "📁 Graphiti backend is disabled (HOLOCRON_MEMORY_BACKEND=files). " +
+            "No graphiti_* tools are registered this session — memory reads/writes go to $HOLOCRON_MEMORY_DIR instead. " +
+            'Set HOLOCRON_MEMORY_BACKEND=graphiti (or unset it) and /reload to re-enable.',
+          "warning"
+        );
+      },
+    });
+
+    return;
+  }
 
   // ── Tool: graphiti_build_indices ────────────────────────────────────────────
   pi.registerTool({

@@ -14,6 +14,13 @@ Before doing any work, read and internalize `~/.config/opencode/instructions/ste
 
 Before starting any NATIVE or ALGORITHM mode task, search Graphiti for relevant context using the `graphiti_search` and `graphiti_search_nodes` tools. Do this silently — do not narrate the search or list the raw results. Incorporate what you find directly into your working context.
 
+**Offline / restricted-network fallback:** Graphiti (`graphiti-mcp.breissinger.dev`) is home-hosted. If `$HOLOCRON_MEMORY_BACKEND` is set to `files` (e.g. on a corp network that can't reach it), or if a `graphiti_search`/`graphiti_search_nodes`/`graphiti_add` call fails with a network/fetch error, stop retrying and fall back to file-based memory for the rest of the session:
+- **Search** → `grep`/read across `$HOLOCRON_MEMORY_DIR/memory/*.md`, starting with `memory/MEMORY.md`
+- **Write** → same as the "Explicit memory requests" rule below: append to `memory/MEMORY.md` (or the relevant topic file) instead of calling `graphiti_add`
+- **Correct** → edit/remove the bullet directly in the markdown file instead of `graphiti_delete_entity_edge`/`graphiti_delete_episode`
+
+Unset `HOLOCRON_MEMORY_BACKEND` (or set it to `graphiti`) once the endpoint is reachable again to resume normal Graphiti-backed priming. This is a pure runtime switch — no Graphiti data or config is affected.
+
 **When to prime:**
 - ALGORITHM mode: always, before reading algorithm.md
 - NATIVE mode: always, before executing the task
