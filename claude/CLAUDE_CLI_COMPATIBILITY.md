@@ -109,14 +109,16 @@ scripts/hooks/
 
 ### 1. `~/.claude/settings.json` — Foundation
 
-This is the only Claude CLI-specific config file required. It injects `HOLOCRON_MEMORY_DIR` into every session and wires all hooks.
+This is the only Claude CLI-specific config file required. It wires all hooks.
+
+`HOLOCRON_MEMORY_DIR` is deliberately **not** set here. An `env` block in this file overrides the
+value exported by your shell profile, so a placeholder path committed to this repo would silently
+break every hook on a fresh clone. Export it from your shell profile instead — see
+`MEMORY_CONTRACT.md`. Hooks inherit it from the environment Claude Code was launched in.
 
 ```json
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "env": {
-    "HOLOCRON_MEMORY_DIR": "/path/to/your/holocron-context"
-  },
   "permissions": {
     "allow": ["Bash", "Read", "Write", "Edit", "MultiEdit", "Glob", "Grep", "WebFetch", "Task"],
     "defaultMode": "default"

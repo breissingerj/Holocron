@@ -1,9 +1,5 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "env": {
-    "HOLOCRON_MEMORY_DIR": "/path/to/your/holocron-context",
-    "HOLOCRON_REPO_ROOT": "/path/to/your/Holocron"
-  },
   "permissions": {
     "allow": [
       "Bash",
@@ -29,11 +25,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/KittyEnvPersist.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/KittyEnvPersist.hook.ts"
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/LoadContext.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/LoadContext.hook.ts"
           }
         ]
       }
@@ -44,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/AgentExecutionGuard.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/AgentExecutionGuard.hook.ts"
           }
         ]
       },
@@ -53,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/SecurityValidator.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SecurityValidator.hook.ts"
           }
         ]
       },
@@ -62,7 +58,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/SkillGuard.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SkillGuard.hook.ts"
           }
         ]
       },
@@ -71,7 +67,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/SetQuestionTab.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SetQuestionTab.hook.ts"
           }
         ]
       }
@@ -81,17 +77,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/RatingCapture.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/RatingCapture.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/SessionAutoName.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SessionAutoName.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/UpdateTabTitle.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/UpdateTabTitle.hook.ts",
             "async": true
           }
         ]
@@ -128,7 +124,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/QuestionAnswered.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/QuestionAnswered.hook.ts"
           }
         ]
       }
@@ -142,22 +138,22 @@
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/LastResponseCache.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/LastResponseCache.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/VoiceCompletion.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/VoiceCompletion.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/DocIntegrity.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/DocIntegrity.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/ResponseTabReset.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/ResponseTabReset.hook.ts",
             "async": true
           }
         ]
@@ -168,26 +164,26 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/WorkCompletionLearning.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/WorkCompletionLearning.hook.ts"
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/RelationshipMemory.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/RelationshipMemory.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/IntegrityCheck.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/IntegrityCheck.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/UpdateCounts.hook.ts",
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/UpdateCounts.hook.ts",
             "async": true
           },
           {
             "type": "command",
-            "command": "$HOME/.bun/bin/bun run $HOLOCRON_MEMORY_DIR/hooks/SessionCleanup.hook.ts"
+            "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SessionCleanup.hook.ts"
           }
         ]
       }
