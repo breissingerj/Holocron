@@ -3,6 +3,16 @@
 Tracking for all pi extensions — both npm-installed packages and lifted local extensions from third-party repos.
 Update this file whenever an extension is added, removed, or sourced.
 
+> **Multi-file extensions with their own `package.json` require `npm install`.** `install.sh` symlinks `pi/extensions/<name>/` into `~/.pi/agent/extensions/<name>/` and — as of the dependency-install step added after the extensions-linking block — automatically runs `npm install` in any extension directory that has a `package.json` and no existing `node_modules/` (currently `google-drive` and `graphiti-memory`). `node_modules/` is git-ignored, so this must run at least once per machine; re-running `install.sh` is idempotent and skips the install if `node_modules/` already exists.
+>
+> **If pi reports `Failed to load extension ... Cannot find module 'X'`** for `google-drive` or `graphiti-memory`, it means `npm install` hasn't been run yet for that extension on this machine. Fix manually with:
+> ```bash
+> cd ~/.pi/agent/extensions/google-drive && npm install
+> cd ~/.pi/agent/extensions/graphiti-memory && npm install
+> ```
+> or just re-run `install.sh`.
+> Restart pi (or start a new session) after installing for the extension to load.
+
 ---
 
 ## Local Extensions (Lifted)
@@ -190,6 +200,22 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 ---
 
+### google-drive
+
+| Field | Value |
+|-------|-------|
+| **Directory** | `pi/extensions/google-drive/` |
+| **Source** | Holocron original |
+| **License** | MIT |
+
+**What it does:** Google Drive tools for pi, authenticated via Application Default Credentials (`gcloud auth application-default login`) — no GCP project or OAuth client setup required. Uses `google-auth-library` + `googleapis`.
+
+**Dependencies:** `google-auth-library`, `googleapis` — requires `npm install` in `pi/extensions/google-drive/` (see note above).
+
+**Prerequisite:** `gcloud` CLI installed and authenticated (`gcloud auth application-default login`) with Drive API scopes.
+
+---
+
 ### graphiti-memory
 
 | Field | Value |
@@ -225,6 +251,11 @@ Makes other agents' commands and skills available in pi without manual re-regist
 - `FALKORDB_PORT` — defaults to `6379`
 - `GRAPHITI_GROUP_ID` — defaults to `jbreissinger`
 - `GRAPHITI_SEMAPHORE` — migrate concurrency (default `3`)
+
+**Offline / restricted-network fallback:**
+- `HOLOCRON_MEMORY_BACKEND` — defaults to `graphiti`. Set to `files` to disable this extension's tool registration entirely (no `graphiti_*` tools loaded for the session) and fall back to `$HOLOCRON_MEMORY_DIR` markdown files as the source of truth. Use this when the network can't reach the home-hosted MCP endpoint (`graphiti-mcp.breissinger.dev`) — e.g. a corp network with restrictive DNS/egress. See `pi/AGENTS.md` → Memory → Backend Toggle for the read/write behavior this triggers. Purely a runtime switch — no Graphiti config or data is affected; unset it (or set back to `graphiti`) + `/reload` to resume normal operation.
+- `GRAPHITI_MCP_URL` — override the MCP endpoint (e.g. `http://localhost:8000/mcp/` for local dev)
+- `GRAPHITI_MCP_TOKEN` — optional bearer auth once the traefik route is protected
 
 **First-time setup:**
 ```

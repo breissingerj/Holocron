@@ -539,6 +539,27 @@ if [[ -d "$HOLOCRON_DIR/pi/extensions" ]]; then
     ext_name="$(basename "$ext_file")"
     link_file "$ext_file" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name"
   done
+
+  # Install npm dependencies for any multi-file extension that ships its own
+  # package.json (e.g. google-drive, graphiti-memory). link_dir symlinks the
+  # source dir itself, so node_modules gets installed once in the Holocron
+  # repo copy and is picked up through the symlink — no per-machine copy step
+  # needed, but `npm install` must still be run at least once per machine
+  # since node_modules is git-ignored.
+  if command -v npm &>/dev/null; then
+    for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
+      [[ -f "$ext_dir/package.json" ]] || continue
+      ext_name="$(basename "$ext_dir")"
+      if [[ ! -d "$ext_dir/node_modules" ]]; then
+        echo "  Installing dependencies for pi/extensions/$ext_name..."
+        (cd "$ext_dir" && npm install --silent 2>&1 | tail -3)
+        echo "  ✓  pi/extensions/$ext_name dependencies installed"
+      fi
+    done
+  else
+    echo "  ⚠  npm not found — skipping pi extension dependency install"
+    echo "     Extensions with a package.json (google-drive, graphiti-memory) will fail to load until you run 'npm install' in their directory."
+  fi
 fi
 
 # pi/agents/ → link agent .md files (non-chain) into ~/.pi/agent/agents/

@@ -267,9 +267,11 @@ for e in expected:
 
 ```bash
 HOOKS_DIR="$HOME/.config/opencode/scripts/hooks"
-# session-start.sh — no stdin needed, just needs HOLOCRON_MEMORY_DIR set
-HOLOCRON_MEMORY_DIR="$(python3 -c "import json,os; print(json.load(open(os.path.expanduser('~/.claude/settings.json'))).get('env',{}).get('HOLOCRON_MEMORY_DIR',''))")"
-export HOLOCRON_MEMORY_DIR
+# session-start.sh — no stdin needed, just needs HOLOCRON_MEMORY_DIR set.
+# The var comes from your shell profile (see MEMORY_CONTRACT.md), not settings.json.
+[[ -n "$HOLOCRON_MEMORY_DIR" ]] \
+  && echo "✓ HOLOCRON_MEMORY_DIR=$HOLOCRON_MEMORY_DIR" \
+  || echo "✗ HOLOCRON_MEMORY_DIR unset — export it in your shell profile first"
 
 for script in session-start.sh stop-guard.sh; do
   echo '{}' | bash "$HOOKS_DIR/$script" > /dev/null 2>&1

@@ -8,6 +8,23 @@ These instructions apply to every pi session, regardless of project or working d
 
 **Graphiti is the persistent memory store for this agent.** All facts, preferences, decisions, and context worth retaining across sessions must be written to and read from Graphiti.
 
+### Backend Toggle — `HOLOCRON_MEMORY_BACKEND`
+
+Graphiti (`graphiti-mcp.breissinger.dev`) is home-hosted. On networks that block resolving or routing to it (e.g. a locked-down corp network), set:
+```bash
+export HOLOCRON_MEMORY_BACKEND=files
+```
+With this set, the `graphiti-memory` extension registers **no** `graphiti_*` tools for the session — so don't attempt to call them; they won't exist. Instead, **`$HOLOCRON_MEMORY_DIR` becomes the source of truth**:
+
+- **Reading context / "what did we decide about X"** — `grep`/`Read` across `$HOLOCRON_MEMORY_DIR/memory/*.md` (start with `memory/MEMORY.md`, the curated index) instead of `graphiti_search` / `graphiti_search_nodes`.
+- **Writing a new fact/preference/decision** (in place of `graphiti_add`) — append it under the relevant `## heading` in `memory/MEMORY.md`, or to the most relevant topic file in `memory/*.md` if one exists (e.g. `lahzo-org.md`, `behavioral-corrections.md`). Keep entries in the same terse bullet style already used in those files. `memory/MEMORY.md` is auto-primed into every session's system prompt by `holocron-memory.ts`, so writes there are immediately visible next session with no extra query step.
+- **Correcting a fact** (in place of `graphiti_delete_entity_edge` / `graphiti_delete_episode`) — edit or remove the bullet directly in the markdown file.
+- Commit memory file changes per the `MEMORY_CONTRACT.md` convention (`git add -A && git commit -m "session memory $(date +%Y-%m-%d)" && git push` in `$HOLOCRON_MEMORY_DIR`) so nothing is lost across machines.
+
+Unset `HOLOCRON_MEMORY_BACKEND` (or set it to `graphiti`) and run `/reload` once the Graphiti endpoint is reachable again to restore normal Graphiti-backed operation — nothing about the Graphiti setup itself is removed by toggling this off.
+
+**Mid-session fallback:** if a `graphiti_*` tool call fails with a network/fetch error while the backend is nominally enabled (var unset), don't keep retrying — tell the user Graphiti appears unreachable, suggest `export HOLOCRON_MEMORY_BACKEND=files`, and fall back to the file-based read/write behavior above for the rest of the session.
+
 ### When to Write (`graphiti_add`)
 
 Always call `graphiti_add` when the user:
