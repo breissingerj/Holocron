@@ -20,7 +20,7 @@ Update this file whenever an extension is added, removed, or sourced.
 Sourced from [`disler/pi-vs-claude-code`](https://github.com/disler/pi-vs-claude-code/tree/main/extensions).
 Files live in `pi/extensions/`. All five share a required dependency: `themeMap.ts` (also lifted, same source).
 
-> **Activated automatically** by `install.sh`, which symlinks all `.ts` files from `pi/extensions/` (and the `prd-sidebar/` subdirectory) into `~/.pi/agent/extensions/`. The `_lib/` directory is a shared helper and is intentionally skipped. No manual copying required.
+> **Activated automatically** by `install.sh`, which symlinks all `.ts` files (and any extension subdirectory) from `pi/extensions/` into `~/.pi/agent/extensions/`. The `_lib/` directory is a shared helper and is intentionally skipped. No manual copying required.
 
 ---
 
