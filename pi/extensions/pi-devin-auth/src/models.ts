@@ -54,6 +54,29 @@ function matchesWantedPrefix(uid: string): boolean {
  * All prices are per million tokens (USD). Used by both
  * {@link FALLBACK_MODELS} and {@link buildLiveModels} so there is a single
  * source of truth for pricing.
+ *
+ * ## Provenance (verified 2026-08-06)
+ *
+ * Cognition's `GetCascadeModelConfigs` returns only `modelUid`, `label`, and
+ * `disabled` — no window, output cap, or pricing — so every number below is
+ * supplied locally. Values were reconciled against pi's own bundled model
+ * catalog (`@earendil-works/pi-ai/dist/providers/data/*.json`), which is the
+ * best available authority since Cascade routes to these same upstream models.
+ *
+ * Resolution order used:
+ *   1. First-party provider entry (anthropic / openai / xai / moonshotai / zai).
+ *   2. If first-party lists cost 0 because it is a subscription-only plan
+ *      (zai for glm), fall back to OpenRouter's pay-as-you-go rate as a proxy.
+ *   3. If no upstream model exists at all (the `swe-1-*` family is Cognition
+ *      proprietary), values are UNVERIFIED — see per-entry notes.
+ *
+ * Note: `gpt-5-6-*` upstream carries a long-context surcharge tier above
+ * 272K input tokens. `ModelMeta` has no tier field, so only the base rate is
+ * represented here; effective cost can be ~2x at the very top of the window.
+ *
+ * Caveat: these are the *upstream model* capabilities. Cognition may impose
+ * its own lower ceilings inside Cascade; if a request fails with a context
+ * error well below the window listed here, that is the likely cause.
  */
 interface ModelMeta {
     contextWindow: number;
@@ -69,6 +92,10 @@ interface ModelMeta {
 }
 
 const MODEL_META: Map<string, ModelMeta> = new Map([
+    // Cognition proprietary — no upstream model in pi's catalog.
+    // UNVERIFIED: window/output are the vendored author's original values and
+    // cost is genuinely unknown (Cognition publishes no per-token rate; usage
+    // draws from the subscription's credits instead).
     ['swe-1-7', {
         contextWindow: 256_000,
         maxTokens: 128_000,
@@ -76,6 +103,7 @@ const MODEL_META: Map<string, ModelMeta> = new Map([
         input: ['text', 'image'],
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     }],
+    // Cognition proprietary — UNVERIFIED, as above.
     ['swe-1-7-lightning', {
         contextWindow: 256_000,
         maxTokens: 128_000,
@@ -83,34 +111,39 @@ const MODEL_META: Map<string, ModelMeta> = new Map([
         input: ['text', 'image'],
         cost: { input: 2.50, output: 12.50, cacheRead: 0.25, cacheWrite: 3.13 },
     }],
+    // openai first-party gpt-5.6-sol (was wrongly 1_050_000 ctx).
     ['gpt-5-6-sol', {
-        contextWindow: 1_050_000,
+        contextWindow: 272_000,
         maxTokens: 128_000,
         reasoning: true,
         input: ['text', 'image'],
         cost: { input: 5.00, output: 30.00, cacheRead: 0.50, cacheWrite: 6.25 },
     }],
+    // openai first-party gpt-5.6-luna (was wrongly 1_050_000 ctx).
     ['gpt-5-6-luna', {
-        contextWindow: 1_050_000,
+        contextWindow: 272_000,
         maxTokens: 128_000,
         reasoning: true,
         input: ['text', 'image'],
         cost: { input: 1.00, output: 6.00, cacheRead: 0.10, cacheWrite: 1.25 },
     }],
+    // openai first-party gpt-5.6-terra (was wrongly 1_050_000 ctx).
     ['gpt-5-6-terra', {
-        contextWindow: 1_050_000,
+        contextWindow: 272_000,
         maxTokens: 128_000,
         reasoning: true,
         input: ['text', 'image'],
-        cost: { input: 2.50, output: 15.00, cacheRead: 0.25, cacheWrite: 3.13 },
+        cost: { input: 2.50, output: 15.00, cacheRead: 0.25, cacheWrite: 3.125 },
     }],
+    // anthropic first-party claude-opus-4-8 (was wrongly 200_000 ctx).
     ['claude-opus-4-8', {
-        contextWindow: 200_000,
+        contextWindow: 1_000_000,
         maxTokens: 128_000,
         reasoning: true,
         input: ['text', 'image'],
         cost: { input: 5.00, output: 25.00, cacheRead: 0.50, cacheWrite: 6.25 },
     }],
+    // anthropic first-party claude-fable-5 — already correct, verified unchanged.
     ['claude-fable-5', {
         contextWindow: 1_000_000,
         maxTokens: 128_000,
@@ -118,33 +151,42 @@ const MODEL_META: Map<string, ModelMeta> = new Map([
         input: ['text', 'image'],
         cost: { input: 10.00, output: 50.00, cacheRead: 1.00, cacheWrite: 12.50 },
     }],
+    // anthropic first-party claude-sonnet-5. Previously wrong on all three:
+    // ctx 200K→1M, output 64K→128K, cost 3/15/0.30/3.75 → 2/10/0.20/2.50.
     ['claude-sonnet-5', {
-        contextWindow: 200_000,
-        maxTokens: 64_000,
-        reasoning: true,
-        input: ['text', 'image'],
-        cost: { input: 3.00, output: 15.00, cacheRead: 0.30, cacheWrite: 3.75 },
-    }],
-    ['glm-5-2', {
         contextWindow: 1_000_000,
-        maxTokens: 131_000,
-        reasoning: true,
-        input: ['text', 'image'],
-        cost: { input: 0.70, output: 2.20, cacheRead: 0.26, cacheWrite: 0.88 },
-    }],
-    ['kimi-k2-7', {
-        contextWindow: 256_000,
-        maxTokens: 256_000,
-        reasoning: true,
-        input: ['text', 'image'],
-        cost: { input: 0.95, output: 4.00, cacheRead: 0.19, cacheWrite: 1.19 },
-    }],
-    ['grok-4-5', {
-        contextWindow: 500_000,
         maxTokens: 128_000,
         reasoning: true,
         input: ['text', 'image'],
-        cost: { input: 2.00, output: 6.00, cacheRead: 0.50, cacheWrite: 2.50 },
+        cost: { input: 2.00, output: 10.00, cacheRead: 0.20, cacheWrite: 2.50 },
+    }],
+    // zai first-party glm-5.2 for window/output (131_072, not 131_000).
+    // zai lists cost 0 (subscription coding plan), so pricing is OpenRouter's
+    // pay-as-you-go rate for z-ai/glm-5.2. No cache-write billing upstream.
+    ['glm-5-2', {
+        contextWindow: 1_000_000,
+        maxTokens: 131_072,
+        reasoning: true,
+        input: ['text'],
+        cost: { input: 0.68, output: 2.14, cacheRead: 0.13, cacheWrite: 0 },
+    }],
+    // moonshotai first-party kimi-k2.7-code — 262_144 (2^18), not 256_000.
+    // No cache-write billing upstream (was wrongly 1.19).
+    ['kimi-k2-7', {
+        contextWindow: 262_144,
+        maxTokens: 262_144,
+        reasoning: true,
+        input: ['text', 'image'],
+        cost: { input: 0.95, output: 4.00, cacheRead: 0.19, cacheWrite: 0 },
+    }],
+    // xai first-party grok-4.5 — output cap is the full 500K, not 128K.
+    // cacheRead 0.50→0.30 and no cache-write billing upstream.
+    ['grok-4-5', {
+        contextWindow: 500_000,
+        maxTokens: 500_000,
+        reasoning: true,
+        input: ['text', 'image'],
+        cost: { input: 2.00, output: 6.00, cacheRead: 0.30, cacheWrite: 0 },
     }],
 ]);
 
