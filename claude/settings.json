@@ -12,8 +12,9 @@
       "WebFetch",
       "Task"
     ],
-    "defaultMode": "default"
+    "defaultMode": "acceptEdits"
   },
+  "model": "sonnet",
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "linear"
@@ -198,5 +199,6 @@
         ]
       }
     ]
-  }
+  },
+  "theme": "auto"
 }
