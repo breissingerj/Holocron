@@ -248,7 +248,9 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 **Scope/limitations:** this surfaces Cognition's SWE-1.x **chat model** (Cascade), not the autonomous Devin agent — no repo access, browser/terminal actions, or PR creation. For actual Devin task delegation (create a session, let it work, get a PR back), use the official documented `api.devin.ai/v1` session API instead (separate integration, not part of this extension) — see Holocron memory (`memory/MEMORY.md` → pi ↔ Devin integration) for that design.
 
-**Dependencies:** none beyond pi's own peer packages — requires `npm install` in `pi/extensions/pi-devin-auth/` (see note above; handled automatically by `install.sh`).
+**Dependencies:** none beyond pi's own peer packages — requires `npm install` in `pi/extensions/pi-devin-auth/` (see note above; handled automatically by `install.sh`). `npm audit` reports **0 vulnerabilities** in this extension's lockfile. GitHub's Dependabot alerts on the `Holocron` default branch are unrelated and pre-existing (mostly `next`/`hono`/`fast-uri`/`ip-address` from the `opencode/plugins/*` workspaces), not introduced by this vendored extension.
+
+**Typecheck:** `npm run typecheck` requires the included `tsconfig.json` (vendored source did not ship one).
 
 **Tools (callable by LLM):**
 - `graphiti_add` — ingest text/message/json episodes with automatic entity extraction using structured entity types (Preference, Requirement, Procedure, Location, Event, Organization, Document, etc.) and temporal contradiction resolution
