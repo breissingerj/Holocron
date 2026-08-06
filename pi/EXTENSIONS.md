@@ -229,6 +229,27 @@ Makes other agents' commands and skills available in pi without manual re-regist
 
 **Single unified graph:** All data lives under `group_id = jbreissinger`. No routing decisions — everything goes into one graph so cross-domain entity linking and contradiction resolution work across all context (work, personal, tooling, reflections). Additional users can be onboarded by passing `--group <their_id>` to the CLI.
 
+---
+
+### pi-devin-auth
+
+| Field | Value |
+|-------|-------|
+| **Directory** | `pi/extensions/pi-devin-auth/` |
+| **Source** | Vendored from npm (`pi-devin-auth@0.1.2` by nmzpy) — **not** a Holocron original |
+| **License** | MIT |
+| **Vendored** | 2026-08-06 |
+
+**What it does:** Registers a `devin` model provider backed by Cognition's Windsurf/Cascade backend, so a Devin/Windsurf subscription can be used inside pi like any other provider (`/model devin/<id>`, real per-token streaming). Auth is real browser sign-in against `windsurf.com` (Auth0 implicit grant, `redirect_uri=show-auth-token`) — paste the displayed token back into pi's `/login devin` prompt, which exchanges it via `register.windsurf.com` for a long-lived, account-scoped API key. The model catalog is fetched live per-session from Cognition's `GetCascadeModelConfigs` RPC, scoped to whatever the signed-in account's subscription tier actually grants. Streaming chat runs over `server.codeium.com`'s `GetChatMessage` gRPC (the same backend the Windsurf editor's Cascade chat uses), wired into pi via `streamSimple`.
+
+**Commands:** `/login devin`, `/logout devin`, `/devin-status` (check auth state), `/devin-refresh` (re-pull the model catalog, e.g. after a plan upgrade).
+
+**Why vendored instead of `npm install`-ed live:** the upstream GitHub repo (`nmzpy/pi-devin-auth`) 404s — no issue tracker, no visibility into future changes, single maintainer, low download count. All of this rides on **undocumented, internal Cognition/Windsurf endpoints** (Auth0 client id, `register.windsurf.com` token exchange, the Cascade gRPC contract) — none of it is a published, versioned public API, and Cognition can change any part of it without notice. Vendoring the exact working snapshot here means a future upstream change or a yanked npm release can't silently break this session's login flow; if Cognition changes the contract, this vendored copy will need manual patching (compare against a fresh `npm pack pi-devin-auth` to see what moved).
+
+**Scope/limitations:** this surfaces Cognition's SWE-1.x **chat model** (Cascade), not the autonomous Devin agent — no repo access, browser/terminal actions, or PR creation. For actual Devin task delegation (create a session, let it work, get a PR back), use the official documented `api.devin.ai/v1` session API instead (separate integration, not part of this extension) — see Holocron memory (`memory/MEMORY.md` → pi ↔ Devin integration) for that design.
+
+**Dependencies:** none beyond pi's own peer packages — requires `npm install` in `pi/extensions/pi-devin-auth/` (see note above; handled automatically by `install.sh`).
+
 **Tools (callable by LLM):**
 - `graphiti_add` — ingest text/message/json episodes with automatic entity extraction using structured entity types (Preference, Requirement, Procedure, Location, Event, Organization, Document, etc.) and temporal contradiction resolution
 - `graphiti_search` — hybrid BM25 + vector search over stored **facts (edges)**
