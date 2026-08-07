@@ -10,34 +10,29 @@ Before doing any work, read and internalize `~/.config/opencode/instructions/ste
 
 ---
 
-## Graphiti Context Priming
+## Memory Context Priming
 
-Before starting any NATIVE or ALGORITHM mode task, search Graphiti for relevant context using the `graphiti_search` and `graphiti_search_nodes` tools. Do this silently — do not narrate the search or list the raw results. Incorporate what you find directly into your working context.
+Before starting any NATIVE or ALGORITHM mode task, retrieve only the personal memory relevant to the request. Treat `$HOLOCRON_MEMORY_DIR` Markdown files as canonical.
 
-**Offline / restricted-network fallback:** Graphiti (`graphiti-mcp.breissinger.dev`) is home-hosted. If `$HOLOCRON_MEMORY_BACKEND` is set to `files` (e.g. on a corp network that can't reach it), or if a `graphiti_search`/`graphiti_search_nodes`/`graphiti_add` call fails with a network/fetch error, stop retrying and fall back to file-based memory for the rest of the session:
-- **Search** → `grep`/read across `$HOLOCRON_MEMORY_DIR/memory/*.md`, starting with `memory/MEMORY.md`
-- **Write** → same as the "Explicit memory requests" rule below: append to `memory/MEMORY.md` (or the relevant topic file) instead of calling `graphiti_add`
-- **Correct** → edit/remove the bullet directly in the markdown file instead of `graphiti_delete_entity_edge`/`graphiti_delete_episode`
+**Retrieval order:**
+1. If `graphiti_search` tools are available, run 1–3 targeted Graphiti queries for semantic or temporal retrieval.
+2. Otherwise, if `obsidian` MCP tools are available, call `search_notes` with a specific query and a small result limit.
+3. Inspect search metadata or excerpts first, then read only the 1–3 selected notes.
+4. If neither memory MCP is available, use targeted filesystem search as the fallback.
 
-Unset `HOLOCRON_MEMORY_BACKEND` (or set it to `graphiti`) once the endpoint is reachable again to resume normal Graphiti-backed priming. This is a pure runtime switch — no Graphiti data or config is affected.
+Known exact files—active PRDs, explicit user-provided paths, or files selected by a search result—may be read directly without a search call. Do not recursively inspect the vault or load every search result.
 
 **When to prime:**
 - ALGORITHM mode: always, before reading algorithm.md
 - NATIVE mode: always, before executing the task
 - MINIMAL mode (greetings, ratings, acks): skip
 
-**What to search:**
+**Graphiti queries:**
+- Use `graphiti_search` for specific facts, constraints, and past decisions.
+- Use `graphiti_search_nodes` when you need an entity summary rather than a fact.
+- Queries should be specific: `"Jack editor preference"` not `"preferences"`; `"Lahzo funnel team SMS task"` not `"work"`.
 
-All data lives in a single unified graph (group `jbreissinger`) — no routing decisions needed. Run 1–3 targeted queries based on the task. Do not run exhaustive or generic queries.
-
-- Use `graphiti_search` for specific facts, constraints, and past decisions (returns edges with temporal bounds)
-- Use `graphiti_search_nodes` when you want to understand what an entity _is_ — a person, tool, project, or concept — rather than what happened with it (returns entity summaries)
-- Queries should be specific: `"Jack editor preference"` not `"preferences"`; `"Lahzo funnel team SMS task"` not `"work"`
-
-**How to use results:**
-- Treat retrieved facts as trusted long-term memory — weight them alongside the current conversation
-- If a retrieved fact contradicts something the user just said, flag the conflict, ask for clarification, and offer to update Graphiti with the correct information using `graphiti_add` (which will overwrite the stale fact via temporal contradiction resolution) or `graphiti_delete_entity_edge` for surgical removal of the outdated edge
-- If nothing relevant is returned, proceed without comment — do not mention that the search was empty
+**Fallback write and correction:** When Graphiti is unavailable, write durable memory to the relevant `$HOLOCRON_MEMORY_DIR/memory/` file and correct it through a direct edit. Unset `HOLOCRON_MEMORY_BACKEND` (or set it to `graphiti`) once Graphiti is reachable again.
 
 ---
 
@@ -94,9 +89,11 @@ FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 ---
 
+<!--
 ## Context Routing
 
 When you need context about the user, projects, system internals, or specific topics, read `$HOLOCRON_MEMORY_DIR/Holocron/CONTEXT_ROUTING.md` for the file path.
+-->
 
 ---
 

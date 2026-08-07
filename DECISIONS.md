@@ -520,3 +520,53 @@ Each entry has:
 - **Decision** — Deleted duplicate framework documentation files (`.md`) from `holocron-context/Holocron/` and updated all internal path references in `Holocron/docs/` to point to `$HOLOCRON_DIR/docs/` or `tools/` instead of `PAI/`. Overwrote `holocron-context/Holocron/README.md` to establish strict separation of concerns.
 - **Options considered** — (1) Keep documentation in both repositories. (2) Define `holocron-context` as the sole source of truth. (3) Enforce `Holocron` as the stateless framework codebase and `holocron-context` as the stateful memory repo.
 - **Rationale** — Mixing framework code into the context repository creates a split-brain architecture. By removing duplicate static documentation and tools from the context repo, we ensure there is only one source of truth for the system's framework, preventing divergence and broken paths for ALGORITHM tools.
+
+---
+
+## 2026-08-07
+
+### Document Obsidian vault setup as full installation step
+
+- **Decision** — Document opening the private memory repository as an Obsidian vault and installing the Obsidian Git plugin as part of a full personal Holocron installation.
+- **Options considered** — (1) Automate Obsidian and plugin setup in `install.sh`. (2) Omit the workflow from Holocron documentation. (3) Document the user-managed setup in the README.
+- **Rationale** — The vault-local plugin, Git remote, and Git credentials belong to the user environment and cannot be safely or portably automated by Holocron. The README makes the intended durable-memory workflow discoverable without expanding installer scope.
+
+---
+
+## 2026-08-07
+
+### Register MCPVault during macOS/Linux installation
+
+- **Decision** — Add an idempotent MCPVault stage to `install.sh` that registers an `obsidian` Claude MCP server against `$HOLOCRON_MEMORY_DIR` only when no server by that name already exists.
+- **Options considered** — (1) Require manual Claude MCP configuration. (2) Overwrite `obsidian` on every install. (3) Register it when absent and preserve existing configuration.
+- **Rationale** — MCPVault makes the private Obsidian-backed memory repository directly searchable by Claude agents. Registration improves fresh-install usability, while detecting an existing named server protects user-custom configuration from installer side effects.
+
+---
+
+## 2026-08-07
+
+### Establish MCP-first memory retrieval order
+
+- **Decision** — Instruct agents to retrieve memory through Graphiti when available, then Obsidian MCP search, then known direct routes, with targeted filesystem search as the final fallback.
+- **Options considered** — (1) Continue direct tree traversal after Graphiti failure. (2) Make Obsidian MCP the only retrieval mechanism. (3) Use ordered semantic, lexical, deterministic, and filesystem retrieval layers.
+- **Rationale** — Graphiti provides the strongest semantic and temporal retrieval when reachable; MCPVault gives local lexical discovery when it is not. Direct routes remain optimal for known targets, while filesystem search preserves functionality in harnesses without memory MCP tools.
+
+---
+
+## 2026-08-07
+
+### Disable runtime context-routing reads
+
+- **Decision** — Remove runtime context-routing reads from Claude, shared, and Pi instruction paths, while preserving the routing Markdown as commented dormant reference material.
+- **Options considered** — (1) Keep known-route direct reads. (2) Delete the routing document. (3) Retain it but rely on MCP search for memory discovery.
+- **Rationale** — MCPVault search provides a single retrieval path for known and ambiguous memory queries. Retaining the document preserves its information without encouraging agents to walk a static context tree.
+
+---
+
+## 2026-08-07
+
+### Expose memory ingest as a skill
+
+- **Decision** — Create the public `MemoryIngest` skill as the primary LLM-guided interface for durable memory promotion, duplicate resolution, metadata, linking, and verification.
+- **Options considered** — (1) Build a custom memory-ingest MCP server first. (2) Expose direct MCPVault write tools without workflow guidance. (3) Use a skill over MCPVault primitives.
+- **Rationale** — Promotion and duplicate decisions are semantic judgments best made by an LLM under a structured workflow. MCPVault remains the execution layer for search and note edits, while the skill provides consistent policy across harnesses.
