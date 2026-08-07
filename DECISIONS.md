@@ -560,3 +560,13 @@ Each entry has:
 - **Decision** — Remove runtime context-routing reads from Claude, shared, and Pi instruction paths, while preserving the routing Markdown as commented dormant reference material.
 - **Options considered** — (1) Keep known-route direct reads. (2) Delete the routing document. (3) Retain it but rely on MCP search for memory discovery.
 - **Rationale** — MCPVault search provides a single retrieval path for known and ambiguous memory queries. Retaining the document preserves its information without encouraging agents to walk a static context tree.
+
+---
+
+## 2026-08-07
+
+### Expose memory ingest as a skill
+
+- **Decision** — Create the public `MemoryIngest` skill as the primary LLM-guided interface for durable memory promotion, duplicate resolution, metadata, linking, and verification.
+- **Options considered** — (1) Build a custom memory-ingest MCP server first. (2) Expose direct MCPVault write tools without workflow guidance. (3) Use a skill over MCPVault primitives.
+- **Rationale** — Promotion and duplicate decisions are semantic judgments best made by an LLM under a structured workflow. MCPVault remains the execution layer for search and note edits, while the skill provides consistent policy across harnesses.

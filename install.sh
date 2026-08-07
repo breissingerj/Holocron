@@ -481,6 +481,7 @@ declare -a PI_SKILL_MAPPINGS=(
   "ContentAnalysis:content-analysis"
   "Investigation:investigation"
   "Media:media"
+  "MemoryIngest:memory-ingest"
   "RedisCloud:redis-cloud"
   "Research:research"
   "Scraping:scraping"
