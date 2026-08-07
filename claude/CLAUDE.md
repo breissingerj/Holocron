@@ -67,9 +67,23 @@ FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 ---
 
+## Memory Retrieval
+
+For personal-memory discovery, use the `obsidian` MCP server before walking the vault or reading broad context files.
+
+1. For an unknown, ambiguous, cross-topic, or historical memory query, call `search_notes` with a specific query and a small result limit.
+2. Inspect result metadata or excerpts first, then read only the 1–3 relevant notes.
+3. Read an exact file directly when the current conversation or a search result identifies it.
+4. Keep `MEMORY.md` as the compact startup index; do not treat it as the complete knowledge base.
+5. If `obsidian` MCP tools are unavailable, use targeted filesystem search as the fallback.
+
+Do not load or scan the entire vault for routine memory discovery.
+
+<!--
 ## Context Routing
 
-When you need context about the user, projects, system internals, or specific topics, read `$HOLOCRON_MEMORY_DIR/Holocron/CONTEXT_ROUTING.md` for the file path.
+When you need context about the user, projects, system internals, or specific topics, use `$HOLOCRON_MEMORY_DIR/Holocron/CONTEXT_ROUTING.md` for exact known file targets.
+-->
 
 ---
 

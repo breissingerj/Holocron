@@ -221,6 +221,24 @@ EOF
 fi
 echo ""
 
+# ── MCPVault (Obsidian) ───────────────────────────────────────────────────────
+echo "MCPVault (Obsidian)"
+if [[ -z "$HOLOCRON_MEMORY_DIR" ]]; then
+  echo "  ℹ  MCPVault skipped — HOLOCRON_MEMORY_DIR is not set"
+elif ! command -v claude &>/dev/null; then
+  echo "  ⚠  Claude CLI not found — MCPVault skipped"
+else
+  _mcp_servers="$(claude mcp list 2>&1 || true)"
+  if [[ "$_mcp_servers" == *"obsidian:"* ]]; then
+    echo "  ✓  obsidian MCP server already configured — skipping"
+  elif claude mcp add-json obsidian --scope user "{\"type\":\"stdio\",\"command\":\"npx\",\"args\":[\"@bitbonsai/mcpvault@latest\",\"$HOLOCRON_MEMORY_DIR\"]}"; then
+    echo "  ✓  obsidian MCP server configured for $HOLOCRON_MEMORY_DIR"
+  else
+    echo "  ⚠  MCPVault registration failed — run 'claude mcp add-json obsidian --scope user …' manually"
+  fi
+fi
+echo ""
+
 # ── Plugin dependencies ───────────────────────────────────────────────────────
 # Install npm/bun dependencies for each plugin that has a package.json.
 # Plugins are loaded by OpenCode directly from source (Bun TS runtime), so no

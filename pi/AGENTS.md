@@ -16,7 +16,7 @@ export HOLOCRON_MEMORY_BACKEND=files
 ```
 With this set, the `graphiti-memory` extension registers **no** `graphiti_*` tools for the session — so don't attempt to call them; they won't exist. Instead, **`$HOLOCRON_MEMORY_DIR` becomes the source of truth**:
 
-- **Reading context / "what did we decide about X"** — `grep`/`Read` across `$HOLOCRON_MEMORY_DIR/memory/*.md` (start with `memory/MEMORY.md`, the curated index) instead of `graphiti_search` / `graphiti_search_nodes`.
+- **Reading context / "what did we decide about X"** — If `obsidian` MCP tools are available, use `search_notes` first with a targeted query and small result limit, then inspect excerpts or metadata before reading only selected notes. Fall back to targeted `grep`/Read across `$HOLOCRON_MEMORY_DIR/memory/*.md` only when no memory MCP is available.
 - **Writing a new fact/preference/decision** (in place of `graphiti_add`) — append it under the relevant `## heading` in `memory/MEMORY.md`, or to the most relevant topic file in `memory/*.md` if one exists (e.g. `lahzo-org.md`, `behavioral-corrections.md`). Keep entries in the same terse bullet style already used in those files. `memory/MEMORY.md` is auto-primed into every session's system prompt by `holocron-memory.ts`, so writes there are immediately visible next session with no extra query step.
 - **Correcting a fact** (in place of `graphiti_delete_entity_edge` / `graphiti_delete_episode`) — edit or remove the bullet directly in the markdown file.
 - Commit memory file changes per the `MEMORY_CONTRACT.md` convention (`git add -A && git commit -m "session memory $(date +%Y-%m-%d)" && git push` in `$HOLOCRON_MEMORY_DIR`) so nothing is lost across machines.

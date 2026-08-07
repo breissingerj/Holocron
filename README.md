@@ -88,6 +88,16 @@ export HOLOCRON_MEMORY_DIR="/path/to/your/private/memory/repo"
 $env:HOLOCRON_MEMORY_DIR = "C:\path\to\your\private\memory\repo"
 ```
 
+### Full installation: Obsidian vault and Git sync
+
+For a full personal installation, open the private memory repository as an Obsidian vault. This gives you a local, human-friendly interface over the same Markdown files that Holocron agents use.
+
+Install the [Obsidian Git](https://github.com/denolehov/obsidian-git/wiki/Installation) community plugin in that vault, then configure it to automatically commit and push vault changes. The repository must already have a writable Git remote and working authentication; `install.sh` does not install Obsidian, install community plugins, or configure Git credentials.
+
+### Agent vault search
+
+When `HOLOCRON_MEMORY_DIR` is configured, the macOS/Linux installer registers [MCPVault](https://github.com/bitbonsai/mcpvault) as the user-scoped Claude MCP server named `obsidian`. MCPVault exposes the private memory repository for agent search and note operations. The installer preserves an existing `obsidian` MCP configuration; remove it with `claude mcp remove obsidian -s user` before rerunning the installer if you want Holocron to register it again.
+
 ### Adding a new harness
 
 Each install script has a `HARNESSES` map at the top. To add support for a new tool, add one line:
