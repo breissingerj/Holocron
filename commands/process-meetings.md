@@ -34,7 +34,7 @@ Output:
 Use `mcp__claude_ai_Gmail__search_threads` with a query scoped to known meeting-recording/transcript senders and subjects — never a bare keyword match, to avoid catching unrelated emails (legal transcripts, sports recordings, etc.):
 
 ```
-(from:zoom.us OR from:otter.ai OR from:fireflies.ai OR from:fathom.video OR from:read.ai OR from:gong.io OR from:grain.com OR from:tldv.io OR from:meet.google.com OR subject:"meeting recording" OR subject:"recording is ready" OR subject:"your meeting transcript" OR subject:transcript) after:{lower-bound-date}
+(from:zoom.us OR from:otter.ai OR from:fireflies.ai OR from:fathom.video OR from:read.ai OR from:gong.io OR from:grain.com OR from:tldv.io OR from:meet.google.com OR from:gemini-notes@google.com OR subject:"meeting recording" OR subject:"recording is ready" OR subject:"your meeting transcript" OR subject:transcript OR subject:"Notes:") after:{lower-bound-date}
 ```
 
 Adjust the sender/subject list if the user's actual meeting tools differ — ask or infer from prior threads if the defaults return nothing on a non-first run.
