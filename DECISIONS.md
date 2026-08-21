@@ -570,3 +570,13 @@ Each entry has:
 - **Decision** — Create the public `MemoryIngest` skill as the primary LLM-guided interface for durable memory promotion, duplicate resolution, metadata, linking, and verification.
 - **Options considered** — (1) Build a custom memory-ingest MCP server first. (2) Expose direct MCPVault write tools without workflow guidance. (3) Use a skill over MCPVault primitives.
 - **Rationale** — Promotion and duplicate decisions are semantic judgments best made by an LLM under a structured workflow. MCPVault remains the execution layer for search and note edits, while the skill provides consistent policy across harnesses.
+
+---
+
+## 2026-08-21
+
+### Adopt GitHub spec-kit for spec-driven development
+
+- **Decision** — Initialize [spec-kit](https://github.com/github/spec-kit) in the Holocron repo (`.specify/`, `.claude/skills/speckit-*`) with the Claude Code integration, and add a "Spec Before Work" rule to `AGENTS.md` requiring non-trivial work to go through `/speckit-specify` → `/speckit-plan` → `/speckit-tasks` before implementation.
+- **Options considered** — (1) Keep the existing informal PRD/ISC workflow (Algorithm) as the only spec mechanism. (2) Adopt spec-kit as a full replacement for the Algorithm's PRD system. (3) Adopt spec-kit as an additional, repo-level convention layered on top of existing per-session PRDs, scoped to trivial-vs-non-trivial work.
+- **Rationale** — Option 3 was chosen: spec-kit gives a standardized, harness-native (Claude slash commands) spec/plan/task pipeline for repo work without displacing the Algorithm's own PRD/ISC mechanism, which operates at the session level rather than the repo level. Trivial changes are explicitly exempted to avoid process overhead disproportionate to small edits.
