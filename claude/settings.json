@@ -200,5 +200,6 @@
       }
     ]
   },
-  "theme": "auto"
+  "theme": "auto",
+  "skipWorkflowUsageWarning": true
 }

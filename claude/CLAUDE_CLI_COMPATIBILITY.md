@@ -496,14 +496,29 @@ exit 0
 #!/usr/bin/env bash
 # Block stopping if the active PRD has unchecked ISC criteria in execute/verify phase
 # Partial approximation of the Ralph Loop — PRD-state only, not live response text
+#
+# Session-scoped: resolves the PRD via this session's own transcript (transcript_path
+# is unique per session) rather than a global mtime scan, so concurrent sessions each
+# working their own PRD don't block on each other's unchecked criteria.
 
 mem_dir="${HOLOCRON_MEMORY_DIR:-}"
+mem_dir="${mem_dir%/}"
 [ -z "$mem_dir" ] && exit 0
 
-# Find most recently modified PRD
-prd=$(find "$mem_dir/WORK" -name "PRD.md" -exec stat -f "%m %N" {} \; 2>/dev/null \
-  | sort -rn | head -1 | awk '{print $2}')
+input=$(cat)
+transcript_path=$(echo "$input" | jq -r '.transcript_path // ""' 2>/dev/null)
+[ -z "$transcript_path" ] && exit 0
+[ -f "$transcript_path" ] || exit 0
+
+# Last PRD.md this session's own Write/Edit tool calls touched
+prd=$(jq -r --arg wd "$mem_dir/WORK/" '
+  select(.type=="assistant") | .message.content[]?
+  | select(.type=="tool_use" and (.name=="Write" or .name=="Edit"))
+  | (.input.file_path // .input.path // "")
+  | select(startswith($wd) and endswith("/PRD.md"))
+' "$transcript_path" 2>/dev/null | tail -1)
 [ -z "$prd" ] && exit 0
+[ ! -f "$prd" ] && exit 0
 
 phase=$(awk '/^---/{n++} n==1 && /^phase:/{print $2; exit}' "$prd" 2>/dev/null)
 
