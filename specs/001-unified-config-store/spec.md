@@ -17,9 +17,9 @@ Holocron currently carries the same core knowledge in multiple hand-maintained c
 | Artifact | Copies today | Evidence of drift |
 |---|---|---|
 | Global instruction file | 3: `instructions/AGENTS.md` (opencode), `claude/CLAUDE.md` (claude), `pi/AGENTS.md` (pi) | Each embeds harness-specific tool names/paths inline (`~/.config/opencode/...` vs `~/.claude/...`); memory section rewritten per harness (Graphiti vs obsidian-MCP vs priming extension) |
-| `algorithm.md` | 2: `instructions/algorithm.md` + `claude/instructions/algorithm.md` | 84-line diff: harness tool tables differ **and** 6 `<!-- reflect: -->` learnings applied to the shared copy were never ported to the Claude copy |
-| Agents (15) | 2 per agent: `claude/agents/` + `opencode/agents/` (bodies must stay byte-synced by manual rule in `VERIFY_AGENTS.md`) | Manual "dual-maintenance rule"; drift is only caught by re-reading both files |
-| Skills (20 public + private) | 1 public canonical, fanned out to 3 live homes with per-file symlinks + **12 pi wrapper `SKILL.md` files** that duplicate canonical frontmatter (differ only in the case of `name`) | Wrappers exist solely because canonical names are CamelCase; pi is actually lenient on name/dir mismatch |
+| `algorithm.md` | 2: `instructions/algorithm.md` + `claude/instructions/algorithm.md` | 84-line diff: harness tool tables differ **and** 4 `<!-- reflect: -->` learnings applied to the shared copy were never ported to the Claude copy (12 vs 8 as of 2026-08-28) |
+| Agents (16) | 2 per agent: `claude/agents/` + `opencode/agents/` (bodies must stay byte-synced by manual rule in `VERIFY_AGENTS.md`) | Manual "dual-maintenance rule"; drift is only caught by re-reading both files |
+| Skills (20 public + private) | 1 public canonical, fanned out to 3 live homes with per-file symlinks + **13 pi wrapper `SKILL.md` files** that duplicate canonical frontmatter (differ only in the case of `name`) | Wrappers exist solely because canonical names are CamelCase; pi is actually lenient on name/dir mismatch |
 | Live machine pointers | `install.sh` granular fan-out into `~/.claude/`, `~/.config/opencode/`, `~/.pi/agent/` | Already drifted: `~/.claude/settings.json` links to the repo **template** instead of the memory-repo override `install.sh` is supposed to prefer; `~/.claude/skills` contains hand-added external symlinks no install step creates; the live Claude daemon rewrites `~/.claude/settings.json` (a symlink into the repo), churning the repo working tree |
 
 This violates the project's own Constitution Principle I (*Harness-Agnostic Core*: "Harness-specific glue … is treated as disposable adapter code, never as the source of truth for behavior") and Principle II (which names `instructions/AGENTS.md` + `instructions/algorithm.md` as canonical — two of the three top-level files are not that file).
@@ -35,11 +35,11 @@ One canonical set of files in the Holocron repo — `instructions/AGENTS.md`, `i
 1. **pi does not expand `@`-imports in context files** (verified in pi source: `loadContextFileFromDir` reads the file raw). Claude Code **does** expand `@`-imports in CLAUDE.md (relative to the importing file; `~` and env-var paths already proven in the current shim).
    → The canonical `AGENTS.md` must be **self-contained** for always-on content. Heavy docs (`algorithm.md`, `PRDFORMAT.md`) stay separate and are referenced as *read-at-runtime* instructions ("read `$HOLOCRON_DIR/instructions/algorithm.md`") — a pattern that already works in both harnesses.
 2. **pi loads `AGENTS.md` or `CLAUDE.md`** (AGENTS.md preferred) from `~/.pi/agent/` and walks up from cwd (verified in pi source). → A single file at the canonical path can serve pi globally via symlink; no pi-specific top file is needed for shared behavior.
-3. **pi supports a `resources_discover` extension event** returning `skillPaths` / `promptPaths` (first-class API, documented) and natively reads `~/.agents/skills` + `.agents/skills`. → pi can consume the shared skill root directly; the 12 wrapper skills and the `~/.pi/agent/skills` fan-out become deletable.
+3. **pi supports a `resources_discover` extension event** returning `skillPaths` / `promptPaths` (first-class API, documented) and natively reads `~/.agents/skills` + `.agents/skills`. → pi can consume the shared skill root directly; the 13 wrapper skills and the `~/.pi/agent/skills` fan-out become deletable.
 4. **pi is lenient on skill name ≠ directory name** (documented: "suboptimal for shared skill directories used across multiple harnesses"). → The wrappers are redundant *today*, but normalizing canonical names to the Agent Skills standard (lowercase-hyphen, name == dir) removes warnings in pi and keeps the store usable by any future strict harness.
 5. **pi supports `APPEND_SYSTEM.md`** in `~/.pi/agent/` (append to system prompt without replacing it). → The pi-only sections of the current `pi/AGENTS.md` (TillDone workflow, `graphiti_*` tool guidance, `HOLOCRON_MEMORY_BACKEND` toggle) move to a declarative overlay file — no extension code needed for instructions.
 6. **Settings files are format-specific** (Claude `settings.json`, pi `settings.json`) — schemas cannot be unified. Their *placement* and *precedence* (repo template < memory-repo personal override < harness-local `settings.local.json`) can and must be made deterministic.
-7. **Only two harnesses remain** → the 15 shared agents need exactly one format (Claude's, which is the canonical file structure). No frontmatter generator is required; `opencode/agents/` (15 files) is deleted outright, and the `VERIFY_AGENTS.md` dual-maintenance rule dies with it.
+7. **Only two harnesses remain** → the 16 shared agents need exactly one format (Claude's, which is the canonical file structure). No frontmatter generator is required; `opencode/agents/` (16 files) is deleted outright, and the `VERIFY_AGENTS.md` dual-maintenance rule dies with it.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -64,7 +64,7 @@ I (Jack) want to change a core behavioral rule once in one file and have it take
 
 I want to add or edit a skill in the repo once and have it available in Claude Code and pi with no per-harness wrapper files and no per-machine fan-out maintenance.
 
-**Why this priority**: Second-largest duplication (20 skills × 3 homes + 12 wrapper files) and an explicit part of the request ("Skills … should all be stored in the claude file structure by default and harnesses like pi should be extended to read from those directories").
+**Why this priority**: Second-largest duplication (20 skills × 3 homes + 13 wrapper files) and an explicit part of the request ("Skills … should all be stored in the claude file structure by default and harnesses like pi should be extended to read from those directories").
 
 **Independent Test**: Create `skills/demo-skill/SKILL.md` in the repo (lowercase name). Without touching any harness directory, confirm the skill is listed in both harnesses after reinstall/`/reload`.
 
@@ -91,14 +91,14 @@ I want a single `algorithm.md` so that learnings from `/reflect` are never silen
 
 1. **Given** the merge, **When** I grep the repo, **Then** `algorithm.md` exists at exactly one path and `claude/instructions/` no longer exists.
 2. **Given** harness-specific tool tables (Claude `WebFetch`/subagent types vs pi tools), **When** each harness loads the doc, **Then** its own tool table is present and readable; the other harness's table is in a clearly-delimited, labeled subsection that does not confuse the active harness. The opencode tool table is **deleted**, not migrated.
-3. **Given** the 6 `<!-- reflect: -->` entries currently missing from the Claude copy, **When** the merge lands, **Then** all of them are present in the single file.
+3. **Given** the 4 `<!-- reflect: -->` entries currently missing from the Claude copy, **When** the merge lands, **Then** all of them are present in the single file.
 4. **Given** all top-level files and skills that reference `algorithm.md` by absolute path, **When** they are read, **Then** they reference it via one consistent resolution scheme (env var `$HOLOCRON_DIR` with documented fallback to the canonical file's own location) — no harness-specific absolute paths remain in shared content.
 
 ---
 
 ### User Story 4 — Agents defined once, in the claude file structure (Priority: P2)
 
-I want each of the 15 shared agents to have exactly one file in the repo, in Claude format, with no second harness copy to keep in sync.
+I want each of the 16 shared agents to have exactly one file in the repo, in Claude format, with no second harness copy to keep in sync.
 
 **Why this priority**: The manual "both directories must stay in behavioral sync" rule is the most error-prone maintenance obligation in the repo; with OpenCode gone, the second copy simply disappears.
 
@@ -143,7 +143,7 @@ I want the repo, the installer, and my machine to contain no OpenCode adapter co
 **Acceptance Scenarios**:
 
 1. **Given** the migration, **When** I inspect the repo, **Then** the `opencode/` directory (agents, plugins, `PLUGINS.md`) is deleted, `install.sh`/`install.ps1` have no OpenCode section, and shared content (`instructions/`, `skills/`, `agents/`, `commands/`) contains no OpenCode-specific tool names or paths (the opencode tool table in `algorithm.md` is deleted per US3 AS2).
-2. **Given** the migration on this machine, **When** I inspect `~/.config/opencode/`, **Then** all Holocron-created pointers (`AGENTS.md`, `commands`, `instructions`, `scripts`, `plugins`, the `agents/` and `skills/` fan-out dirs) are removed, while anything the user created or that belongs to OpenCode itself (e.g., `opencode.json`) is left untouched, and a notice is printed listing what was removed.
+2. **Given** the migration on this machine, **When** I inspect `~/.config/opencode/`, **Then** all Holocron-created pointers (`AGENTS.md`, `commands`, `instructions`, `scripts`, `plugins`, the `agents/` and `skills/` fan-out dirs, and the `opencode.json` symlink — installer-created, confirmed for removal by user decision 2026-08-28) are removed, while anything the user created or that belongs to OpenCode itself (real files, OpenCode's own state) is left untouched, and a notice is printed listing what was removed.
 3. **Given** the OpenCode section of `install.sh` removed, **When** I run the installer, **Then** it never creates, modifies, or removes anything under `~/.config/opencode/`.
 4. **Given** a future desire to support OpenCode again, **When** it is added, **Then** Constitution I still applies: it is achievable as a small additive change (one installer section + one thin adapter) without touching `instructions/`, `skills/`, `agents/`, or `commands/`.
 5. **Given** the documentation, **When** it is updated, **Then** `README.md`, `instructions/SKILLSYSTEM.md`, `VERIFY_AGENTS.md`, `CLAUDE_CLI_COMPATIBILITY.md`, and `pi/EXTENSIONS.md` name exactly two supported harnesses.
@@ -194,12 +194,12 @@ I want to move my current machine to the new layout in one shot, with the docs d
 - **FR-006**: Every public skill MUST live at `skills/<name>/SKILL.md` where `name` is lowercase a-z/0-9/hyphen and equals the frontmatter `name` (Agent Skills standard). The `pi/skills/` wrapper directory MUST be deleted.
 - **FR-007**: pi MUST consume the shared skill root (and prompt root) via a `resources_discover` extension rather than a `~/.pi/agent/skills` fan-out. The `~/.pi/agent/skills` directory MUST be removed by the migration.
 - **FR-008**: For Claude Code, each skill MUST appear in the live home as exactly one whole-directory symlink (public, private, or external). File-level merging MUST be permitted only where a private skill's name collides (case-insensitively) with a public skill's name.
-- **FR-009**: Each of the 15 shared agents MUST have exactly one canonical file in a single repo `agents/` directory, in Claude Code frontmatter format (moved from `claude/agents/`). No per-harness variant, generator, or second copy may exist.
+- **FR-009**: Each of the 16 shared agents MUST have exactly one canonical file in a single repo `agents/` directory, in Claude Code frontmatter format (moved from `claude/agents/`). No per-harness variant, generator, or second copy may exist.
 - **FR-010**: `pi/agents/` (pi-native roster and chains) MUST remain hand-maintained and is explicitly out of scope for FR-009.
 - **FR-011**: `install.sh` MUST be convergent: re-running it repairs stale, dangling, or missing live pointers to the expected state and MUST print every repair.
 - **FR-012**: `install.sh --check` MUST report drifted/missing/dangling/unexpected pointers (including settings-precedence violations and content churn inside a linked repo file) and exit non-zero without modifying the filesystem.
 - **FR-013**: Settings resolution MUST follow documented precedence: repo template < `$HOLOCRON_MEMORY_DIR` personal override < harness-local user file (e.g., `settings.local.json`). The installer MUST link the highest-precedence *Holocron-managed* source and never overwrite a harness-local user file.
-- **FR-014**: The migration MUST be one-shot and idempotent; it MUST remove `pi/AGENTS.md`, `pi/skills/`, `claude/instructions/`, `claude/agents/` (moved to `agents/`), `opencode/` (deleted), and the old per-harness `AGENTS.md`/`CLAUDE.md` source files; it MUST update `README.md`, `instructions/SKILLSYSTEM.md`, `VERIFY_AGENTS.md`, and `CLAUDE_CLI_COMPATIBILITY.md` in the same change.
+- **FR-014**: The migration MUST be one-shot and idempotent; it MUST remove `pi/AGENTS.md`, `pi/skills/`, `claude/instructions/`, `claude/agents/` (moved to `agents/`), `opencode/` (deleted), and the old per-harness `AGENTS.md`/`CLAUDE.md` source files; it MUST update `README.md`, `instructions/SKILLSYSTEM.md`, `VERIFY_AGENTS.md`, `CLAUDE_CLI_COMPATIBILITY.md`, and `pi/EXTENSIONS.md` in the same change.
 - **FR-015**: After migration, the effective instructions in both harnesses MUST be behaviorally identical except for the content of each harness's own adapter (US1 AS3).
 - **FR-016**: The installer MUST NOT create, delete, or shadow any resource under `~/.agents/` (external skill location).
 - **FR-017**: Every non-trivial decision made during implementation MUST be recorded in `DECISIONS.md`, and `$HOLOCRON_MEMORY_DIR/memory/holocron-system.md` MUST be updated to the new canonical layout when the work completes.
@@ -207,7 +207,7 @@ I want to move my current machine to the new layout in one shot, with the docs d
 
 ### Success Criteria
 
-1. **SC-001**: After migration, a `grep -r` of the repo shows `AGENTS.md`/instruction content duplicated across harnesses in exactly **0** places; `algorithm.md` exists at exactly **1** path; each of the 15 agents at exactly **1** path.
+1. **SC-001**: After migration, a `grep -r` of the repo shows `AGENTS.md`/instruction content duplicated across harnesses in exactly **0** places; `algorithm.md` exists at exactly **1** path; each of the 16 agents at exactly **1** path.
 2. **SC-002**: Both harnesses pass a verification prompt: each correctly answers "what is the canonical location of the global instructions?" with `instructions/AGENTS.md`, and each quotes a unique marker line proving the `@`-import (Claude) or symlink (pi) resolved.
 3. **SC-003**: A new skill added to `skills/` appears in both harnesses with **zero** per-harness files created (pi via the extension; Claude via directory symlink).
 4. **SC-004**: `install.sh` run twice in a row: first converges (prints repairs), second prints "no changes".
@@ -222,7 +222,7 @@ I want to move my current machine to the new layout in one shot, with the docs d
 - pi's `resources_discover` extension API and `APPEND_SYSTEM.md` behavior hold in the currently installed pi version (verified against installed source as of this spec's date).
 - The memory repo (`$HOLOCRON_MEMORY_DIR`) is the correct home for personal overrides (private skills, private agents, personal `settings.json`), per the existing repo layout.
 - OpenCode is retired as an active harness for this user. It may still be installed on the machine; Holocron simply stops serving it. Re-adding support is a future additive change under Constitution I.
-- The 15 shared agents' canonical home is top-level `agents/` (Claude format), consistent with the 2026-03-18 decision's canonical agent location. `claude/agents/` is retired in its favor.
+- The 16 shared agents' canonical home is top-level `agents/` (Claude format), consistent with the 2026-03-18 decision's canonical agent location. `claude/agents/` is retired in its favor.
 
 ## Out of Scope
 

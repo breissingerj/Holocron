@@ -1,13 +1,19 @@
 <!--
 SYNC IMPACT REPORT
-Version change: [TEMPLATE] → 1.0.0 (initial ratification)
-Modified principles: N/A — first ratification, no prior version to diff against
-Added sections: Core Principles (I–VI), Additional Constraints, Development Workflow, Governance
-Removed sections: none — template placeholder tokens replaced, no prior content existed
-Deferred/TODO placeholders: none — every bracket token below is filled with a concrete value
-Follow-up: spec/plan/tasks templates under .specify/templates/ have not yet been audited against
-  these principles; re-check for alignment the first time /speckit-specify or /speckit-plan is run
-  against a real feature.
+Version change: 1.0.0 → 1.1.0 (MINOR — materially changed guidance on two existing Additional
+  Constraints; approved by Jack 2026-08-28 per governance)
+Modified principles: none — Core Principles I–VI unchanged (Principle I's portability rationale,
+  including its historical OpenCode mention, intentionally preserved)
+Added sections: none
+Removed sections: none
+Changes: (1) "Skill structure" constraint — public-skill naming changed from TitleCase to the
+  lowercase-hyphen Agent Skills standard (frontmatter `name` == directory, `[a-z0-9-]+`), per spec
+  001 FR-006/SC-006 and user direction 2026-08-28; the `USE WHEN` trigger and personal `_ALLCAPS`
+  rules are unchanged. (2) "Supported harnesses" constraint — OpenCode removed (retired per user
+  direction 2026-08-28); add-a-harness wording updated to "one installer section + one thin
+  per-harness adapter".
+Follow-up: spec/plan/tasks templates were audited against these principles on first real-feature
+  run (spec 001) — aligned; see specs/001-unified-config-store/plan.md Constitution Check.
 -->
 
 # Holocron Constitution
@@ -102,10 +108,13 @@ a symlink makes the repo the only place that needs to change.
 ## Additional Constraints
 
 - **Skill structure**: Any skill added to this repo MUST follow the canonical structure defined in
-  `instructions/SKILLSYSTEM.md` — TitleCase naming with a `USE WHEN` trigger in its description for
-  shareable system skills, `_ALLCAPS` naming for personal (never-shared) skills, and the required
-  flat directory layout. This is a style/quality gate, not a Core Principle, but it is
-  non-negotiable for anything intended to be portable per Principle I.
+  `instructions/SKILLSYSTEM.md` — lowercase-hyphen naming (`[a-z0-9-]+`, the Agent Skills standard)
+  with frontmatter `name` equal to the directory name and a `USE WHEN` trigger in its description
+  for shareable system skills, `_ALLCAPS` naming for personal (never-shared) skills, and the
+  required flat directory layout. (Amended 2026-08-28, v1.1.0: previously TitleCase; the
+  Agent-Skills standard removes pi name warnings and keeps the store usable by any strict future
+  harness — spec 001, FR-006/SC-006.) This is a style/quality gate, not a Core Principle, but it
+  is non-negotiable for anything intended to be portable per Principle I.
 - **Just-in-time adoption**: Per `ROADMAP.md`'s stated plugin philosophy, capabilities (plugins,
   dependencies, new subsystems) are adopted when the work in front of the project actually demands
   them, not speculatively. Check for an existing, well-supported solution before building one from
@@ -115,9 +124,11 @@ a symlink makes the repo the only place that needs to change.
   against the actual installed version's source, generated types, or a live call — DECISIONS.md
   records multiple cases where documented or assumed behavior (a `noReply` field, a Todo write API)
   turned out not to exist.
-- **Supported harnesses**: Claude Code (`~/.claude/`), OpenCode (`~/.config/opencode/`), and
-  pi.dev (`~/.pi/agent/`) are the currently supported harnesses. Adding a new one is scoped to a
-  one-line addition to each install script's harness map (see `README.md` § Adding a new harness).
+- **Supported harnesses**: Claude Code (`~/.claude/`, the canonical file structure) and pi.dev
+  (`~/.pi/agent/`) are the currently supported harnesses. (Amended 2026-08-28, v1.1.0: OpenCode
+  retired per user direction — DECISIONS.md 2026-08-28 "Retire OpenCode harness support".) Adding a
+  new one is scoped to one installer section plus one thin per-harness adapter — never a change to
+  `instructions/`, `skills/`, `agents/`, or `commands/` (see `README.md` § Adding a new harness).
 
 ## Development Workflow
 
@@ -156,4 +167,4 @@ consulted before falling back to `algorithm.md`/`steering-rules.md` operational 
 work that knowingly conflicts with a Core Principle MUST be flagged to the user rather than
 silently proceeding.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-21 | **Last Amended**: 2026-08-21
+**Version**: 1.1.0 | **Ratified**: 2026-08-21 | **Last Amended**: 2026-08-28
