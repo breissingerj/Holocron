@@ -21,8 +21,8 @@
 
 **Purpose**: De-risk assumptions and create a rollback reference before any migration.
 
-- [ ] T001 Run the 2-minute Claude `@`-import marker test (relative vs `~/`-absolute vs `$HOLOCRON_DIR` forms) in a throwaway CLAUDE.md; record the final shim import form in `specs/001-unified-config-store/research.md` R1
-- [ ] T002 [P] Snapshot the current live pointer inventory (`~/.claude/`, `~/.pi/agent/`, `~/.config/opencode/`, `~/.agents/skills/` — symlink targets, real files, external entries) into `specs/001-unified-config-store/migration-snapshot.md` as the pre-migration rollback reference
+- [x] T001 Run the 2-minute Claude `@`-import marker test (relative vs `~/`-absolute vs `$HOLOCRON_DIR` forms) in a throwaway CLAUDE.md; record the final shim import form in `specs/001-unified-config-store/research.md` R1 — **DONE 2026-08-28**: external imports are consent-gated per project (`hasClaudeMdExternalIncludesApproved` in `~/.claude.json`, all false on this machine → live shim imports never expanded); env-var import paths are dead; shim mechanism changed to generated concatenation (see R1 + DECISIONS.md)
+- [x] T002 [P] Snapshot the current live pointer inventory (`~/.claude/`, `~/.pi/agent/`, `~/.config/opencode/`, `~/.agents/skills/` — symlink targets, real files, external entries) into `specs/001-unified-config-store/migration-snapshot.md` as the pre-migration rollback reference
 
 **Checkpoint**: Import form chosen; baseline captured — migration is safely reversible.
 
@@ -51,7 +51,7 @@
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Rewrite `claude/CLAUDE.md` as the thin shim: `@`-import of `instructions/AGENTS.md` (form per T001/R1), `@$HOLOCRON_MEMORY_DIR/memory/MEMORY.md` import, plus the Claude-only tail (e.g. the `/rename` session-naming rule and any other Claude-specific behavior currently in the file); remove all shared behavior from it (FR-003: no overlap with the canonical file)
+- [ ] T009 [US1] Build the Claude shim as a **generated concatenation** (per T001 finding — `@`-import mechanism retired, see R1 + DECISIONS.md 2026-08-28): new tracked file `claude/claude-tail.md` holding the Claude-only content (execution modes, memory-retrieval guidance, critical rules, `/rename` session naming); `install.sh` generates `claude/CLAUDE.md` = `instructions/AGENTS.md` + `claude/claude-tail.md` + primed `$HOLOCRON_MEMORY_DIR/memory/MEMORY.md` (hash-gated regen, GENERATED header); `claude/CLAUDE.md` becomes git-ignored; `~/.claude/CLAUDE.md` symlink unchanged. Remove all shared behavior from the tail (FR-003: no overlap with the canonical file)
 - [ ] T010 [P] [US1] Create `pi/APPEND_SYSTEM.md` from the pi-specific sections of `pi/AGENTS.md` (TillDone workflow, `graphiti_*` tool guidance, `HOLOCRON_MEMORY_BACKEND` toggle, obsidian-search fallback); then delete `pi/AGENTS.md` (its shared content must already be in the canonical file from T005)
 - [ ] T011 [US1] `install.sh` — claude section: link `CLAUDE.md` (shim) and settings with the fixed precedence (memory-repo `settings.json` override > repo template, per R3); pi section: link `~/.pi/agent/AGENTS.md` → repo `instructions/AGENTS.md` and `~/.pi/agent/APPEND_SYSTEM.md` → repo `pi/APPEND_SYSTEM.md`; drop all references to `pi/AGENTS.md`
 - [ ] T012 [US1] Verify US1 acceptance AS1–AS4 + SC-002: Claude marker quote (shim import expanded), pi marker quote (symlink), one-harness-rule edits touch only the adapter, canonical file contains no `@`-import lines

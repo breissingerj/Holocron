@@ -4,6 +4,16 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ---
 
+## 2026-08-28
+
+### Claude shim mechanism: generated concatenation over `@`-import (spec 001, T001 finding)
+
+- **Decision** — The Claude Code side of the unified config store does **not** use `@`-imports to pull in the canonical `instructions/AGENTS.md`. `claude/CLAUDE.md` becomes a **generated file** rebuilt by `install.sh` whenever inputs change: `instructions/AGENTS.md` + `claude/claude-tail.md` (new tracked file holding only Claude-specific content) + a primed copy of `$HOLOCRON_MEMORY_DIR/memory/MEMORY.md`. The generated file carries a "GENERATED — do not edit" header and is git-ignored; `~/.claude/CLAUDE.md` keeps its existing symlink to it; `--check` verifies freshness via input hashes and apply mode regenerates.
+- **Options considered** — (1) `@`-import shim as originally specced (`@/abs/path/instructions/AGENTS.md` + `@$HOLOCRON_MEMORY_DIR/memory/MEMORY.md`) — refuted by T001 marker test (Claude Code v2.1.251): external (outside-project) imports are consent-gated per project via `hasClaudeMdExternalIncludesApproved` in `~/.claude.json`; every project on this machine is `false`, proving the live shim's external imports **never expanded**; env-var import paths don't expand at all; non-interactive `-p` runs silently skip unconsented imports with no way to pre-consent for *future* projects. (2) Relative import from user scope — still counts as external, same gate. (3) Symlink `~/.claude/CLAUDE.md` directly at the canonical file — no home for the Claude-only tail. (4) Pre-seed consent flags in `~/.claude.json` at install — only covers known projects and means writing into the harness's own state from Holocron.
+- **Rationale** — Generated concatenation is consent-free, deterministic, portable across machines and repo moves, and a natural fit for the converge/`--check` engine because the installer already owns regeneration. It also *repairs* a live bug discovered during the test: today's Claude Code sessions load only the literal body of `claude/CLAUDE.md` — the steering-rules and MEMORY.md `@`-imports have silently never expanded, so Claude has been running without the shared steering rules and memory priming that pi receives via its extension.
+
+---
+
 ## 2026-03-31
 
 ### Multi-domain agent selection — use Agent tool's injected subagent descriptions
