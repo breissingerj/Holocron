@@ -207,8 +207,8 @@ NOTE: Use as many perfectly selected CAPABILITIES for the task as you can that w
 SELECTION METHODOLOGY:
 
 1. Fully understand the task from the reverse engineering step.
-2. Review skills available in `~/.config/opencode/skills/` — read SKILL.md files to understand USE WHEN triggers.
-3. **Check for a matching Fabric pattern** — scan `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for a pattern that fits the task intent (e.g., `review_code`, `extract_wisdom`, `analyze_terraform_plan`, `create_threat_model`). If a match exists, prefer it over ad-hoc execution — patterns are battle-tested, structured, and faster to invoke than building equivalent logic inline.
+2. Review skills available in `$HOLOCRON_DIR/skills/` — read SKILL.md files to understand USE WHEN triggers.
+3. **Check for a matching Fabric pattern** — scan `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for a pattern that fits the task intent (e.g., `review_code`, `extract_wisdom`, `analyze_terraform_plan`, `create_threat_model`). If a match exists, prefer it over ad-hoc execution — patterns are battle-tested, structured, and faster to invoke than building equivalent logic inline.
 4. Consult the **Platform Capabilities** table below for harness-native capabilities beyond skills.
 5. SELECT capabilities across ALL sources.
 
@@ -239,8 +239,8 @@ GUIDANCE:
   <!-- reflect: applied from signals 2026-03-24T12:10:00Z (x4), 2026-03-24T00:10:00Z, 2026-03-24T00:00:00Z — rating avg 8 -->
 - **Invoke Research/Task agents for validation**: When verifying file locations, dependency existence, API contracts, or external state, explicitly select and invoke Research skill or parallel Task agents in OBSERVE rather than reverting to manual sequential grep/read probing during BUILD.
   <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-23T09:30, 2026-03-23T12:57, 2026-03-23T20:45 — rating avg N/A -->
-- Use **skills** for any domain-specific workflow — check `~/.config/opencode/skills/` before building logic inline.
-- **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `~/.config/opencode/skills/Utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
+- Use **skills** for any domain-specific workflow — check `$HOLOCRON_DIR/skills/` before building logic inline.
+- **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
 - Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
 - Verify **websearch** availability before selecting — requires OpenCode hosted plan. Use **webfetch** as the reliable fallback for specific URLs.

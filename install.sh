@@ -381,7 +381,7 @@ echo ""
 #   original_name    e.g. "Agents"
 #   pi_slug          e.g. "agents"
 #   pi_wrapper_dir   e.g. "$HOLOCRON_DIR/pi/skills"
-#   public_skill_dir e.g. "$HOLOCRON_DIR/skills/Agents"
+#   public_skill_dir e.g. "$HOLOCRON_DIR/skills/agents"
 #   private_src      e.g. "$HOLOCRON_MEMORY_DIR/skills/Agents" (or "" if none)
 #   dest_root        e.g. "$PI_DIR/skills"
 #   label            e.g. "pi/skills"

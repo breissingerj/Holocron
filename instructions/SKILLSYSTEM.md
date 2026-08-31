@@ -60,7 +60,7 @@ If a skill does not follow this structure, it is not properly configured and wil
 
 Personal skills are identified by their `_ALLCAPS` naming convention. To list current personal skills:
 ```bash
-ls -1 ~/.config/opencode/skills/ | grep "^_"
+ls -1 $HOLOCRON_DIR/skills/ | grep "^_"
 ```
 
 This ensures documentation never drifts from reality. The underscore prefix ensures:
@@ -224,7 +224,7 @@ science_cycle_time: meso
 - **Research** - Investigation through hypotheses and evidence gathering
 - **Council** - Debate as parallel hypothesis testing
 
-**See:** `~/.config/opencode/skills/Science/Protocol.md` for the full protocol interface
+**See:** `$HOLOCRON_DIR/skills/Science/Protocol.md` for the full protocol interface
 
 ### 2. Markdown Body (Workflow Routing + Examples + Documentation)
 
@@ -423,7 +423,7 @@ SkillSearch('art tools')        # Loads Tools.md from skill root
 Or reference them directly:
 ```bash
 # Read specific context file
-Read ~/.config/opencode/skills/Media/Art/Aesthetic.md
+Read $HOLOCRON_DIR/skills/media/Art/Aesthetic.md
 ```
 
 Context files can reference workflows and tools:
@@ -508,7 +508,7 @@ Don't bother for:
 
 Use the Createskill skill's CanonicalizeSkill workflow:
 ```
-~/.config/opencode/skills/Createskill/Workflows/CanonicalizeSkill.md
+$HOLOCRON_DIR/skills/Createskill/Workflows/CanonicalizeSkill.md
 ```
 
 Or manually:
@@ -578,7 +578,7 @@ description: Complete blog workflow. USE WHEN user mentions doing anything with 
 
 ## Complete Canonical Example: Blogging Skill
 
-**Reference:** `~/.config/opencode/skills/_PERSONAL/_MYSKILL/SKILL.md`
+**Reference:** `$HOLOCRON_DIR/skills/_PERSONAL/_MYSKILL/SKILL.md`
 
 ```yaml
 ---
@@ -702,8 +702,8 @@ skills/OSINT/Workflows/CompanyDueDiligence.md   # Workflow - one level deep
 skills/OSINT/Tools/Analyze.ts                   # Tool - one level deep
 skills/OSINT/CompanyTools.md                    # Context file - in root
 skills/OSINT/Examples.md                        # Context file - in root
-skills/Utilities/Prompting/BeCreative.md                  # Templates in Prompting root
-skills/Utilities/Prompting/StoryExplanation.md            # Templates in Prompting root
+skills/utilities/Prompting/BeCreative.md                  # Templates in Prompting root
+skills/utilities/Prompting/StoryExplanation.md            # Templates in Prompting root
 skills/PromptInjection/DefenseMechanisms.md     # Context file - in root
 skills/PromptInjection/QuickStartGuide.md       # Context file - in root
 ```
@@ -715,8 +715,8 @@ skills/OSINT/Resources/Examples.md              # Context files go in root, NOT 
 skills/OSINT/Docs/CompanyTools.md               # Context files go in root, NOT Docs/
 skills/OSINT/Templates/Primitives/Extract.md    # THREE levels - NO
 skills/OSINT/Workflows/Company/DueDiligence.md  # THREE levels - NO (use CompanyDueDiligence.md instead)
-skills/Utilities/Prompting/Templates/BeCreative.md        # Templates in root, NOT Templates/ subdirectory
-skills/Research/Workflows/Analysis/Deep.md      # THREE levels - NO
+skills/utilities/Prompting/Templates/BeCreative.md        # Templates in root, NOT Templates/ subdirectory
+skills/research/Workflows/Analysis/Deep.md      # THREE levels - NO
 ```
 
 ### Why Flat Structure
@@ -742,9 +742,9 @@ skills/Research/Workflows/Analysis/Deep.md      # THREE levels - NO
    - Wrong: `Tools/Analysis/Analyze.ts`
 
 **Templates (Prompting skill only):**
-- Templates live in `skills/Utilities/Prompting/` root, NOT nested
-- Correct: `skills/Utilities/Prompting/BeCreative.md`
-- Wrong: `skills/Utilities/Prompting/Templates/BeCreative.md`
+- Templates live in `skills/utilities/Prompting/` root, NOT nested
+- Correct: `skills/utilities/Prompting/BeCreative.md`
+- Wrong: `skills/utilities/Prompting/Templates/BeCreative.md`
 
 ### Context/Resource Files Go in Skill Root
 
@@ -940,7 +940,7 @@ bun Generate.ts \
  * ToolName.ts - Brief description
  *
  * Usage:
- *   bun ~/.config/opencode/skills/SkillName/Tools/ToolName.ts <command> [options]
+ *   bun $HOLOCRON_DIR/skills/SkillName/Tools/ToolName.ts <command> [options]
  *
  * Commands:
  *   start     Start the thing
