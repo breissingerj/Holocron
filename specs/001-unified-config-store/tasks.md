@@ -165,7 +165,7 @@
 **Purpose**: Final proof and closure.
 
 - [x] T035 [P] Full success-criteria sweep SC-001 → SC-008 — **DONE 2026-08-31**: SC-001 (0 duplication, 1 algorithm.md, 15 agents at 1 path) ✓; SC-002 (marker resolves through both harnesses) ✓ file-level, not live-session; SC-003 (zero per-harness files for a new skill) ✓ structural; SC-004 (idempotent) ✓ live + sandboxed; SC-005 (`--check` exit codes + drift table) ✓ live; SC-006 (pi zero skill-name warnings) ✓ source-verified only — could not get a clean non-interactive pi startup signal, see T016; SC-007 (dead paths gone, symlinks resolve) ✓ live; SC-008 (opencode grep + machine clean) ✓ live. No residual gaps block sign-off; SC-006 and the memory-feed/validate-script gaps (T028) are the two open follow-ups, both already flagged in DECISIONS.md/holocron-system.md rather than silently closed.
-- [ ] T036 Flip spec `Status: Draft` → `Approved` (after Jack's sign-off) in `specs/001-unified-config-store/spec.md`; confirm no unresolved NEEDS CLARIFICATION remains in `plan.md`/`research.md`; commit the feature branch per the ticket convention — **left for Jack's review via the PR**; no unresolved NEEDS CLARIFICATION found in `plan.md`/`research.md` during this pass
+- [x] T036 Flip spec `Status: Draft` → `Approved` — **DONE 2026-09-01**: Jack's sign-off given as "merge the PR" (PR #68); status flipped, no unresolved NEEDS CLARIFICATION in `plan.md`/`research.md`
 
 ---
 

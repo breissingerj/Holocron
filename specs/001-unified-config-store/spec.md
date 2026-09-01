@@ -4,7 +4,7 @@
 
 **Created**: 2026-08-28
 
-**Status**: Draft
+**Status**: Approved (2026-09-01, Jack's sign-off via PR #68 merge)
 
 **Input**: User description: "Eliminate the duplication of settings and skill files across the repo and across my computer. Unify on AGENTS.md files — at the top level just have my CLAUDE.md use @AGENTS.md to pull in those instructions. Skills, agents.md, etc. should all be stored in the claude file structure by default and harnesses like pi should be extended to read from those directories rather than duplicating file locations." Scope addition (same day): "Remove opencode support from the repo. Focus only on Claude and pi."
 
