@@ -246,6 +246,11 @@ merge_link_skills() {
 
 # merge_link_agents SRC DEST LABEL — per-file symlinks for *.md agent
 # definitions from SRC into DEST (converted to a real directory if needed).
+# Also removes orphaned entries: dangling symlinks in DEST that don't
+# correspond to any file currently in SRC (e.g. an agent deleted from the
+# source, or a leftover link to a since-removed private-agent path) — a
+# class of drift that isn't "STALE" (wrong target) or "DANGLING" against a
+# still-expected pointer, so it would otherwise never get cleaned up.
 merge_link_agents() {
   local src="$1" dest="$2" label="$3"
   [[ -d "$src" ]] || return 0
@@ -256,6 +261,22 @@ merge_link_agents() {
     [[ -e "$f" ]] || continue
     fname="$(basename "$f")"
     converge_entry "$f" "$dest/$fname" "$label/$fname" false
+  done
+
+  for f in "$dest"/*.md; do
+    [[ -L "$f" ]] || continue
+    fname="$(basename "$f")"
+    [[ -e "$src/$fname" ]] && continue
+    if [[ -e "$f" ]]; then
+      report "$f" "UNEXPECTED" "$(readlink "$f")" "-" "left untouched (no matching source, but resolves)"
+    else
+      if $CHECK_MODE; then
+        report "$f" "DANGLING" "$(readlink "$f")" "(no source — orphan)" "would remove"
+      else
+        rm "$f"
+        report "$f" "DANGLING" "$(readlink "$f")" "(no source — orphan)" "REMOVED"
+      fi
+    fi
   done
 }
 

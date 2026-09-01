@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Holocron memory feed — live sidebar renderer for Ghostty split pane
 #
-# KNOWN GAP (2026-08-31, spec 001): the only producer of the log this script
-# tails was the `holocron-memory-feed` OpenCode plugin, deleted with the rest
-# of opencode/ when OpenCode was retired. No Claude Code hook or pi extension
-# currently writes to $HOLOCRON_MEMORY_FEED_LOG, so this script has nothing to
-# tail until a replacement hook/extension is built. Kept as reference for
-# that future port.
+# Producer (2026-09-01, spec 001 follow-up): `claude/scripts/hooks/memory-feed.sh`
+# is the Claude Code equivalent of the retired OpenCode `holocron-memory-feed`
+# plugin — a PostToolUse (Write|Edit) hook that appends the same classified,
+# timestamped lines to $HOLOCRON_MEMORY_FEED_LOG. It already existed in the
+# public settings.json template; it just wasn't wired into this machine's
+# live $HOLOCRON_MEMORY_DIR/settings.json until now. No pi equivalent exists yet.
 #
 # Tails /tmp/holocron-memory-feed.log and renders each memory write as a
 # formatted, color-coded line. Run this in a narrow Ghostty split alongside
@@ -102,7 +102,7 @@ printf "${DIM}%s${RESET}\n" "─────────────────
 # ── Create log file if it doesn't exist yet ───────────────────────────────────
 touch "$LOG_FILE" 2>/dev/null || {
   printf "${C_CAPTURE}  Cannot create log file: %s${RESET}\n" "$LOG_FILE"
-  printf "${DIM}  See the KNOWN GAP note at the top of this script.${RESET}\n"
+  printf "${DIM}  Is HOLOCRON_MEMORY_DIR set, and is claude/scripts/hooks/memory-feed.sh wired into your settings.json?${RESET}\n"
   exit 1
 }
 
