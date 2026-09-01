@@ -49,7 +49,7 @@ curl -X POST https://api.remove.bg/v1.0/removebg \
   -o output-image.png
 ```
 
-**API Key:** Stored in `~/.config/opencode/.env` as `REMOVEBG_API_KEY`
+**API Key:** Stored in `~/.claude/.env` as `REMOVEBG_API_KEY`
 
 **Parameters:**
 - `size=auto` - Automatic size detection (recommended)
@@ -84,7 +84,7 @@ cp output-image.png /destination/path/transparent-image.png
 
 ## API Credentials
 
-The remove.bg API key is stored in `~/.config/opencode/.env`:
+The remove.bg API key is stored in `~/.claude/.env`:
 
 ```bash
 REMOVEBG_API_KEY=your_key_here
@@ -150,7 +150,7 @@ Check usage at: https://www.remove.bg/dashboard
 **Solution:** Don't use local rembg. Use the remove.bg API via curl.
 
 **Problem:** "API key invalid"
-**Solution:** Verify `REMOVEBG_API_KEY` is set correctly in `~/.config/opencode/.env`
+**Solution:** Verify `REMOVEBG_API_KEY` is set correctly in `~/.claude/.env`
 
 **Problem:** "Output file is same size as input"
 **Solution:** Background removal may have failed. Check API response for errors.

@@ -265,7 +265,7 @@ for (const ip of ips) {
 Requires **security MCP profile**:
 ```bash
 $HOLOCRON_DIR/tools/MCPs/swap-mcp security
-# Restart OpenCode
+# Restart your AI coding tool
 ```
 
 **Security profile includes:**

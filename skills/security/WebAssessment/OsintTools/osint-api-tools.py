@@ -55,7 +55,7 @@ except ImportError:
 
 try:
     from dotenv import load_dotenv
-    load_dotenv(os.path.expanduser(os.environ.get("HOLOCRON_DIR", os.environ.get("HOLOCRON_CONFIG_DIR", "~/.config/opencode")) + "/.env"))
+    load_dotenv(os.path.expanduser(os.environ.get("HOLOCRON_DIR", os.environ.get("HOLOCRON_CONFIG_DIR", "~/.claude")) + "/.env"))
 except ImportError:
     print("Warning: 'python-dotenv' not installed. Falling back to os.environ", file=sys.stderr)
 

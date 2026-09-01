@@ -1,7 +1,8 @@
 # Claude CLI Compatibility Plan
 
-> **Status:** Implemented  
-> **Goal:** Make Holocron work in both OpenCode and Claude CLI (Claude Code) with zero switching friction
+> **Status:** Superseded 2026-08-31 (spec 001) — OpenCode is fully retired (Constitution 1.1.0; DECISIONS.md 2026-08-28 "Retire OpenCode harness support"). Holocron now supports exactly two harnesses, Claude Code and pi.dev. This document's OpenCode↔Claude-CLI translation content (hook-plugin mapping, `~/.config/opencode/` paths) is kept for historical reference only — it does not describe the current system, and several of its documented mappings (e.g. the hook script paths below) were never actually the live configuration, which instead uses `${HOLOCRON_MEMORY_DIR}/hooks/*.hook.ts`. For current hook wiring, read the live `settings.json` directly rather than this document.
+>
+> **Original goal (historical):** Make Holocron work in both OpenCode and Claude CLI (Claude Code) with zero switching friction.
 
 ---
 

@@ -23,7 +23,7 @@ TIME CHECK at every phase — if elapsed >150% of budget, auto-compress.
 At Algorithm entry and every phase transition, announce via the voice script (not background):
 
 ```bash
-bash ~/.config/opencode/scripts/voice.sh "MESSAGE"
+bash $HOLOCRON_DIR/scripts/voice.sh "MESSAGE"
 ```
 
 **Algorithm entry:** `"Entering the Algorithm"` — immediately before OBSERVE begins.
@@ -116,7 +116,7 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 
 **ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
 
-**Voice:** `bash ~/.config/opencode/scripts/voice.sh "Entering the Algorithm"`
+**Voice:** `bash $HOLOCRON_DIR/scripts/voice.sh "Entering the Algorithm"`
 
 **Console output at Algorithm entry (MANDATORY):**
 ```
@@ -209,30 +209,47 @@ SELECTION METHODOLOGY:
 1. Fully understand the task from the reverse engineering step.
 2. Review skills available in `$HOLOCRON_DIR/skills/` — read SKILL.md files to understand USE WHEN triggers.
 3. **Check for a matching Fabric pattern** — scan `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for a pattern that fits the task intent (e.g., `review_code`, `extract_wisdom`, `analyze_terraform_plan`, `create_threat_model`). If a match exists, prefer it over ad-hoc execution — patterns are battle-tested, structured, and faster to invoke than building equivalent logic inline.
-4. Consult the **Platform Capabilities** table below for harness-native capabilities beyond skills.
+4. Consult the **Platform Capabilities** tables below (Claude Code tools / pi tools) for harness-native capabilities beyond skills — use whichever table matches the harness this session is running in.
 5. SELECT capabilities across ALL sources.
 
 PLATFORM CAPABILITIES (consider alongside skills):
 
+#### Claude Code tools
+
 | Capability | When to Select | How to Invoke |
 |------------|---------------|---------------|
-| **Plan agent** | Analysis or code review — enforces read-only (no edits, no bash, must ask before any change) | `@plan` in TUI or configure as session agent; reads files, searches, fetches web, runs LSP diagnostics |
-| **Parallel subagents** | Multiple independent workstreams, competing hypotheses, parallel research | Multiple `agent` tool calls in a single message — each runs concurrently as a stateless Task agent |
-| **Task agent (single)** | Delegate one bounded read/search task without consuming primary context | `agent` tool — Task agents get: glob, grep, ls, view, sourcegraph. No bash, no write, no webfetch |
-| **Webfetch** | Read a specific URL (docs page, GitHub file, API reference) | `webfetch` tool — built-in, always available |
-| **Websearch** | Research, docs lookup, finding examples | `websearch` tool — requires OpenCode hosted plan (Exa AI); verify availability before selecting |
-| **LSP diagnostics** | Check type errors, lint issues, references, call hierarchy mid-execution | `diagnostics` tool — experimental; requires LSP configured in opencode.json |
-| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | `bash` tool — full shell access via configured shell |
-| **MCP tools** | Any capability from a configured MCP server (pai-skills, Figma, Linear, etc.) | Call tool by name directly — named `{serverName}_{toolName}`; appears alongside built-ins |
-| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | `skill` tool — lazy-loads the skill's SKILL.md by name on demand |
-| **Custom commands** | Parameterized slash command workflows with file/shell injection | `/commandname [args]` — supports `$ARGUMENTS`, `!shellcmd`, `@file` templates |
+| **Plan subagent** | Analysis, code review, read-only investigation — enforces no edits, no bash | Agent tool with `subagent_type: "Plan"` — reads files, searches, fetches web; cannot write or run bash |
+| **Explore subagent** | Fast codebase search and pattern matching | Agent tool with `subagent_type: "Explore"` — glob, grep, read, webfetch; optimized for speed |
+| **Parallel subagents** | Multiple independent workstreams, competing hypotheses, parallel research | Multiple Agent tool calls in a single message — each runs concurrently |
+| **Subagent (single)** | Delegate one bounded task without consuming primary context | Agent tool with appropriate `subagent_type` — full tool access including bash and write |
+| **WebFetch** | Read a specific URL (docs page, GitHub file, API reference) | WebFetch tool — built-in, always available |
+| **WebSearch** | Research, docs lookup, finding examples | WebSearch tool — requires API key; verify availability before selecting |
+| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | Bash tool — full shell access |
+| **MCP tools** | Any capability from a configured MCP server (Linear, Gmail, etc.) | Call tool by name directly — named `mcp__{serverName}__{toolName}`; appears in deferred tools list |
+| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | Skill tool — first-class Claude Code built-in; USE WHEN triggers auto-route; invoke by name |
+| **Custom commands** | Parameterized slash command workflows with file/shell injection | `/commandname [args]` — available in `$HOLOCRON_DIR/commands/` |
 
-> **Note on Task agents:** Subagents spawned via the `agent` tool are read-only by design (glob, grep, ls, view only). They cannot run bash, write files, or fetch web. For tasks requiring those capabilities, use the primary agent or MCP tools.
+> **Note on Claude Code subagents:** Agent tool subagent capabilities vary by type. `Plan` and `Explore` types are scoped for read-only work. Other types (general-purpose, Engineer, etc.) have full tool access. Match the subagent type to the work required.
+
+#### pi tools
+
+| Capability | When to Select | How to Invoke |
+|------------|---------------|---------------|
+| **Read / Write / Edit** | Inspect or modify files | Built-in `read`, `write`, `edit` tools |
+| **Glob / Grep / Ls** | Locate files or search content | Built-in `glob`, `grep`, `ls` tools |
+| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | Built-in `bash` tool — full shell access |
+| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | Built-in `skill` tool — lazy-loads the skill's SKILL.md by name on demand |
+| **tilldone** | Task discipline — required before any other tool use in Extended-mode work | `tilldone` tool (extension) — see `THEDELEGATIONSYSTEM.md` / `pi/APPEND_SYSTEM.md` for the list lifecycle |
+| **Graphiti memory** | Read/write durable facts, preferences, decisions | `graphiti_search`, `graphiti_search_nodes`, `graphiti_add`, etc. (extension) — falls back to `$HOLOCRON_MEMORY_DIR/memory/*.md` when `HOLOCRON_MEMORY_BACKEND=files` or Graphiti is unreachable |
+| **MCP tools** | Any capability from a configured MCP server | Call tool by name directly — named `{serverName}_{toolName}` |
+| **Custom commands** | Parameterized slash command workflows | `/commandname [args]` — from `$HOLOCRON_DIR/commands/` via the `prompts` root |
+
+> **Note on pi capabilities:** pi's confirmed built-in tool surface (verified against the installed `pi-coding-agent` package) is `read`, `write`, `edit`, `bash`, `glob`, `grep`, `ls`, `skill` — there is no native WebFetch/WebSearch tool; use `bash` (e.g. `curl`) or ask the user for page content instead of assuming one exists. A `subagent` tool is referenced by this repo's `subagent-progress.ts` extension UI, but its availability was not confirmed in the currently installed pi version — verify with a live tool call (don't assume) before relying on it for parallel delegation, per the constitution's empirical-verification principle.
 
 GUIDANCE:
 
-- Use the **Plan agent** for any review, audit, or analysis task — it enforces read-only by design.
-- **Parallelize aggressively** — spawn multiple `agent` tool calls in a single message for independent research, competing hypotheses, or parallel exploration. This is the primary parallelism primitive.
+- Use the **Plan subagent** (Claude Code) or a read-only tool sequence (`read`/`glob`/`grep`, pi) for any review, audit, or analysis task.
+- **Parallelize aggressively** — on Claude Code, spawn multiple Agent tool calls in a single message for independent research, competing hypotheses, or parallel exploration; this is the primary parallelism primitive. On pi, batch independent `read`/`glob`/`grep`/`bash` calls in one message instead — do not assume a subagent tool is available without verifying first.
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
   <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
 - **Parallel WebFetch for multi-URL research**: When a task requires fetching N URLs (repos, READMEs, docs, API references), issue ALL N WebFetch calls simultaneously in the OBSERVE phase — never sequentially. One round-trip for all sources is always correct; sequential fetching is always wrong for research tasks.
@@ -243,7 +260,7 @@ GUIDANCE:
 - **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
 - Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
-- Verify **websearch** availability before selecting — requires OpenCode hosted plan. Use **webfetch** as the reliable fallback for specific URLs.
+- Verify web-search availability before selecting (Claude Code: WebSearch requires an API key; pi: no native web-search tool exists — see the pi table above). WebFetch/`bash curl` is the reliable fallback for specific URLs on either harness.
 
 OUTPUT:
 

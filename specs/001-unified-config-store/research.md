@@ -47,7 +47,10 @@ Phase 0 output — resolves the spec's open assumptions and the validation pass'
 
 **Alternatives considered**: Symlink `~/.pi/agent/skills` fan-out (rejected — that is the duplication being eliminated; FR-007); relying on `~/.agents/skills` only (rejected — repo skills must be the source of truth and versioned here).
 
-## R5 — Private agent home (spec US4 AS5 path correction)
+## R5 — Private agent home (spec US4 AS5 path correction) — **SUPERSEDED 2026-08-31: private agents retired, see DECISIONS.md**
+
+**Update**: Neither `agents/claude/` nor `agents/opencode/` exists in the memory repo — both were deleted by an automated backup commit (`acaca00`, 2026-08-07), three weeks *before* this R5 entry was written. The premise below (private agents live at `agents/opencode/`) was already stale on 2026-08-28. Jack confirmed 2026-08-31 the two private agents are intentionally retired, not restored. T008 and its downstream US4 clauses are dropped from scope. The original R5 analysis is kept below for history.
+
 
 **Decision**: Private agents move from `$HOLOCRON_MEMORY_DIR/agents/opencode/` to `$HOLOCRON_MEMORY_DIR/agents/` (harness-neutral, memory-repo commit). The installer links them alongside public agents into `~/.claude/agents/` via the existing `merge_link_agents` helper. Frontmatter verified at migration time to be Claude-compatible (the opencode copies were byte-synced with claude copies by the old dual-maintenance rule, so they already are).
 

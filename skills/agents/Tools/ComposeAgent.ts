@@ -34,8 +34,8 @@ import Handlebars from "handlebars";
 
 // Paths
 const HOME = process.env.HOME || "~";
-const HOLOCRON_DIR = process.env.HOLOCRON_MEMORY_DIR || join(HOME, ".config", "opencode");
-const HOLOCRON_MEMORY_DIR = process.env.HOLOCRON_MEMORY_DIR || `${HOME}/.config/opencode`;
+const HOLOCRON_DIR = process.env.HOLOCRON_MEMORY_DIR || join(HOME, ".claude");
+const HOLOCRON_MEMORY_DIR = process.env.HOLOCRON_MEMORY_DIR || `${HOME}/.claude`;
 const BASE_TRAITS_PATH = `${HOLOCRON_DIR}/skills/agents/Data/Traits.yaml`;
 const USER_TRAITS_PATH = `${HOLOCRON_MEMORY_DIR}/Holocron/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`;
 const TEMPLATE_PATH = `${HOLOCRON_DIR}/skills/agents/Templates/DynamicAgent.hbs`;

@@ -247,7 +247,7 @@ For tasks requiring AI decision-making about what to do next. Both agents use `p
 - Structured user story validation with defined steps and assertions
 - Parallel test execution (one UIReviewer per story)
 
-**Agent definitions:** `~/.config/opencode/agents/BrowserAgent.md` and `~/.config/opencode/agents/UIReviewer.md`
+**Agent definitions:** `$HOLOCRON_DIR/agents/BrowserAgent.md` and `$HOLOCRON_DIR/agents/UIReviewer.md`
 
 **Usage:**
 

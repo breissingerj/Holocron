@@ -368,7 +368,7 @@ Reports saved to:
 # Switch to security profile
 $HOLOCRON_DIR/tools/MCPs/swap-mcp security
 
-# Restart OpenCode to apply
+# Restart your AI coding tool to apply
 # Then run active reconnaissance
 ```
 

@@ -63,7 +63,7 @@ Project Discovery tools managed by pdtm:
 ## API Key Configuration
 
 Keys are stored in:
-- `~/.config/opencode/.env` - PAI environment variables
+- `~/.claude/.env` - PAI environment variables
 - `~/.config/subfinder/provider-config.yaml` - Subfinder sources
 
 To authenticate with PDCP (ProjectDiscovery Cloud Platform):

@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
 # Holocron memory feed — live sidebar renderer for Ghostty split pane
 #
+# KNOWN GAP (2026-08-31, spec 001): the only producer of the log this script
+# tails was the `holocron-memory-feed` OpenCode plugin, deleted with the rest
+# of opencode/ when OpenCode was retired. No Claude Code hook or pi extension
+# currently writes to $HOLOCRON_MEMORY_FEED_LOG, so this script has nothing to
+# tail until a replacement hook/extension is built. Kept as reference for
+# that future port.
+#
 # Tails /tmp/holocron-memory-feed.log and renders each memory write as a
 # formatted, color-coded line. Run this in a narrow Ghostty split alongside
-# opencode to get a live view of every file the agent writes to
+# your AI coding tool to get a live view of every file the agent writes to
 # $HOLOCRON_MEMORY_DIR.
 #
 # Usage:
-#   bash ~/.config/opencode/scripts/memory-feed.sh
+#   bash $HOLOCRON_DIR/scripts/memory-feed.sh
 #
 # Ghostty split keybind (add to ~/.config/ghostty/config):
-#   keybind = ctrl+shift+m=new_split:right,bash -c 'bash ~/.config/opencode/scripts/memory-feed.sh'
+#   keybind = ctrl+shift+m=new_split:right,bash -c 'bash $HOLOCRON_DIR/scripts/memory-feed.sh'
 #
 # Log format written by the holocron-memory-feed plugin:
 #   <ISO timestamp> TAB <label> TAB <absolute path>
@@ -95,7 +102,7 @@ printf "${DIM}%s${RESET}\n" "─────────────────
 # ── Create log file if it doesn't exist yet ───────────────────────────────────
 touch "$LOG_FILE" 2>/dev/null || {
   printf "${C_CAPTURE}  Cannot create log file: %s${RESET}\n" "$LOG_FILE"
-  printf "${DIM}  Is the holocron-memory-feed plugin loaded in opencode?${RESET}\n"
+  printf "${DIM}  See the KNOWN GAP note at the top of this script.${RESET}\n"
   exit 1
 }
 

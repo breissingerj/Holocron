@@ -27,7 +27,7 @@ import { extname, resolve } from "node:path";
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.HOLOCRON_DIR || resolve(process.env.HOME!, '.config', 'opencode');
+  const paiDir = process.env.HOLOCRON_DIR || resolve(process.env.HOME!, '.claude');
   const envPath = resolve(paiDir, '.env');
   try {
     const envContent = await readFile(envPath, 'utf-8');

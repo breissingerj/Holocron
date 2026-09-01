@@ -16,12 +16,12 @@ import { basename, dirname, join, resolve } from "path";
 import { homedir } from "os";
 
 // ============================================================================
-// Environment Loading — keys from ~/.config/opencode/.env
+// Environment Loading — keys from ~/.claude/.env
 // ============================================================================
 
 function loadEnv(): void {
   const envPath = resolve(
-    process.env.HOLOCRON_CONFIG_DIR || process.env.HOLOCRON_DIR || resolve(homedir(), ".config/opencode"),
+    process.env.HOLOCRON_CONFIG_DIR || process.env.HOLOCRON_DIR || resolve(homedir(), ".claude"),
     ".env"
   );
   try {
@@ -82,7 +82,7 @@ if (!existsSync(inputFile)) {
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
 if (!apiKey) {
-  console.error("ANTHROPIC_API_KEY not found. Set it in ~/.config/opencode/.env");
+  console.error("ANTHROPIC_API_KEY not found. Set it in ~/.claude/.env");
   process.exit(1);
 }
 

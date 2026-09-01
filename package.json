@@ -2,18 +2,6 @@
   "name": "holocron",
   "version": "1.0.0",
   "private": true,
-  "workspaces": [
-    "opencode/plugins/holocron-prd",
-    "opencode/plugins/holocron-context-loader",
-    "opencode/plugins/holocron-learning-capture",
-    "opencode/plugins/holocron-ralph-loop",
-    "opencode/plugins/holocron-agents-loader",
-    "opencode/plugins/holocron-glob-rules"
-  ],
-  "scripts": {
-    "test": "bun test opencode/plugins/holocron-prd/tests opencode/plugins/holocron-context-loader/tests opencode/plugins/holocron-learning-capture/tests opencode/plugins/holocron-ralph-loop/tests opencode/plugins/holocron-agents-loader/tests opencode/plugins/holocron-glob-rules/tests",
-    "test:watch": "bun test --watch opencode/plugins/holocron-prd/tests opencode/plugins/holocron-context-loader/tests opencode/plugins/holocron-learning-capture/tests opencode/plugins/holocron-ralph-loop/tests opencode/plugins/holocron-agents-loader/tests opencode/plugins/holocron-glob-rules/tests"
-  },
   "devDependencies": {
     "@types/node": "^22.0.0"
   }

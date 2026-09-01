@@ -91,7 +91,7 @@ Examples: "crawl this site", "crawl all pages under /docs", "spider this domain"
 ## Core Capabilities
 
 **Progressive Escalation Strategy:**
-1. **Tier 1: WebFetch** - Fast, simple, built-in OpenCode tool
+1. **Tier 1: WebFetch** - Fast, simple, built-in WebFetch tool
 2. **Tier 2: Customized Curl** - Chrome-like browser headers to bypass basic bot detection
 3. **Tier 3: Browser Automation** - Full browser automation using Playwright for JavaScript-heavy sites
 4. **Tier 4: Bright Data MCP** - Professional scraping service that handles CAPTCHA and advanced bot detection
@@ -122,7 +122,7 @@ Examples: "crawl this site", "crawl all pages under /docs", "spider this domain"
 ## Extended Context
 
 **Integration Points:**
-- **WebFetch Tool** - Built-in OpenCode tool for basic URL fetching
+- **WebFetch Tool** - Built-in WebFetch tool for basic URL fetching
 - **Bash Tool** - For executing curl commands with custom headers
 - **Browser Automation** - Playwright-based browser automation for JavaScript rendering
 - **Bright Data MCP** - `mcp__Brightdata__scrape_as_markdown` and `scrape_batch` for advanced scraping
@@ -135,7 +135,7 @@ Examples: "crawl this site", "crawl all pages under /docs", "spider this domain"
 - **Tier 4 (Bright Data):** Sites with CAPTCHA, advanced bot detection, residential proxy requirements
 
 **Configuration:**
-No configuration required - all tools are available by default in OpenCode
+No configuration required - all tools are available by default
 
 ---
 

@@ -1,5 +1,7 @@
 # Claude CLI Harness Validation Playbook
 
+> **Superseded 2026-08-31 (spec 001):** several checks below (§4.4, the `~/.config/opencode/...` paths) validate the retired dual-harness OpenCode+Claude layout and will now report false failures. Use `bash install.sh --check` instead — it implements the same drift-detection intent for the current Claude Code + pi architecture (see `contracts/install-cli.md`). Kept for historical reference only.
+
 Validates that the Claude Code harness has every Holocron component correctly wired.
 Run this manually after `install.sh`, after any symlink changes, or when Claude Code
 behavior seems off.

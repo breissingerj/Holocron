@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# SUPERSEDED 2026-08-31 (spec 001) — this script's dual-harness (Claude +
+# OpenCode) checks predate OpenCode's retirement and several will now report
+# false failures against `~/.config/opencode/` paths that were intentionally
+# removed. Use `bash install.sh --check` instead — it implements the same
+# drift-detection intent for the current Claude Code + pi architecture (see
+# contracts/install-cli.md). Kept for historical reference only.
+#
 # Holocron — Claude Code harness validation script
 # Runs all checks from claude/ValidateClaudeCLI.md and prints a summary.
 # Usage: bash claude/validate-claude-cli.sh

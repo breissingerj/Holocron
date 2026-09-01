@@ -23,7 +23,7 @@ const DEFAULTS = {
 } as const;
 
 function loadConfig(): Config {
-  const envPath = join(process.env.HOLOCRON_CONFIG_DIR || resolve(homedir(), '.config/opencode'), '.env');
+  const envPath = join(process.env.HOLOCRON_CONFIG_DIR || resolve(homedir(), '.claude'), '.env');
 
   try {
     const envContent = readFileSync(envPath, 'utf-8');

@@ -19,12 +19,12 @@ import { basename, dirname, extname, join, resolve } from "path";
 import { homedir } from "os";
 
 // ============================================================================
-// Environment Loading — keys from ~/.config/opencode/.env
+// Environment Loading — keys from ~/.claude/.env
 // ============================================================================
 
 function loadEnv(): void {
   const envPath = resolve(
-    process.env.HOLOCRON_CONFIG_DIR || process.env.HOLOCRON_DIR || resolve(homedir(), ".config/opencode"),
+    process.env.HOLOCRON_CONFIG_DIR || process.env.HOLOCRON_DIR || resolve(homedir(), ".claude"),
     ".env"
   );
   try {
@@ -71,7 +71,7 @@ if (!existsSync(audioFile)) {
 
 const apiKey = process.env.CLEANVOICE_API_KEY;
 if (!apiKey) {
-  console.error("CLEANVOICE_API_KEY not found. Set it in ~/.config/opencode/.env");
+  console.error("CLEANVOICE_API_KEY not found. Set it in ~/.claude/.env");
   console.error("Get key at: https://cleanvoice.ai → Dashboard → Settings → API Key");
   process.exit(1);
 }

@@ -70,7 +70,7 @@ Output: cleaned MP3/WAV
 
 | Service | Env Var | Where to Get |
 |---------|---------|-------------|
-| Anthropic (for analyze step) | `ANTHROPIC_API_KEY` | Already set via OpenCode |
+| Anthropic (for analyze step) | `ANTHROPIC_API_KEY` | Already set in your shell environment |
 | Cleanvoice (for polish step, optional) | `CLEANVOICE_API_KEY` | cleanvoice.ai Dashboard Settings API Key |
 
 ## Examples

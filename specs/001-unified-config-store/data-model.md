@@ -52,7 +52,7 @@ This feature has no database; the "data model" is the **resource → pointer** m
 
 | Field | Type | Notes |
 |---|---|---|
-| `name` | `<Name>.md` | 16 shared (repo `agents/`), 2 private (`$HOLOCRON_MEMORY_DIR/agents/` after R5 move) |
+| `name` | `<Name>.md` | 15 shared (repo `agents/`) — no private agents (T008 retired 2026-08-31: the two former private agents were already deleted from the memory repo before this spec was written; not restored, per Jack's decision) |
 | `format` | Claude Code frontmatter | single format — no variants, no generator (FR-009) |
 | `claude_live` | per-file symlink in `~/.claude/agents/` (real dir) | via `merge_link_agents` |
 | `pi` | N/A | pi-native roster `pi/agents/` + `~/.pi/agent/chains/` is a different decomposition — untouched (FR-010) |
@@ -83,8 +83,8 @@ Installer links the highest-precedence *Holocron-managed* source that exists; it
 | 6 | `scripts/` (dir) | `~/.pi/agent/scripts` (and `~/.claude/scripts` → `claude/scripts/` if kept) | pi, claude | symlink | verify at T032; `~/.config/opencode/scripts` removed |
 | 7 | `skills/<slug>/` ×20 | `~/.claude/skills/<slug>` | claude | dir-symlink | + private merge (skill `agents`) |
 | 8 | `skills/` + `$M/skills/` roots | (extension) | pi | `resources_discover` | `skill-roots.ts` |
-| 9 | `agents/<Name>.md` ×16 | `~/.claude/agents/<Name>.md` | claude | file-symlink | real dir, per-file links |
-| 10 | `$M/agents/*.md` ×2 | `~/.claude/agents/<Name>.md` | claude | file-symlink | private, R5 |
+| 9 | `agents/<Name>.md` ×15 | `~/.claude/agents/<Name>.md` | claude | file-symlink | real dir, per-file links |
+| 10 | — (retired) | — | claude | n/a | private agents dropped — T008 retired 2026-08-31, no `$M/agents/` source exists |
 | 11 | `claude/settings.json` | `~/.claude/settings.json` | claude | symlink + churn_check | precedence per §6 (currently STALE/PRECEDENCE — the live drift) |
 | 12 | `pi/settings.json` | `~/.pi/agent/settings.json` | pi | symlink + churn_check | **only if** live is Holocron-managed; currently real user file → USER_LOCAL |
 | 13 | — (removed) | `~/.config/opencode/{AGENTS.md,commands,instructions,scripts,plugins,agents/,skills/}` | opencode | absent expected | migration removes; `opencode.json` per R8 (user decision) |
