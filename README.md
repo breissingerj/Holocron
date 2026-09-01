@@ -4,7 +4,7 @@
 
 Holocron is a personal agent configuration layer designed to work across any AI agent harness. It contains the skills, commands, plugins, and behavioral rules that make any agent feel like *mine* — not a generic assistant.
 
-The goal is harness-agnostic personalization: the same knowledge, voice, and workflows should be loadable whether I'm running Claude Code, OpenCode, or whatever comes next.
+The goal is harness-agnostic personalization: the same knowledge, voice, and workflows should be loadable whether I'm running Claude Code, pi, or whatever comes next.
 
 ---
 
@@ -12,7 +12,7 @@ The goal is harness-agnostic personalization: the same knowledge, voice, and wor
 
 - **Skills** — Domain-specific instruction files that activate on intent
 - **Commands** — Custom slash commands for recurring workflows
-- **Plugins** — OpenCode harness plugins (system prompt injection, context loading, memory sync)
+- **Pi extensions** — pi harness extensions (`pi/extensions/`): system prompt injection, memory context priming, task discipline, skill discovery
 - **Hooks** — Claude Code lifecycle hooks (context injection, PRD sync, security validation)
 - **Instructions** — Behavioral rules and algorithm that govern how I want agents to think and respond
 
@@ -30,16 +30,15 @@ The architecture is inspired by [Daniel Miessler's Personal AI Infrastructure](h
 
 ```
 Holocron/
-  skills/        # Markdown skill files loaded as agent context
+  instructions/  # AGENTS.md (canonical, shared), algorithm.md, steering-rules.md, etc.
+  skills/        # Agent skills (shared across harnesses) — lowercase Agent-Skills slugs
+  agents/        # Shared agent definitions, Claude Code frontmatter (single canonical copy)
   commands/      # Custom slash commands (map to pi prompts/)
-  instructions/  # Behavioral rules, algorithm, steering rules (shared)
-  skills/        # Agent skills (shared across harnesses)
   scripts/       # Shared scripts (voice.sh, etc.)
-  claude/        # Claude CLI harness — agents/, CLAUDE.md, instructions/, scripts/, settings.json
-  opencode/      # OpenCode harness — agents/, plugins/
-  pi/            # Pi.dev harness — AGENTS.md, skills/ (wrappers)
-  install.sh     # Symlinks config into the active harness (Mac/Linux)
-  install.ps1    # Symlinks config into the active harness (Windows)
+  claude/        # Claude Code adapter — CLAUDE.md (generated shim), claude-tail.md, scripts/, settings.json
+  pi/            # pi adapter — APPEND_SYSTEM.md (pi-only overlay), extensions/, agents/ (native roster), skills/, settings.json
+  install.sh     # Converges the live machine to match this repo (Mac/Linux); install.sh --check reports drift
+  install.ps1    # Not yet updated for the Claude Code + pi layout (Windows)
 ```
 
 ---
@@ -70,9 +69,9 @@ Install the following global pi packages after running `install.sh`:
 pi package install https://pi.dev/packages/@juicesharp/rpiv-ask-user-question
 ```
 
-The install scripts symlink `skills/`, `commands/`, `plugins/`, and `instructions/` into the target harness directory (e.g. `~/.opencode/`). Running it again is safe — existing links are skipped.
+`install.sh` symlinks `skills/`, `commands/`, `agents/`, and `instructions/` into each harness's home directory and converges the live machine to match the repo on every run — stale, dangling, or missing links are repaired and every change is printed. Run `install.sh --check` to see drift (if any) without changing anything; exit code 0 means clean, 1 means drift was found.
 
-**Supported harnesses:** OpenCode (`~/.config/opencode/`), Claude CLI (`~/.claude/`), and pi.dev (`~/.pi/agent/`). The pi.dev branch maps `commands/` to pi's `prompts/` directory (prompt templates) and leaves the user-configured `~/.pi/agent/settings.json` untouched. Pi extensions will live in `pi/extensions/` when built; `install.sh` will auto-link them into `~/.pi/agent/extensions/`.
+**Supported harnesses:** Claude Code (`~/.claude/`) and pi.dev (`~/.pi/agent/`). The pi branch maps `commands/` to pi's `prompts/` directory (prompt templates), discovers skills via the `skill-roots.ts` extension rather than a fan-out copy, and leaves a user-configured `~/.pi/agent/settings.json` (a real file, not a Holocron-managed symlink) untouched.
 
 ### Private memory repo
 
@@ -100,17 +99,7 @@ When `HOLOCRON_MEMORY_DIR` is configured, the macOS/Linux installer registers [M
 
 ### Adding a new harness
 
-Each install script has a `HARNESSES` map at the top. To add support for a new tool, add one line:
-
-```bash
-# install.sh
-HARNESSES["claude-code"]="$HOME/.claude"
-```
-
-```powershell
-# install.ps1
-$Harnesses["claude-code"] = "$env:USERPROFILE\.claude"
-```
+Core skills, instructions, and agents are harness-agnostic by design (Constitution Principle I) — adding a new harness is scoped to one `install.sh` section plus one thin per-harness adapter directory, never a change to `instructions/`, `skills/`, `agents/`, or `commands/` themselves. Follow the existing Claude Code / pi sections in `install.sh` as the pattern: link the canonical `instructions/AGENTS.md` as the harness's context file, link `skills/` and `agents/` (or an equivalent discovery mechanism), and put anything genuinely harness-specific (always-on overlay content, settings template) in a new adapter directory at the repo root.
 
 ---
 

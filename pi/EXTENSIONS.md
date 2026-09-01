@@ -276,7 +276,7 @@ Makes other agents' commands and skills available in pi without manual re-regist
 - `GRAPHITI_SEMAPHORE` — migrate concurrency (default `3`)
 
 **Offline / restricted-network fallback:**
-- `HOLOCRON_MEMORY_BACKEND` — defaults to `graphiti`. Set to `files` to disable this extension's tool registration entirely (no `graphiti_*` tools loaded for the session) and fall back to `$HOLOCRON_MEMORY_DIR` markdown files as the source of truth. Use this when the network can't reach the home-hosted MCP endpoint (`graphiti-mcp.breissinger.dev`) — e.g. a corp network with restrictive DNS/egress. See `pi/AGENTS.md` → Memory → Backend Toggle for the read/write behavior this triggers. Purely a runtime switch — no Graphiti config or data is affected; unset it (or set back to `graphiti`) + `/reload` to resume normal operation.
+- `HOLOCRON_MEMORY_BACKEND` — defaults to `graphiti`. Set to `files` to disable this extension's tool registration entirely (no `graphiti_*` tools loaded for the session) and fall back to `$HOLOCRON_MEMORY_DIR` markdown files as the source of truth. Use this when the network can't reach the home-hosted MCP endpoint (`graphiti-mcp.breissinger.dev`) — e.g. a corp network with restrictive DNS/egress. See `pi/APPEND_SYSTEM.md` → Memory → Backend Toggle for the read/write behavior this triggers. Purely a runtime switch — no Graphiti config or data is affected; unset it (or set back to `graphiti`) + `/reload` to resume normal operation.
 - `GRAPHITI_MCP_URL` — override the MCP endpoint (e.g. `http://localhost:8000/mcp/` for local dev)
 - `GRAPHITI_MCP_TOKEN` — optional bearer auth once the traefik route is protected
 
@@ -285,6 +285,25 @@ Makes other agents' commands and skills available in pi without manual re-regist
 /graphiti-build-indices   # creates vector + full-text indices
 /graphiti-migrate         # ingest existing Holocron markdown files
 ```
+
+---
+
+## Native Extensions (Holocron)
+
+Written for Holocron directly (not lifted from a third-party repo).
+
+### skill-roots
+
+| Field | Value |
+|-------|-------|
+| **File** | `pi/extensions/skill-roots.ts` |
+| **Added** | 2026-08-31 (spec 001, T013) |
+
+**What it does:** Registers a `resources_discover` handler returning `skillPaths: [<repo>/skills, $HOLOCRON_MEMORY_DIR/skills]` (when the latter exists), so pi finds Holocron's public and private skills directly from their canonical roots instead of the retired `~/.pi/agent/skills` fan-out (13 wrapper directories, removed by `install.sh`). No `promptPaths` — the native `~/.pi/agent/prompts → commands/` symlink already covers prompts.
+
+### holocron-memory
+
+See `pi/extensions/holocron-memory.ts` — memory context priming at session start (`session_start`, `before_agent_start`) from `$HOLOCRON_MEMORY_DIR`. Predates this file's tracking convention; documented here for completeness.
 
 ---
 

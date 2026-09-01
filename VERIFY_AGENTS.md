@@ -1,36 +1,18 @@
 # Agent Wiring Verification Prompt
 
-## Dual-Harness Architecture
+## Single-Source Architecture
 
-Holocron maintains **two parallel agent directories**, one per harness:
+Holocron maintains **one canonical agent directory**, `agents/` (Claude Code frontmatter: `model`, `tools`, `skills`, `permissionMode`), symlinked per-file into `~/.claude/agents/` by `install.sh`. There is no per-harness variant, generator, or second copy — the old `claude/agents/` + `opencode/agents/` dual-maintenance rule is retired (spec 001, 2026-08-31). pi does not consume this directory; its native agent roster lives separately in `pi/agents/` (untouched, hand-maintained).
 
-| Directory | Harness | Symlinked to | Schema |
-|---|---|---|---|
-| `opencode/agents/` | OpenCode | `~/.config/opencode/agents/` | OpenCode frontmatter (`color`, `voiceId`, `voice`, `persona`, `permission`) |
-| `claude/agents/` | Claude Code | `~/.claude/agents/` | Claude Code frontmatter (`model`, `tools`, `skills`, `permissionMode`) |
-
-**Both directories must stay in behavioral sync.** When you change an agent's description, system prompt, methodology, or core behavior in one directory, apply the equivalent change to the same agent in the other directory.
-
-**What stays the same across both:**
-- `name` — must match exactly (Claude Code uses it for delegation)
-- `description` — must match exactly (used for routing in both harnesses)
-- The entire body (character backstory, startup sequence, output format, methodology)
-
-**What differs between the two:**
-- Frontmatter only — OpenCode uses `color`/`voiceId`/`voice`/`persona`/`permission`; Claude Code uses `model`/`tools`/`skills`
-
-**Dual-maintenance rule:** Any commit that touches a file in `opencode/agents/` should also touch the corresponding file in `claude/agents/` — and vice versa. If you intentionally update only one side, note it in the commit message.
+**Drift check:** `bash install.sh --check` reports any stale, dangling, or missing agent symlink under `~/.claude/agents/` without changing anything (exit 0 = clean, 1 = drift found).
 
 ---
 
-
-Use this prompt in opencode after the agents are symlinked to confirm they are loaded and routing correctly.
+Use this prompt in a Claude Code session after the agents are symlinked (`bash install.sh`) to confirm they are loaded and routing correctly.
 
 ---
 
 ## Verification Prompt
-
-Paste this into an opencode session:
 
 ```
 I want to verify that the named agents are correctly wired into this session. Please do the following:
@@ -40,16 +22,14 @@ I want to verify that the named agents are correctly wired into this session. Pl
    - `name` field from frontmatter
    - `description` field from frontmatter (first sentence only)
    - `model` field
-   - Whether a `voiceId` is present (yes/no)
-   - Whether `permissions` are defined (yes/no)
+   - Whether `tools` are defined (yes/no)
 
 2. Confirm the following agents are present by name (these are required):
-   - Architect (Serena Blackwood)
-   - Engineer (Marcus Webb)
+   - Architect
+   - Engineer
    - Designer
    - QATester
-   - Pentester (Rook Blackburn)
-   - ProductManager (Jordan Mercer)
+   - Pentester
    - ClaudeResearcher
    - GeminiResearcher
    - GrokResearcher
@@ -59,13 +39,11 @@ I want to verify that the named agents are correctly wired into this session. Pl
    - BrowserAgent
    - UIReviewer
    - Algorithm
-   - ContextEngineer (Mira Osei)
+   - ContextEngineer
 
-3. Attempt to invoke the ProductManager agent for a trivial task: ask it to tell you the name of Jack's Linear team and the default ticket status. It should answer "Funnel Team (FUN)" and "Triage" without you providing that information.
+3. Attempt to invoke the Engineer agent for a trivial task: ask it what testing philosophy it follows. It should mention TDD and the red-green-refactor cycle.
 
-4. Attempt to invoke the Engineer agent for a trivial task: ask it what testing philosophy it follows. It should mention TDD and the red-green-refactor cycle.
-
-5. Report any agents that are missing, have malformed frontmatter, or failed to load correctly.
+4. Report any agents that are missing, have malformed frontmatter, or failed to load correctly.
 ```
 
 ---
@@ -74,23 +52,21 @@ I want to verify that the named agents are correctly wired into this session. Pl
 
 | Check | Pass | Fail |
 |-------|------|------|
-| All 15 agents listed | All names appear | Any missing → file wasn't copied or has a parse error |
+| All 15 agents listed | All names appear | Any missing → symlink broken; run `install.sh --check` |
 | `description` readable | Meaningful text | Empty or `null` → frontmatter YAML parse error |
-| `voiceId` present | `yes` for all except Algorithm | `no` → frontmatter stripped or file corrupted |
-| ProductManager answers FUN/Triage | Correct | Wrong → loaded the old slim `pm.md` stub instead of `ProductManager.md` |
 | Engineer answers TDD | Mentions red-green-refactor | Wrong → wrong file loaded or context file missing |
 
 ---
 
 ## Manual spot-check (bash)
 
-If you want to verify the files are present before running the prompt:
-
 ```bash
-ls -1 ~/.config/opencode/agents/
+bash install.sh --check    # expect: no agent-related drift rows, exit 0
+ls -1 ~/.claude/agents/
+readlink ~/.claude/agents/Engineer.md   # expect: <repo>/agents/Engineer.md
 ```
 
-Expected output (16 files):
+Expected output (15 files):
 ```
 Algorithm.md
 Architect.md
@@ -105,7 +81,6 @@ GeminiResearcher.md
 GrokResearcher.md
 Pentester.md
 PerplexityResearcher.md
-ProductManager.md
 QATester.md
 UIReviewer.md
 ```

@@ -99,7 +99,7 @@ Use the Agents skill to compose task-specific agents with unique traits, voices,
 
 **For research specifically:** Use the Research skill, which has dedicated researcher agents (ClaudeResearcher, GeminiResearcher, etc.)
 
-**Reference:** Agents skill (`~/.config/opencode/skills/Agents/SKILL.md`)
+**Reference:** Agents skill (`$HOLOCRON_DIR/skills/agents/SKILL.md`)
 
 **Full Context Requirements:**
 When delegating, ALWAYS include:
@@ -165,4 +165,4 @@ Timing: DEEP — comprehensive analysis.
 - SKILL.md > Delegation (Quick Reference) - Condensed trigger table
 - Workflows/Delegation.md - Operational delegation procedures
 - Workflows/BackgroundDelegation.md - Background agent patterns
-- skills/Agents/SKILL.md - Custom agent creation system
+- skills/agents/SKILL.md - Custom agent creation system

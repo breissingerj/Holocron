@@ -16,20 +16,25 @@ If a skill does not follow this structure, it is not properly configured and wil
 
 ---
 
-## TitleCase Naming Convention (MANDATORY)
+## Naming Convention (MANDATORY)
 
-**All naming in the skill system MUST use TitleCase (PascalCase).**
+**Amended 2026-08-31 (Constitution 1.1.0, spec 001):** the **public skill's own directory name and its frontmatter `name`** now use the lowercase-hyphen Agent Skills standard (`[a-z0-9-]+`, `name` == directory), not TitleCase — this is what both Claude Code and pi's skill discovery treat as the skill's identity, and pi warns on non-compliant names. **Everything else inside a skill** (workflow files, reference docs, tool files, help files) still uses TitleCase as before; only the top-level directory/`name` pair changed.
 
 | Component | Wrong | Correct |
 |-----------|-------|---------|
-| Skill directory | `createskill`, `create-skill`, `CREATE_SKILL` | `Createskill` or `CreateSkill` |
-| Workflow files | `create.md`, `update-info.md`, `SYNC_REPO.md` | `Create.md`, `UpdateInfo.md`, `SyncRepo.md` |
-| Reference docs | `prosody-guide.md`, `API_REFERENCE.md` | `ProsodyGuide.md`, `ApiReference.md` |
-| Tool files | `manage-server.ts`, `MANAGE_SERVER.ts` | `ManageServer.ts` |
-| Help files | `manage-server.help.md` | `ManageServer.help.md` |
-| YAML name | `name: create-skill` | `name: CreateSkill` |
+| **Skill directory (top-level)** | `Createskill`, `CREATE_SKILL`, `CreateSkill` | `create-skill` (lowercase, hyphen-separated, matches frontmatter `name`) |
+| **YAML `name` (top-level)** | `name: CreateSkill`, `name: Create-Skill` | `name: create-skill` (must equal the directory name exactly) |
+| Workflow files (inside the skill) | `create.md`, `update-info.md`, `SYNC_REPO.md` | `Create.md`, `UpdateInfo.md`, `SyncRepo.md` |
+| Reference docs (inside the skill) | `prosody-guide.md`, `API_REFERENCE.md` | `ProsodyGuide.md`, `ApiReference.md` |
+| Tool files (inside the skill) | `manage-server.ts`, `MANAGE_SERVER.ts` | `ManageServer.ts` |
+| Help files (inside the skill) | `manage-server.help.md` | `ManageServer.help.md` |
 
-**TitleCase Rules:**
+**Skill directory / frontmatter `name` rules (Agent Skills standard):**
+- Lowercase `a-z`, `0-9`, and hyphens only — no underscores, spaces, or capitals
+- Must equal the directory name exactly
+- Personal (never-shared) skills keep the separate `_ALLCAPS` convention below — this rule applies to public/system skills only
+
+**TitleCase rules (everything else inside a skill — unchanged):**
 - First letter of each word capitalized
 - No hyphens, underscores, or spaces
 - No ALL_CAPS or all_lowercase
@@ -45,7 +50,7 @@ If a skill does not follow this structure, it is not properly configured and wil
 **Skills are classified into two categories:**
 
 ### System Skills (Shareable via PAI Packs)
-- Use **TitleCase** naming: `Browser`, `Research`, `Development`
+- Use **lowercase-hyphen** naming for the directory/`name`: `browser`, `research`, `development` (internal files stay TitleCase — see Naming Convention above)
 - Contain NO personal data (contacts, API keys, team members)
 - Reference `$HOLOCRON_MEMORY_DIR/Holocron/USER/` for any personalization
 - Can be exported to the public PAI repository
@@ -60,7 +65,7 @@ If a skill does not follow this structure, it is not properly configured and wil
 
 Personal skills are identified by their `_ALLCAPS` naming convention. To list current personal skills:
 ```bash
-ls -1 ~/.config/opencode/skills/ | grep "^_"
+ls -1 $HOLOCRON_DIR/skills/ | grep "^_"
 ```
 
 This ensures documentation never drifts from reality. The underscore prefix ensures:
@@ -83,7 +88,7 @@ Personal configuration loaded from:
 
 ## Skill Customization System
 
-**System skills (TitleCase) check for user customizations before executing.**
+**System (public) skills check for user customizations before executing.**
 
 **Personal skills (_ALLCAPS) do NOT use this system** - they already contain personal data directly and are never shared.
 
@@ -190,7 +195,7 @@ science_cycle_time: meso         # Optional: micro | meso | macro
 ```
 
 **Rules:**
-- `name` uses **TitleCase**
+- `name` matches the skill directory name exactly (lowercase-hyphen for public skills, `_ALLCAPS` for personal)
 - `description` is a **single line** (not multi-line with `|`)
 - `USE WHEN` keyword is **MANDATORY** (Claude Code parses this for skill activation)
 - Use intent-based triggers with `OR` for multiple conditions
@@ -224,7 +229,7 @@ science_cycle_time: meso
 - **Research** - Investigation through hypotheses and evidence gathering
 - **Council** - Debate as parallel hypothesis testing
 
-**See:** `~/.config/opencode/skills/Science/Protocol.md` for the full protocol interface
+**See:** `$HOLOCRON_DIR/skills/Science/Protocol.md` for the full protocol interface
 
 ### 2. Markdown Body (Workflow Routing + Examples + Documentation)
 
@@ -423,7 +428,7 @@ SkillSearch('art tools')        # Loads Tools.md from skill root
 Or reference them directly:
 ```bash
 # Read specific context file
-Read ~/.config/opencode/skills/Media/Art/Aesthetic.md
+Read $HOLOCRON_DIR/skills/media/Art/Aesthetic.md
 ```
 
 Context files can reference workflows and tools:
@@ -471,7 +476,7 @@ Don't bother for:
 ### When to Canonicalize
 
 - Skill has old YAML format (separate `triggers:` or `workflows:` arrays)
-- Skill uses non-TitleCase naming
+- Skill directory/`name` doesn't match the lowercase-hyphen Agent Skills standard (public skills), or internal files don't use TitleCase
 - Skill is missing `USE WHEN` in description
 - Skill lacks `## Examples` section
 - Skill has `backups/` inside its directory
@@ -479,13 +484,13 @@ Don't bother for:
 
 ### Canonicalization Checklist
 
-#### Naming (TitleCase)
-- [ ] Skill directory uses TitleCase
+#### Naming
+- [ ] Skill directory uses lowercase-hyphen naming (public skills; `_ALLCAPS` for personal)
 - [ ] All workflow files use TitleCase
 - [ ] All reference docs use TitleCase
 - [ ] All tool files use TitleCase
 - [ ] Routing table names match file names exactly
-- [ ] YAML `name:` uses TitleCase
+- [ ] YAML `name:` matches the directory name exactly (lowercase-hyphen for public skills)
 
 #### YAML Frontmatter
 - [ ] Single-line `description` with embedded `USE WHEN`
@@ -508,11 +513,11 @@ Don't bother for:
 
 Use the Createskill skill's CanonicalizeSkill workflow:
 ```
-~/.config/opencode/skills/Createskill/Workflows/CanonicalizeSkill.md
+$HOLOCRON_DIR/skills/Createskill/Workflows/CanonicalizeSkill.md
 ```
 
 Or manually:
-1. Rename files to TitleCase
+1. Rename the skill directory (and its `name:` field) to lowercase-hyphen; rename internal files to TitleCase
 2. Update YAML frontmatter to single-line description
 3. Add `## Workflow Routing` table
 4. Add `## Examples` section
@@ -578,7 +583,7 @@ description: Complete blog workflow. USE WHEN user mentions doing anything with 
 
 ## Complete Canonical Example: Blogging Skill
 
-**Reference:** `~/.config/opencode/skills/_PERSONAL/_MYSKILL/SKILL.md`
+**Reference:** `$HOLOCRON_DIR/skills/_PERSONAL/_MYSKILL/SKILL.md`
 
 ```yaml
 ---
@@ -662,7 +667,7 @@ User: "Publish the AI agents post"
 Every skill follows this structure:
 
 ```
-SkillName/                    # TitleCase directory name
+skill-name/                   # lowercase-hyphen (public); _ALLCAPS for personal
 ├── SKILL.md                  # Main skill file (always uppercase)
 ├── QuickStartGuide.md        # Context/reference files in root (TitleCase)
 ├── DefenseMechanisms.md      # Context/reference files in root (TitleCase)
@@ -702,8 +707,8 @@ skills/OSINT/Workflows/CompanyDueDiligence.md   # Workflow - one level deep
 skills/OSINT/Tools/Analyze.ts                   # Tool - one level deep
 skills/OSINT/CompanyTools.md                    # Context file - in root
 skills/OSINT/Examples.md                        # Context file - in root
-skills/Utilities/Prompting/BeCreative.md                  # Templates in Prompting root
-skills/Utilities/Prompting/StoryExplanation.md            # Templates in Prompting root
+skills/utilities/Prompting/BeCreative.md                  # Templates in Prompting root
+skills/utilities/Prompting/StoryExplanation.md            # Templates in Prompting root
 skills/PromptInjection/DefenseMechanisms.md     # Context file - in root
 skills/PromptInjection/QuickStartGuide.md       # Context file - in root
 ```
@@ -715,8 +720,8 @@ skills/OSINT/Resources/Examples.md              # Context files go in root, NOT 
 skills/OSINT/Docs/CompanyTools.md               # Context files go in root, NOT Docs/
 skills/OSINT/Templates/Primitives/Extract.md    # THREE levels - NO
 skills/OSINT/Workflows/Company/DueDiligence.md  # THREE levels - NO (use CompanyDueDiligence.md instead)
-skills/Utilities/Prompting/Templates/BeCreative.md        # Templates in root, NOT Templates/ subdirectory
-skills/Research/Workflows/Analysis/Deep.md      # THREE levels - NO
+skills/utilities/Prompting/Templates/BeCreative.md        # Templates in root, NOT Templates/ subdirectory
+skills/research/Workflows/Analysis/Deep.md      # THREE levels - NO
 ```
 
 ### Why Flat Structure
@@ -742,9 +747,9 @@ skills/Research/Workflows/Analysis/Deep.md      # THREE levels - NO
    - Wrong: `Tools/Analysis/Analyze.ts`
 
 **Templates (Prompting skill only):**
-- Templates live in `skills/Utilities/Prompting/` root, NOT nested
-- Correct: `skills/Utilities/Prompting/BeCreative.md`
-- Wrong: `skills/Utilities/Prompting/Templates/BeCreative.md`
+- Templates live in `skills/utilities/Prompting/` root, NOT nested
+- Correct: `skills/utilities/Prompting/BeCreative.md`
+- Wrong: `skills/utilities/Prompting/Templates/BeCreative.md`
 
 ### Context/Resource Files Go in Skill Root
 
@@ -940,7 +945,7 @@ bun Generate.ts \
  * ToolName.ts - Brief description
  *
  * Usage:
- *   bun ~/.config/opencode/skills/SkillName/Tools/ToolName.ts <command> [options]
+ *   bun $HOLOCRON_DIR/skills/SkillName/Tools/ToolName.ts <command> [options]
  *
  * Commands:
  *   start     Start the thing
@@ -1009,9 +1014,9 @@ Explicit output specs reduce variability and increase actionability.
 
 Before a skill is complete:
 
-### Naming (TitleCase)
-- [ ] Skill directory uses TitleCase (e.g., `Blogging`, `Daemon`)
-- [ ] YAML `name:` uses TitleCase
+### Naming
+- [ ] Skill directory uses lowercase-hyphen naming (e.g., `blogging`, `daemon`) for public skills; `_ALLCAPS` for personal
+- [ ] YAML `name:` matches the directory name exactly
 - [ ] All workflow files use TitleCase (e.g., `Create.md`, `UpdateInfo.md`)
 - [ ] All reference docs use TitleCase (e.g., `ProsodyGuide.md`)
 - [ ] All tool files use TitleCase (e.g., `ManageServer.ts`)
@@ -1042,7 +1047,7 @@ Before a skill is complete:
 
 | Component | Purpose | Naming |
 |-----------|---------|--------|
-| **Skill directory** | Contains all skill files | TitleCase (e.g., `Blogging`) |
+| **Skill directory** | Contains all skill files | lowercase-hyphen (e.g., `blogging`); `_ALLCAPS` for personal skills |
 | **SKILL.md** | Main skill file | Always uppercase |
 | **Workflow files** | Execution procedures | TitleCase (e.g., `Create.md`) |
 | **Reference docs** | Information to read | TitleCase (e.g., `ApiReference.md`) |
