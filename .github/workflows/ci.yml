@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  install-sh:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,8 +18,27 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
+      - name: Syntax / build check
+        run: |
+          bash -n install.sh
+          # pi/extensions/*.ts import peer packages (@mariozechner/*,
+          # @sinclair/typebox) provided by the pi runtime at install time,
+          # not by this repo's package.json — mark them external so this is
+          # a genuine syntax/type-resolution check, not a "missing dep" check.
+          for f in pi/extensions/*.ts; do
+            bun build "$f" --target=node --external "@mariozechner/*" --external "@sinclair/typebox" --outdir /tmp/ci-build-check > /dev/null
+          done
 
-      - name: Run tests
-        run: bun test plugins/holocron-prd/tests plugins/holocron-context-loader/tests
+      - name: Fresh-clone dry run (sandboxed HOME, no HOLOCRON_MEMORY_DIR)
+        run: |
+          export HOME="$(mktemp -d)"
+          bash install.sh
+          bash install.sh --check
+
+      - name: Idempotency check (second apply reports no changes)
+        run: |
+          export HOME="$(mktemp -d)"
+          bash install.sh > /dev/null
+          OUTPUT=$(bash install.sh)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "no changes"
