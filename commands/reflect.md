@@ -25,6 +25,10 @@ Agent invocations (lifetime):
 Already processed snapshots:
 !`ls $HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/ 2>/dev/null | wc -l` prior reflect runs in PROCESSED/
 
+Memory size check:
+!`wc -l < $HOLOCRON_MEMORY_DIR/memory/MEMORY.md 2>/dev/null` lines in MEMORY.md (cap: 200)
+!`find $HOLOCRON_MEMORY_DIR/memory -maxdepth 1 -name "*.md" ! -name "MEMORY.md" -exec wc -l {} \; 2>/dev/null | awk '$1 > 300 {print}'` topic files over the 300-line distill threshold
+
 ---
 
 ## PHASE 1 — INVENTORY
@@ -47,7 +51,8 @@ Read and display all unprocessed signal data:
    For each client with ≥ 2 matching sessions, flag it for client state synthesis in PHASE 2.
 6. Scan `algorithm-reflections.jsonl` for recurring error classes or correction signals. Group by behavioral anti-pattern description (not by session). For each class that appears in ≥ 3 separate sessions, flag it for behavioral correction pattern synthesis in PHASE 2.
 7. Count total signals by type: explicit ratings, implicit ratings, algorithm reflections, captures
-8. If total unprocessed signals = 0, output: "No unprocessed signals found. Nothing to reflect." and stop.
+8. Check memory size against caps (see "Memory size check" above): if `MEMORY.md` exceeds 200 lines, or any `memory/{topic}.md` file exceeds 300 lines, flag it as a distill candidate for PHASE 2 — this check runs every cycle regardless of whether any other signals exist.
+9. If total unprocessed signals = 0 AND no files were flagged in step 8, output: "No unprocessed signals found. Nothing to reflect." and stop.
 
 ---
 
@@ -62,6 +67,7 @@ Analyze all unprocessed signals and cluster them into themes. Apply the followin
 - **Preference/workflow update**: Explicit user corrections about output format, tooling, workflow — apply if explicit (not just inferred) and not already in memory
 - **Client state snapshot** (applies to `memory/{client}-state.md`): Include if ≥ 2 sessions reference the same client with non-trivial work context (substantive tool calls, PRD entries, or reflections — not just mentions). Synthesize current active risks, known tech debt, behavioral quirks, and unresolved issues as facts. Do NOT summarize what was done; capture what is true now.
 - **Behavioral correction pattern** (applies to `memory/behavioral-corrections.md`): Include if the same anti-pattern class appears in ≥ 3 separate sessions. This is distinct from the "Behavioral correction" category above — that category handles explicit corrections the user named; this category handles implicit recurring mistakes surfaced by rating patterns and reflection content. Do NOT promote a pattern here unless it meets the 3-session threshold.
+- **Distill** (applies to any `memory/{topic}.md` flagged in PHASE 1 step 8, or `memory/MEMORY.md` itself): Always include when flagged — this category is not signal-gated like the others; it fires purely off line count. Never skip a flagged file just because it has no other unprocessed signals this cycle.
 
 Output a structured synthesis table:
 
@@ -74,6 +80,7 @@ Output a structured synthesis table:
 | ...   | one-off          | N | ... | Note only, discard |
 | ...   | client-state     | N | ... | Write/update memory/{client}-state.md |
 | ...   | behavior-pattern | N | ... | Append to memory/behavioral-corrections.md |
+| ...   | distill          | — | line count | Compact memory/{topic}.md |
 ```
 
 For each "Apply" row, write out the exact proposed change (the new bullet, rule, or note to add) before proceeding. Do not proceed to PHASE 3 until the synthesis table and proposed changes are complete and visible.
@@ -162,10 +169,17 @@ If there are memory/behavioral/preference changes to apply:
      ```
    - Never overwrite an existing pattern entry. If the same pattern recurs after a prior reflect run, append a `**Recurrence:**` line to the existing entry with the new timestamps and updated session count.
 
-5. For EVERY change, add a source annotation comment in the file using this format:
+5. For every file flagged as a distill candidate in PHASE 2:
+   - Read the full file. Identify sections that are fully resolved — action items marked done/cancelled, decisions explicitly superseded by a later dated entry in the same file, status updates that are no longer current.
+   - Collapse each resolved section into a single compact line (who/what/outcome), folded into a running "Resolved" or "Earlier history" rollup at the bottom of the file — do not delete it outright. The rollup line must retain enough detail that `git blame`/history plus the rollup line together answer "what happened and why," even though the original multi-line entry is gone from the live doc.
+   - Never compact an item that is still open, still referenced by a `[[wiki-link]]` from another note as current context, or was added in the last 7 days — distillation only targets genuinely stale, resolved content.
+   - For `memory/MEMORY.md` specifically: if it's still over 200 lines after removing resolved bullets, migrate the largest remaining section to a new or existing `memory/{topic}.md` topic file and leave a pointer, per the existing "topic file" convention in MEMORY_CONTRACT.md.
+   - Add the same source annotation as other changes, noting it as a distill pass: `<!-- reflect: distilled {REFLECT_TS} — N lines removed -->`
+
+6. For EVERY change, add a source annotation comment in the file using this format:
    `<!-- reflect: applied from signals {TIMESTAMP_1}, {TIMESTAMP_2} — rating avg {N} -->`
 
-6. Commit the changes and push directly to main:
+7. Commit the changes and push directly to main:
    ```bash
    cd $HOLOCRON_MEMORY_DIR
    git add -A
@@ -286,3 +300,5 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
 - Never apply a pattern that appears in only 1 session unless it's an explicit preference correction
 - If synthesis produces zero actionable items, still create the snapshot and report clearly
 - Source annotations are mandatory on every change — traceability to originating signals is required for the human reviewer
+- `memory/MEMORY.md` exceeding 200 lines, or any `memory/{topic}.md` exceeding 300 lines, is a mandatory distill trigger every cycle — it is not optional and does not require any other signal to be present
+- Distillation compacts, it never deletes outright — a resolved item always leaves a one-line rollup behind, never a silent removal
