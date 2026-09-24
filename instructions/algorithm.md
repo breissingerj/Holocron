@@ -111,8 +111,9 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 
 ### Execution of The Algorithm
 
-**MODE SELECTION GATE (MANDATORY — check before entering):** Ask yourself: does this task require multiple steps, multiple file changes, or non-trivial reasoning? If YES → proceed with Algorithm. If the task is a single shell command, a metadata-only update, or pure synthesis of context already in the conversation → use NATIVE mode instead. Do NOT enter the Algorithm for sub-60-second tasks.
+**MODE SELECTION GATE (MANDATORY — check before entering):** Ask yourself: does this task require multiple steps, multiple file changes, or non-trivial reasoning? If YES → proceed with Algorithm. If the task is a single shell command, metadata-only update, pure synthesis of loaded context, bounded read-only comparison, yes/no compatibility check, or single-file fix whose uncertainty is already resolved → use NATIVE mode instead. Do NOT enter the Algorithm when full PRD/ISC ceremony would exceed the task's actual uncertainty.
 <!-- reflect: applied from signals 2026-04-10T09:05Z, 2026-04-14T00:00Z, 2026-04-16T00:00Z — 3 sessions NATIVE mode underuse — 2026-04-17_16-42-31 -->
+<!-- reflect: applied from signals 2026-07-30 to 2026-09-22 — 12 sessions — 2026-09-23_21-15-26 -->
 
 **ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
 
@@ -156,6 +157,14 @@ The effort level defaults to `standard` here and gets refined later in OBSERVE a
   <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-20T19:50, 2026-03-20T20:21, 2026-03-23T20:45 — rating avg N/A -->
 - **Read ALL Edit Targets in OBSERVE**: When you know which files you intend to modify, issue a parallel Read of ALL of them at the start of OBSERVE — before writing a single line of BUILD code. Context compaction can produce inaccurate file summaries; confirmed reads from OBSERVE are authoritative. Do NOT defer file reads to BUILD.
   <!-- reflect: applied from signals 2026-03-31T12:00Z, 2026-03-31T15:35Z, 2026-04-02T00:00Z, 2026-04-04T16:00Z — 4 sessions, 2026-04-04_16-51-16 -->
+- **Execution Preflight**: Before committing to an execution plan, validate required credentials and sessions, registry access, repository-pinned package-manager versions, and required binaries. Resolve missing prerequisites before treating verification as achievable.
+  <!-- reflect: applied from signals 2026-04-19 to 2026-09-21 — 10+ sessions — 2026-09-23_21-15-26 -->
+- **Repository Gate**: Before any branch, commit, MR, or privileged-action decision, read the target repository's `AGENTS.md`/`CLAUDE.md`/constitution and verify the local Git identity.
+  <!-- reflect: applied from signals 2026-08-12 to 2026-08-25 — 6+ sessions — 2026-09-23_21-15-26 -->
+- **Primary-Source Contract Check**: Before reusing ported code, documentation examples, or delegated reports, verify the contract against installed type definitions, driver parameters, or the authoritative source repository.
+  <!-- reflect: applied from signals 2026-06-12 to 2026-09-22 — 8+ sessions — 2026-09-23_21-15-26 -->
+- **Live-State-First Debugging**: For code-works/deployment-fails reports, fingerprint the deployed image, targets, listeners, service events, and live health before analyzing application code.
+  <!-- reflect: applied from signals 2026-08-02 to 2026-09-23 — 6+ sessions — 2026-09-23_21-15-26 -->
 
 - REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
@@ -249,7 +258,10 @@ PLATFORM CAPABILITIES (consider alongside skills):
 GUIDANCE:
 
 - Use the **Plan subagent** (Claude Code) or a read-only tool sequence (`read`/`glob`/`grep`, pi) for any review, audit, or analysis task.
-- **Parallelize aggressively** — on Claude Code, spawn multiple Agent tool calls in a single message for independent research, competing hypotheses, or parallel exploration; this is the primary parallelism primitive. On pi, batch independent `read`/`glob`/`grep`/`bash` calls in one message instead — do not assume a subagent tool is available without verifying first.
+- **Parallelize selectively** — batch independent native tool calls aggressively. Use subagents only for genuinely independent workstreams that reduce primary-context load; before dispatch, state the delegation plan in one line and minimize agent count. Do not fan out bounded work already covered by the primary context.
+  <!-- reflect: applied from signals 2026-09-02T10:31:16-04:00, 2026-09-03T11:19:52-04:00, 2026-09-09T10:21:45-04:00 — rating avg 4.7 -->
+- **Permission-match delegation** — verify a subagent profile's actual tools before assigning web, Git, shell, or write-dependent work. Keep permission-constrained Explore agents on local source search and classification; perform unsupported operations directly or choose a capable profile.
+  <!-- reflect: applied from signals 2026-08-07 to 2026-08-21 — 6+ sessions — 2026-09-23_21-15-26 -->
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
   <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
 - **Parallel WebFetch for multi-URL research**: When a task requires fetching N URLs (repos, READMEs, docs, API references), issue ALL N WebFetch calls simultaneously in the OBSERVE phase — never sequentially. One round-trip for all sources is always correct; sequential fetching is always wrong for research tasks.
@@ -302,7 +314,8 @@ EXAMPLES:
 
 ━━━ 🧠 THINK ━━━ 2/7
 
-**FIRST ACTION:** Voice announce `"Entering the Think phase."`, then Edit PRD frontmatter `phase: think, updated: {timestamp}`. Pressure test and enhance the ISC:
+**FIRST ACTION:** Before advancing, verify every delegated OBSERVE task produced its expected artifact or evidence (PRD diff, file output, or cited findings); self-reported completion alone is unverified. Then voice announce `"Entering the Think phase."`, edit PRD frontmatter `phase: think, updated: {timestamp}`, and pressure test the ISC.
+<!-- reflect: applied from signals 2026-05-18, 2026-07-31, 2026-08-20 — 3 sessions — 2026-09-23_21-15-26 -->
 
 OUTPUT:
 
