@@ -4,6 +4,16 @@ Key architectural and design decisions made while building Holocron. Captured so
 
 ---
 
+## 2026-09-23
+
+### Reflect promotes repeated execution failures into explicit gates
+
+- **Decision** — Tighten mode selection, preflight, repository-convention, primary-source, live-state debugging, delegation-permission, and delegated-artifact gates in `instructions/algorithm.md`; prefer native parallel batches while minimizing bounded-task subagent fan-out.
+- **Options considered** — Keep the existing general guidance; modify a nonexistent canonical Explore agent; or encode the recurring cross-agent failures in the shared algorithm.
+- **Rationale** — The same failures recur across 3–12+ independent sessions and multiple harness agent names. Shared algorithm gates address the actual cross-harness behavior without inventing or duplicating an agent definition.
+
+---
+
 ## 2026-08-28
 
 ### Claude shim mechanism: generated concatenation over `@`-import (spec 001, T001 finding)
