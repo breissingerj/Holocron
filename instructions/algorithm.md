@@ -1,468 +1,235 @@
-## The Algorithm 3.8.0
+## The Algorithm 4.0.0
 
 Core: transition from CURRENT STATE to IDEAL STATE using verifiable criteria (ISC). Goal: **Euphoric Surprise** — 9-10 ratings.
 
-### Effort Levels
+### The Point
 
-| Tier | Budget | ISC Range | Min Capabilities | When |
-|------|--------|-----------|-----------------|------|
-| **Standard** | <2min | 8-16 | 1-2 | Normal request (DEFAULT) |
-| **Extended** | <8min | 16-32 | 3-5 | Quality must be extraordinary |
-| **Advanced** | <16min | 24-48 | 4-7 | Substantial multi-file work |
-| **Deep** | <32min | 40-80 | 6-10 | Complex design |
-| **Comprehensive** | <120min | 64-150 | 8-15 | No time pressure |
+The whole point is euphoric surprise: Jack got exactly the output he wanted, in the right amount of time, for the right amount of spend. There is no effort tier to declare and no ISC count to predict — there is the desired outcome and your judgment about how to reach it. The rest of this file states what must be true when a run is done; how you get there, and how much you spend getting there, is yours to choose. Jack's explicit calls in plain language ("go heavy", "quick pass", a stated budget) outrank your judgment — always.
 
-**Min Capabilities** = minimum number of distinct capabilities to **actually invoke** during execution. "Invoke" means ONE thing: a real action — reading and following a skill's SKILL.md, delegating to an agent, or using a harness tool. Writing text that resembles a skill's output is NOT invocation. Listing a capability but never acting on it is a **CRITICAL FAILURE** — worse than not listing it, because it's dishonest. When in doubt, invoke MORE capabilities not fewer.
+(How a run is *presented* — the output format — is a separate contract in AGENTS.md, kept and unaffected.)
 
-### Time Budget per Phase
+### When to Run the Algorithm
 
-TIME CHECK at every phase — if elapsed >150% of budget, auto-compress.
+Enter the Algorithm when done needs writing down: multi-step work, multiple files, non-trivial reasoning, anything where "finished" must be provable. Answer inline when a single command, a metadata-only update, a bounded read-only comparison, or a synthesis of loaded context is the whole task. No mode label is declared; the output format you use is the one that matches the response you are actually giving.
 
-### Voice Announcements
+### A Run Is Complete When
 
-At Algorithm entry and every phase transition, announce via the voice script (not background):
-
-```bash
-bash $HOLOCRON_DIR/scripts/voice.sh "MESSAGE"
-```
-
-**Algorithm entry:** `"Entering the Algorithm"` — immediately before OBSERVE begins.
-**Phase transitions:** `"Entering the PHASE_NAME phase."` — as the first action at each phase, before the PRD edit.
-
-These are direct, synchronous calls. Do not send to background. The voice notification is part of the phase transition ritual.
-
-**CRITICAL: Only the primary agent may execute voice calls.** Background agents and subagents must NEVER make voice calls. Voice is exclusively for the main conversation agent. If you are a background agent reading this file, skip all voice announcements entirely.
-
-### PRD as System of Record
-
-**The AI writes ALL PRD content directly using Write/Edit tools.** PRD.md in `$HOLOCRON_MEMORY_DIR/WORK/{slug}/` is the single source of truth. The AI is the sole writer. (See `MEMORY_CONTRACT.md` in the Holocron repo for the full `$HOLOCRON_MEMORY_DIR` directory structure.)
-
-**What the AI writes directly:**
-- YAML frontmatter (task, slug, effort, phase, progress, mode, started, updated; optional: iteration)
-- All prose sections (Context, Criteria, Decisions, Verification)
-- Criteria checkboxes (`- [ ] ISC-1: text` and `- [x] ISC-1: text`)
-- Progress counter in frontmatter (`progress: 3/8`)
-- Phase transitions in frontmatter (`phase: execute`)
-
-**What plugins do (read-only from PRD):** If your harness has a PRD sync plugin (Holocron M7), it fires on Write/Edit of PRD.md and syncs frontmatter to `work.json` for dashboards. **Plugins never write to PRD.md — they only read it.** If no plugin is present, the AI is solely responsible for all PRD state.
-
-**Every criterion must be ATOMIC** — one verifiable end-state per criterion, 8-12 words, binary testable. See ISC Decomposition below.
-
-**Anti-criteria** (ISC-A prefix): what must NOT happen.
+1. **The stated goal survived.** Jack's explicit wants, implied wants, and explicit not-wants from reverse engineering are written in the PRD's Context, and every criterion traces to them.
+2. **Done existed in writing before building.** A PRD at `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md` with atomic ISC — each criterion one verifiable end state, each naming the probe that would falsify it.
+3. **What must not happen is written down** — at least one anti-criterion (ISC-A).
+4. **External prerequisites were probed before execution** — credentials, sessions, registry access, deploy targets. MISSING blocks or is ratified deferred in Decisions.
+5. **Material ambiguity was resolved before building** — up to 3 targeted questions when the answer would change what gets built, or an inline flagged default when a reasoned default is safe.
+6. **No criterion closed without probe evidence of the right modality**: file→Read, code→Grep, command→checked output, HTTP→`curl -i`, deploy→live probe, web/UI→real browser via playwright-cli, appearance→viewed pixels, schema→SELECT, config→read-back. Evidence must SPAN the claim — a container passing is never evidence for its members. "Should work" is forbidden.
+7. **Class-sweeps closed.** A defect recognized as an instance of a class did not close until one grep/glob enumerated every sibling, each fixed-and-verified or tombstoned: `🧹 CLASS-SWEEP: <class> — N siblings; M fixed, K tombstoned`. Sweep-shaped asks (rename, retire, migrate) enumerate at PLAN time.
+8. **Every explicit ask in Jack's verbatim message was met, skipped with a stated reason, or surfaced.** No criterion passed because its wording was softened mid-run.
+9. **Validation was intrinsic.** The builder never rubber-stamped its own build. For high-blast-radius work (core system files, auth/security, publish-bound), elect an independent second look scaled to impact — a non-forked review, a RedTeam pass, a Council — or log the skip with a reason. Never silent.
+10. **Learnings were routed, evidence collapsed.** Learnings landed as diffs via the Learning Router (rule→steering-rules.md, gotcha→the skill's SKILL.md, incident→`LEARNING/INCIDENTS/INC-YYYYMMDD-<slug>.md`, knowledge→memory topic file, identity/doctrine/hook/permission→surface to Jack). A closed criterion keeps one line of provenance; the proof lives in git and CI.
+11. **The PRD stayed current** — frontmatter phase and progress updated as the run moved, `phase: complete` at close.
+12. **The PRD at close is not the PRD at open** when the work taught something — criteria added, split, tightened, or killed as discoveries arrived.
+13. **The spend matched the task** — intelligence, verification depth, parallelism, and time scaled to the difficulty and blast radius the work revealed. Breaks in either direction surfaced, never silent.
 
 ### ISC Decomposition Methodology
 
-**The core principle: each ISC criterion = one atomic verifiable thing.** If a criterion can fail in two independent ways, it's two criteria. Granularity is not optional — it's what makes the system work. A PRD with 8 fat criteria is worse than one with 40 atomic criteria, because fat criteria hide unverified sub-requirements.
+**Each criterion = one atomic verifiable thing.** If a criterion can fail in two independent ways, it's two criteria. There is no count floor — the right number of criteria is however many independently verifiable end states the outcome has. A PRD with fat criteria hides unverified sub-requirements; a PRD padded with trivia wastes attention. Decompose until each criterion is one probe away from proven.
 
-**The Splitting Test — apply to EVERY criterion before finalizing:**
+**The Splitting Test — apply to every criterion:**
 
-1. **"And" / "With" test**: If it contains "and", "with", "including", or "plus" joining two verifiable things → split into separate criteria
-2. **Independent failure test**: Can part A pass while part B fails? → they're separate criteria
-3. **Scope word test**: "All", "every", "complete", "full" → enumerate what "all" means. "All tests pass" for 4 test files = 4 criteria, one per file
-4. **Domain boundary test**: Does it cross UI/API/data/logic boundaries? → one criterion per boundary
+1. **"And" / "With" test**: joins two verifiable things → split
+2. **Independent failure test**: can part A pass while part B fails? → split
+3. **Scope word test**: "all", "every", "complete" → enumerate what that means
+4. **Domain boundary test**: crosses UI/API/data/logic → one per boundary
 
-**Decomposition by domain:**
+**Every criterion names its probe** — end each line with ` — probe: <the tool check that would falsify it>`, using the modality table in claim 6. A criterion without a probe is not testable: rewrite or split it.
 
-| Domain | Decompose per... | Example |
-|--------|-----------------|---------|
-| **UI/Visual** | Element, state, breakpoint | "Hero section visible" + "Hero text readable at 320px" + "Hero CTA button clickable" |
-| **Data/API** | Field, validation rule, error case, edge | "Name field max 100 chars" + "Name field rejects empty" + "Name field trims whitespace" |
-| **Logic/Flow** | Branch, transition, boundary | "Login succeeds with valid creds" + "Login fails with wrong password" + "Login locks after 5 attempts" |
-| **Content** | Section, format, tone | "Intro paragraph present" + "Intro under 50 words" + "Intro uses active voice" |
-| **Infrastructure** | Service, config, permission | "Worker deployed to production" + "Worker has R2 binding" + "Worker rate-limited to 100 req/s" |
+### The Loop
 
-**Granularity example — same task at two decomposition depths:**
+Seven phases, one hill climb. The PRD is the system of record.
 
-Coarse (8 ISC — WRONG for Extended+):
+**Voice announcements** (Claude Code, primary agent only — background agents never make voice calls): `bash $HOLOCRON_DIR/scripts/voice.sh "Entering the Algorithm"` at entry and `"Entering the PHASE_NAME phase."` as the first action of each phase.
+
+**Console output at entry (MANDATORY):**
 ```
-- [ ] ISC-1: Blog publishing workflow handles draft to published transition
-- [ ] ISC-2: Markdown content renders correctly with all formatting
-- [ ] ISC-3: SEO metadata generated and validated for each post
-```
-
-Atomic (showing 3 of those same areas decomposed to ~12 criteria each):
-```
-Draft-to-Published:
-- [ ] ISC-1: Draft status stored in frontmatter YAML field
-- [ ] ISC-2: Published status stored in frontmatter YAML field
-- [ ] ISC-3: Status transition requires explicit user confirmation
-- [ ] ISC-4: Published timestamp set on first publish only
-- [ ] ISC-5: Slug auto-generated from title on draft creation
-- [ ] ISC-6: Slug immutable after first publish
-
-Markdown Rendering:
-- [ ] ISC-7: H1-H6 headings render with correct hierarchy
-- [ ] ISC-8: Code blocks render with syntax highlighting
-- [ ] ISC-9: Inline code renders in monospace font
-- [ ] ISC-10: Images render with alt text fallback
-- [ ] ISC-11: Links open in new tab for external URLs
-- [ ] ISC-12: Tables render with proper alignment
-
-SEO:
-- [ ] ISC-13: Title tag under 60 characters
-- [ ] ISC-14: Meta description under 160 characters
-- [ ] ISC-15: OG image URL present and valid
-- [ ] ISC-16: Canonical URL set to published permalink
-- [ ] ISC-17: JSON-LD structured data includes author
-- [ ] ISC-18: Sitemap entry added on publish
-```
-
-The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements. The atomic version makes each independently testable. **Always write atomic.**
-
-### Execution of The Algorithm
-
-**MODE SELECTION GATE (MANDATORY — check before entering):** Ask yourself: does this task require multiple steps, multiple file changes, or non-trivial reasoning? If YES → proceed with Algorithm. If the task is a single shell command, metadata-only update, pure synthesis of loaded context, bounded read-only comparison, yes/no compatibility check, or single-file fix whose uncertainty is already resolved → use NATIVE mode instead. Do NOT enter the Algorithm when full PRD/ISC ceremony would exceed the task's actual uncertainty.
-
-**ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
-
-**Voice:** `bash $HOLOCRON_DIR/scripts/voice.sh "Entering the Algorithm"`
-
-**Console output at Algorithm entry (MANDATORY):**
-```
-♻︎ Entering the ALGORITHM… (v3.8.0) ═════════════
+♻︎ Entering the ALGORITHM… (v4.0.0) ═════════════
 🗒️ TASK: [8 word description]
 ```
 
-**Console output at each phase transition (MANDATORY):** Output the phase header line as the FIRST thing at each phase, before voice and PRD edit.
-
-**PRD stub (MANDATORY — immediately after voice):**
-Create the PRD directory and write a stub PRD with frontmatter only. Ensure you evaluate `$HOLOCRON_MEMORY_DIR` into an absolute path (e.g., via `echo $HOLOCRON_MEMORY_DIR` in `bash`) before using filesystem tools to ensure PRDs are created in the global memory repo and NOT the local working directory.
-1. `mkdir -p $HOLOCRON_MEMORY_DIR/WORK/{slug}/` (slug format: `YYYYMMDD-HHMMSS_kebab-task-description`)
-2. Write `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md` — frontmatter only, no body sections yet:
-```yaml
----
-task: [same 8 word description from console output]
-slug: [the slug]
-effort: standard
-phase: observe
-progress: 0/0
-mode: interactive
-started: [ISO timestamp]
-updated: [ISO timestamp]
----
-```
-The effort level defaults to `standard` here and gets refined later in OBSERVE after reverse engineering.
+**PRD stub (MANDATORY — immediately after voice):** evaluate `$HOLOCRON_MEMORY_DIR` to an absolute path first, then `mkdir -p $HOLOCRON_MEMORY_DIR/WORK/{slug}/` (slug: `YYYYMMDD-HHMMSS_kebab-task-description`) and write a frontmatter-only PRD per `instructions/PRDFORMAT.md`.
 
 ━━━ 👁️ OBSERVE ━━━ 1/7
 
-**FIRST ACTION:** Voice announce `"Entering the Observe phase."`, then Edit PRD frontmatter `updated: {timestamp}`. Then thinking-only, no tool calls except context recovery (read/search <=34s)
+Thinking-first; tool calls only for context recovery and discovery.
 
-- **Prioritize Official Specs**: Check official documentation (via WebFetch) and official type definitions upfront before attempting to guess or infer API contracts, webhooks, or resources.
-- **Check Conventions**: Always explicitly check for and read repository convention files (like `CLAUDE.md` or `CHANGELOG.md`) before making assumptions about testing frameworks or structural formats.
-- **Front-Load Scripted Discovery**: Before attempting incremental manual exploration, run a comprehensive grep sweep or targeted script to map the problem space upfront. For file trees, path integrity checks, or pattern detection (e.g., corrupt characters, missing files, broken references), write a targeted scan at the START of OBSERVE rather than discovering issues one-by-one during BUILD/EXECUTE.
-- **Read ALL Edit Targets in OBSERVE**: When you know which files you intend to modify, issue a parallel Read of ALL of them at the start of OBSERVE — before writing a single line of BUILD code. Context compaction can produce inaccurate file summaries; confirmed reads from OBSERVE are authoritative. Do NOT defer file reads to BUILD.
-- **Execution Preflight**: Before committing to an execution plan, validate required credentials and sessions, registry access, repository-pinned package-manager versions, and required binaries. Resolve missing prerequisites before treating verification as achievable.
-- **Repository Gate**: Before any branch, commit, MR, or privileged-action decision, read the target repository's `AGENTS.md`/`CLAUDE.md`/constitution and verify the local Git identity.
-- **Primary-Source Contract Check**: Before reusing ported code, documentation examples, or delegated reports, verify the contract against installed type definitions, driver parameters, or the authoritative source repository.
-- **Live-State-First Debugging**: For code-works/deployment-fails reports, fingerprint the deployed image, targets, listeners, service events, and live health before analyzing application code.
-
-- REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
+- **Prioritize official specs** — check official documentation and type definitions before guessing API contracts.
+- **Check conventions** — read repo convention files (CLAUDE.md, CHANGELOG.md, AGENTS.md) before assuming frameworks or formats.
+- **Front-load scripted discovery** — a comprehensive grep sweep or targeted scan at the START, not one-by-one discovery during BUILD.
+- **Read ALL edit targets in OBSERVE** — parallel reads before writing a line of BUILD. Confirmed reads are authoritative.
+- **Execution preflight** — validate credentials, sessions, registry access, pinned toolchain versions, and required binaries before treating verification as achievable.
+- **Repository gate** — before any branch/commit/MR decision, read the target repo's AGENTS.md/CLAUDE.md and verify git identity.
+- **Primary-source contract check** — verify ported code, doc examples, and delegated reports against installed type definitions or the authoritative source.
+- **Live-state-first debugging** — for code-works/deployment-fails, fingerprint the deployed system before analyzing application code.
+- REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work.
 
 OUTPUT:
 
 🔎 REVERSE ENGINEERING:
- 🔎 [What did they explicitly say they wanted (multiple, granular, one per line)?]
- 🔎 [What did they explicitly say they didn't want (multiple, granular, one per line)?]
- 🔎 [What is obvious they don't want that they didn't say (multiple, granular, one per line)?]
- 🔎 [How fast do they want the result (a factor in EFFORT LEVEL)?]
+ 🔎 [What did they explicitly say they wanted (granular, one per line)?]
+ 🔎 [What did they explicitly say they didn't want?]
+ 🔎 [What is obvious they don't want that they didn't say?]
+ 🔎 [How fast do they want the result?]
 
-- EFFORT LEVEL:
+- IDEAL STATE criteria generation — write atomic, probe-named ISC directly into the PRD's `## Criteria` section; write context into `## Context`; set `progress: 0/N`.
 
-OUTPUT:
+OUTPUT: [the ISC list from the PRD]
 
-💪🏼 EFFORT LEVEL: [EFFORT LEVEL based on the reverse engineering step above] | [8 word reasoning]
+- CAPABILITY SELECTION (CRITICAL):
 
-- IDEAL STATE Criteria Generation — write criteria directly into the PRD:
-- Edit the stub PRD.md to add full content — update frontmatter `effort` field with the determined effort level, and add sections (Context, Criteria, Decisions, Verification)
-- Add criteria as `- [ ] ISC-1: criterion text` checkboxes directly in the PRD's `## Criteria` section
-- **Apply the Splitting Test** to every criterion before writing. Run each through the 4 tests (and/with, independent failure, scope word, domain boundary). Split any compound criteria into atomics.
-- **NAME THE FALSIFIER PROBE (MANDATORY):** Every criterion must end with ` — probe: <the tool check that would prove it false>`. A criterion without a probe is not testable — rewrite or split it. The probe names the evidence MODALITY, matched to the claim:
-
-| Claim is about... | Probe modality |
-|---|---|
-| File contents/state | Read the file back |
-| Code presence/absence | Grep/Glob |
-| Command outcome | Run it, inspect the checked output |
-| HTTP/API behavior | `curl -i` (status + body) |
-| Deployment | Live probe of the deployed URL/endpoint |
-| Web/UI behavior | Real browser via playwright-cli — never inferred from markup |
-| Appearance | Viewed non-degenerate pixels (screenshot) |
-| Schema/data | SELECT against the real store |
-| Config | Read-back from the source of truth |
-
-  Evidence must also SPAN the claim: a container passing is never evidence for its members. "Site renders" is not proven by the homepage — enumerate the members and probe them. "Should work" is forbidden.
-- Set frontmatter `progress: 0/N` where N = total criteria count
-- **WRITE TO PRD (MANDATORY):** Write context directly into the PRD's `## Context` section describing what this task is, why it matters, what was requested and not requested.
-
-OUTPUT:
-
-[Show the ISC criteria list from the PRD]
-
-**ISC COUNT GATE (MANDATORY — cannot proceed to THINK without passing):**
-
-Count the criteria just written. Compare against effort tier minimum:
-
-| Tier | Floor | If below floor... |
-|------|-------|-------------------|
-| Standard | 8 | Decompose further using Splitting Test |
-| Extended | 16 | Decompose further — you almost certainly have compound criteria |
-| Advanced | 24 | Decompose by domain boundaries, enumerate "all" scopes |
-| Deep | 40 | Full domain decomposition + edge cases + error states |
-| Comprehensive | 64 | Every independently verifiable sub-requirement gets its own ISC |
-
-**If ISC count < floor: DO NOT proceed.** Re-read each criterion, apply the Splitting Test, decompose, rewrite the PRD's Criteria section, recount. Repeat until floor is met. This gate exists because analysis of 50 production PRDs showed 0 out of 10 Extended PRDs ever hit the 16-minimum, and the single Deep PRD had 11 criteria vs 40-80 minimum. The gate is the fix.
-
-- CAPABILITY SELECTION (CRITICAL, MANDATORY):
-
-NOTE: Use as many perfectly selected CAPABILITIES for the task as you can that will allow you to still finish under the time SLA of the EFFORT LEVEL. Select from the skill listing AND the platform capabilities below.
-
-**INVOCATION OBLIGATION: Selecting a capability creates a binding commitment to use it.** Every selected capability MUST be invoked during BUILD or EXECUTE by reading the skill's SKILL.md and following its workflow, or by delegating to an agent. Writing output that resembles what a skill would produce does NOT count as invocation. Selecting a capability and never acting on it is **dishonest**. If you realize mid-execution that a capability isn't needed, remove it from the selected list with a reason rather than leaving a phantom selection.
+**INVOCATION OBLIGATION: Selecting a capability creates a binding commitment to invoke it.** Every selected capability MUST be invoked during BUILD or EXECUTE — reading the skill's SKILL.md and following it, or actually delegating. Text that resembles a skill's output is NOT invocation. If a capability turns out unneeded mid-run, remove it with a reason rather than leaving a phantom selection.
 
 SELECTION METHODOLOGY:
-
-1. Fully understand the task from the reverse engineering step.
-2. Review skills available in `$HOLOCRON_DIR/skills/` — read SKILL.md files to understand USE WHEN triggers.
-3. **Check for a matching Fabric pattern** — per steering-rules.md (the single home for this rule).
-4. Consult the **Platform Capabilities** tables below (Claude Code tools / pi tools) for harness-native capabilities beyond skills — use whichever table matches the harness this session is running in.
-5. SELECT capabilities across ALL sources.
-
-PLATFORM CAPABILITIES (consider alongside skills):
-
-#### Claude Code tools
-
-| Capability | When to Select | How to Invoke |
-|------------|---------------|---------------|
-| **Plan subagent** | Analysis, code review, read-only investigation — enforces no edits, no bash | Agent tool with `subagent_type: "Plan"` — reads files, searches, fetches web; cannot write or run bash |
-| **Explore subagent** | Fast codebase search and pattern matching | Agent tool with `subagent_type: "Explore"` — glob, grep, read, webfetch; optimized for speed |
-| **Parallel subagents** | Multiple independent workstreams, competing hypotheses, parallel research | Multiple Agent tool calls in a single message — each runs concurrently |
-| **Subagent (single)** | Delegate one bounded task without consuming primary context | Agent tool with appropriate `subagent_type` — full tool access including bash and write |
-| **WebFetch** | Read a specific URL (docs page, GitHub file, API reference) | WebFetch tool — built-in, always available |
-| **WebSearch** | Research, docs lookup, finding examples | WebSearch tool — requires API key; verify availability before selecting |
-| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | Bash tool — full shell access |
-| **MCP tools** | Any capability from a configured MCP server (Linear, Gmail, etc.) | Call tool by name directly — named `mcp__{serverName}__{toolName}`; appears in deferred tools list |
-| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | Skill tool — first-class Claude Code built-in; USE WHEN triggers auto-route; invoke by name |
-| **Custom commands** | Parameterized slash command workflows with file/shell injection | `/commandname [args]` — available in `$HOLOCRON_DIR/commands/` |
-
-> **Note on Claude Code subagents:** Agent tool subagent capabilities vary by type. `Plan` and `Explore` types are scoped for read-only work. Other types (general-purpose, Engineer, etc.) have full tool access. Match the subagent type to the work required.
-
-#### pi tools
-
-| Capability | When to Select | How to Invoke |
-|------------|---------------|---------------|
-| **Read / Write / Edit** | Inspect or modify files | Built-in `read`, `write`, `edit` tools |
-| **Glob / Grep / Ls** | Locate files or search content | Built-in `glob`, `grep`, `ls` tools |
-| **Bash** | Run tests, builds, linters, git commands, arbitrary scripts | Built-in `bash` tool — full shell access |
-| **Skills** | Domain-specific workflows (Research, Security, Telos, etc.) | Built-in `skill` tool — lazy-loads the skill's SKILL.md by name on demand |
-| **tilldone** | Task discipline — required before any other tool use in Extended-mode work | `tilldone` tool (extension) — see `THEDELEGATIONSYSTEM.md` / `pi/APPEND_SYSTEM.md` for the list lifecycle |
-| **Graphiti memory** | Read/write durable facts, preferences, decisions | `graphiti_search`, `graphiti_search_nodes`, `graphiti_add`, etc. (extension) — falls back to `$HOLOCRON_MEMORY_DIR/memory/*.md` when `HOLOCRON_MEMORY_BACKEND=files` or Graphiti is unreachable |
-| **MCP tools** | Any capability from a configured MCP server | Call tool by name directly — named `{serverName}_{toolName}` |
-| **Custom commands** | Parameterized slash command workflows | `/commandname [args]` — from `$HOLOCRON_DIR/commands/` via the `prompts` root |
-
-> **Note on pi capabilities:** pi's confirmed built-in tool surface (verified against the installed `pi-coding-agent` package) is `read`, `write`, `edit`, `bash`, `glob`, `grep`, `ls`, `skill` — there is no native WebFetch/WebSearch tool; use `bash` (e.g. `curl`) or ask the user for page content instead of assuming one exists. A `subagent` tool is referenced by this repo's `subagent-progress.ts` extension UI, but its availability was not confirmed in the currently installed pi version — verify with a live tool call (don't assume) before relying on it for parallel delegation, per the constitution's empirical-verification principle.
+1. Understand the task from reverse engineering.
+2. Review `$HOLOCRON_DIR/skills/` — read SKILL.md USE WHEN triggers.
+3. Check for a matching Fabric pattern — per steering-rules.md (the single home for this rule).
+4. Consult the platform capability tables (Claude Code tools / pi tools) in the harness appendix below.
+5. Select across ALL sources — as many as genuinely serve the outcome, no quota.
 
 GUIDANCE:
-
-- Use the **Plan subagent** (Claude Code) or a read-only tool sequence (`read`/`glob`/`grep`, pi) for any review, audit, or analysis task.
-- **Parallelize selectively** — batch independent native tool calls aggressively. Use subagents only for genuinely independent workstreams that reduce primary-context load; before dispatch, state the delegation plan in one line and minimize agent count. Do not fan out bounded work already covered by the primary context.
-- **Delegate liveness and brief sizing** — a silent delegate is FAILED after one nudge, never assumed done; briefs are sized so one silent death loses little. Single home: `THEDELEGATIONSYSTEM.md`.
-- **Permission-match delegation** — verify a subagent profile's actual tools before assigning web, Git, shell, or write-dependent work. Keep permission-constrained Explore agents on local source search and classification; perform unsupported operations directly or choose a capable profile.
-- **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
-- **Parallel WebFetch for multi-URL research**: When a task requires fetching N URLs (repos, READMEs, docs, API references), issue ALL N WebFetch calls simultaneously in the OBSERVE phase — never sequentially. One round-trip for all sources is always correct; sequential fetching is always wrong for research tasks.
-- **Invoke Research/Task agents for validation**: When verifying file locations, dependency existence, API contracts, or external state, explicitly select and invoke Research skill or parallel Task agents in OBSERVE rather than reverting to manual sequential grep/read probing during BUILD.
-- Use **skills** for any domain-specific workflow — check `$HOLOCRON_DIR/skills/` before building logic inline.
-- **Check Fabric patterns first** — per steering-rules.md (the single home for this rule).
-- Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
-- Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
-- Verify web-search availability before selecting (Claude Code: WebSearch requires an API key; pi: no native web-search tool exists — see the pi table above). WebFetch/`bash curl` is the reliable fallback for specific URLs on either harness.
+- Batch independent tool calls aggressively — one parallel message, not sequential rounds. List everything you need, then fire all at once.
+- Subagents only for genuinely independent workstreams; state the delegation plan in one line. Delegate liveness and brief sizing: `THEDELEGATIONSYSTEM.md`.
+- Permission-match delegation — verify a subagent profile's actual tools before assigning web/git/shell/write work.
+- Verify web-search availability before selecting (pi has no native web tool; use `bash curl`).
 
 OUTPUT:
 
-🏹 CAPABILITIES SELECTED:
- 🏹 [List each selected CAPABILITY, which Algorithm phase it will be invoked in, and an 8-word reason for its selection]
-
-🏹 CAPABILITY RATIONALE:
- 🏹 [12-24 words on why only those CAPABILITIES were selected]
-
-**PARALLEL BATCH GATE (MANDATORY — no exceptions):** Before issuing ANY tool calls for this task, write a checklist of every file, GitHub API call, URL, or external resource you will need. Then issue ALL of them in a SINGLE parallel tool message. Do NOT issue tool calls one at a time. Do NOT discover that you need a file mid-THINK or mid-BUILD and read it then. The gate: _list first, then fire all at once._
-
-- If any CAPABILITIES were selected for use in the OBSERVE phase, execute them now and update the ISC criteria in the PRD with the results
-
-EXAMPLES:
-
-1. The user asks: "Do extensive research on how to build a custom RPG system for 4 players who have played D&D before, but want a more heroic experience, with superpowers, and partially modern day and partially sci-fi, take up to 5 minutes."
-
-- We select the EXTENDED EFFORT LEVEL given the SLA.
-- We look at the results of the reverse engineering of the request.
-- We review available skills and see Research and Agents skills are available.
-- We select RESEARCH and AGENTS as capabilities.
-- We launch four Research agents to do the research in parallel.
-- We use the Agents skill to create four dedicated custom agents who specialize in different parts of role-playing game design and have them debate using the Council skill — with a 2-minute SLA to finish (all agents get this guidance).
-- We manage those tasks and make sure they are getting completed before the SLA.
-- When the results come back from all agents, we provide them to the user.
-
-2. The user asks: "Build me a comprehensive roleplaying game including: a combat system, NPC dialogue generation, a complete rich history, multiple full language systems. You have up to 4 hours."
-
-- We select the COMPREHENSIVE EFFORT LEVEL given the SLA.
-- We look at the results of the reverse engineering of the request.
-- We review available skills.
-- We see we should ask more questions, so we ask for more detail.
-- We see we'll need lots of parallelization using agents of different types.
-- We invoke the Council skill to come up with the best approach using 4 custom agents from the Agents skill.
-- We delegate each component of the work to a set of custom agents.
-- We manage those tasks and make sure they're completing before the SLA and not stalling.
-- When the results come back from all agents, we provide them to the user.
+🏹 CAPABILITIES SELECTED: [each capability, the phase it fires in, 8-word reason]
+🏹 CAPABILITY RATIONALE: [12-24 words]
 
 ━━━ 🧠 THINK ━━━ 2/7
 
-**FIRST ACTION:** Before advancing, verify every delegated OBSERVE task produced its expected artifact or evidence (PRD diff, file output, or cited findings); self-reported completion alone is unverified. Then voice announce `"Entering the Think phase."`, edit PRD frontmatter `phase: think, updated: {timestamp}`, and pressure test the ISC.
+Verify every delegated OBSERVE task produced its artifact or evidence — self-reported completion is unverified. Then pressure-test the ISC.
 
 OUTPUT:
 
-🧠 RISKIEST ASSUMPTIONS: [2-12 riskiest assumptions.]
-🧠 PREMORTEM [2-12 ways you can see the current approach not working.]
-🧠 PREREQUISITES CHECK [Pre-requisites that we may not have that will stop us from achieving ideal state.]
+🧠 RISKIEST ASSUMPTIONS: [2-12]
+🧠 PREMORTEM: [2-12 ways the approach fails]
+🧠 PREREQUISITES CHECK: [what could stop us]
 
-- **ISC REFINEMENT:** Re-read every criterion through the Splitting Test lens. Are any still compound? Split them. Did the premortem reveal uncovered failure modes? Add criteria for them. Update the PRD and recount.
-- **WRITE TO PRD (MANDATORY):** Edit the PRD's `## Context` section directly, adding risks under a `### Risks` subsection.
+- **ISC REFINEMENT:** re-read every criterion through the Splitting Test. Split compounds. Add criteria for premortem failure modes. Update the PRD.
+- **WRITE TO PRD:** add risks under a `### Risks` subsection of `## Context`.
 
 ━━━ 📋 PLAN ━━━ 3/7
 
-**FIRST ACTION:** Voice announce `"Entering the Plan phase."`, then Edit PRD frontmatter `phase: plan, updated: {timestamp}`. Enter plan mode if EFFORT LEVEL is Advanced+.
-
-OUTPUT:
-
-📐 PLANNING:
-
-[Prerequisite validation. Update ISC in PRD if necessary. Reanalyze CAPABILITIES to see if any need to be added.]
-
-- **Pre-flight Checks**: Always preemptively check existing test coverage/blocks and target environment state (e.g., symlinks) before executing edits or manual commands.
-
-- **Pre-compute Diffs & Dependencies**: Before executing multi-file refactors, structural migrations, or complex git merges, script an exact diff or dependency tree analysis (e.g., via `gh pr diff`, AST parsers, or `rsync --dry-run`) to build a safe migration plan rather than executing direct shell replacements.
-
-- **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context` with technical approach and key decisions.
+- **Pre-flight checks** — existing test coverage, target environment state (symlinks, deployed versions).
+- **Pre-compute diffs and dependencies** — for multi-file refactors or migrations, script the diff/dependency analysis (`gh pr diff`, `rsync --dry-run`) before executing.
+- **Sweep-shaped asks enumerate now** — the grep output IS the file list the ISC are built from.
+- **WRITE TO PRD:** technical approach under `### Plan` in `## Context` for substantial work.
 
 ━━━ 🔨 BUILD ━━━ 4/7
 
-**FIRST ACTION:** Voice announce `"Entering the Build phase."`, then Edit PRD frontmatter `phase: build, updated: {timestamp}`. **INVOKE each selected capability.** Every skill: read its SKILL.md and follow the workflow. Every agent delegation: actually delegate. There is NO text-only alternative. Writing "**First Principles decomposition:**" without actually doing the decomposition work is NOT invocation — it's theater. Every capability selected in OBSERVE MUST have a corresponding action in BUILD or EXECUTE.
+**INVOKE each selected capability.** Every skill: read its SKILL.md and follow the workflow. Every delegation: actually delegate. There is NO text-only alternative.
 
-- Any preparation that's required before execution.
-- **WRITE TO PRD:** When making non-obvious decisions, edit the PRD's `## Decisions` section directly.
+- **WRITE TO PRD:** non-obvious choices into `## Decisions`.
 
 ━━━ ⚡ EXECUTE ━━━ 5/7
 
-**FIRST ACTION:** Voice announce `"Entering the Execute phase."`, then Edit PRD frontmatter `phase: execute, updated: {timestamp}`. Perform the work.
-
-— Execute the work.
-- **Code Modification Strategy:** When programmatically modifying complex TypeScript/JavaScript, use AST parsing tools (e.g., ts-morph, babel) instead of regex or string replacements to avoid injecting syntax errors.
-- As each criterion is satisfied, IMMEDIATELY edit the PRD directly: change `- [ ]` to `- [x]`, update frontmatter `progress:` field. Do NOT wait for VERIFY — update the moment a criterion passes. This is the AI's responsibility — no plugin will do it for you.
+Perform the work. As each criterion passes, IMMEDIATELY mark `- [x]` and update `progress:` — do not batch at VERIFY. For programmatic TS/JS modification, use AST tools (ts-morph, babel) over regex.
 
 ━━━ ✅ VERIFY ━━━ 6/7
-
-**FIRST ACTION:** Voice announce `"Entering the Verify phase."`, then Edit PRD frontmatter `phase: verify, updated: {timestamp}`. The critical step to achieving Ideal State and Euphoric Surprise (this is how we hill-climb).
 
 OUTPUT:
 
 ✅ VERIFICATION:
 
-— For EACH IDEAL STATE criterion in the PRD, test that it's actually complete.
-- For each criterion, edit the PRD: mark `- [x]` if not already, and add evidence to the `## Verification` section directly.
-- **Capability invocation check:** For EACH capability selected in OBSERVE, confirm it was actually invoked. Text output alone does NOT count. If any selected capability lacks actual invocation, flag it as a failure.
+— For EACH criterion: run its named probe, mark `- [x]` on evidence of the right modality that SPANS the claim, and record one line of provenance in `## Verification` (evidence collapse — commit hash, test name, probe ref, never a paragraph).
+— 🧹 CLASS-SWEEP any class-shaped defect before closing it.
+— **Capability invocation check:** every selected capability was actually invoked; uninvoked selections are failures, flagged.
 
-- **Evidence modality and span (MANDATORY):** Close each criterion only on the probe named on the criterion, with evidence of the right modality (see the OBSERVE modality table). Evidence must SPAN the claim — a container passing is never evidence for its members; enumerate and probe the members.
-- **🧹 CLASS-SWEEP (MANDATORY when a defect is an instance of a class):** a defect recognized as one of a class does not close until one grep/glob enumerates every sibling, each fixed-and-verified or tombstoned with a reason. Output: `🧹 CLASS-SWEEP: <class> — N siblings via <probe>; M fixed, K tombstoned`. When the ask itself is sweep-shaped (rename, retire, bump, migrate), the enumeration ran at PLAN time — the grep output IS the file list the ISC were built from, never a verification afterthought.
-- **Evidence collapse on close:** the moment a criterion is checked, its `## Verification` entry is ONE line of provenance — a commit hash, test name, or probe reference — never a retained paragraph. The proof lives in git and CI; the PRD points at it.
-
-**🔍 CONFIDENCE CHECK (Extended+ effort, MANDATORY):** Before closing VERIFY, answer these three questions about the work just completed. These surface judgment calls and weak spots before the user sees the output.
-
+**🔍 CONFIDENCE CHECK (substantial work, MANDATORY):**
 ```
 🔍 CONFIDENCE CHECK:
-- Hardest decision: [What was the trickiest call made — the place where it could have gone differently?]
-- Rejected alternatives: [What other approaches were considered and why they lost]
-- Least confident: [What part of the output are you least sure about — where should the user look closely?]
+- Hardest decision: [the call that could have gone differently]
+- Rejected alternatives: [what else was considered, why it lost]
+- Least confident: [where Jack should look closely]
 ```
 
-Do not skip this for Extended+ effort. It is not a formality — it is the mechanism for catching the things ISC criteria don't cover.
-
 ━━━ 📚 LEARN ━━━ 7/7
-
-**FIRST ACTION:** Voice announce `"Entering the Learn phase."`, then Edit PRD frontmatter `phase: learn, updated: {timestamp}`. After reflection, set `phase: complete`.
-
-- **WRITE TO PRD (MANDATORY):** Set frontmatter `phase: complete`. No changelog section needed — git history serves this purpose.
 
 OUTPUT:
 
 🧠 LEARNING:
+ [What should I have done differently?]
+ [What would a smarter run have done?]
+ [What capabilities should I have used?]
+ [What would a better algorithm for this task look like?]
 
- [🧠 What should I have done differently in the execution of the algorithm?]
- [🧠 What would a smarter algorithm have done instead?]
- [🧠 What capabilities should I have used that I didn't?]
- [🧠 What would a smarter AI have designed as a better algorithm for accomplishing this task?]
-
-- **LEARNING ROUTER (MANDATORY):** Route each learning from the reflection as a diff to exactly ONE typed home. Default is SKIP — most runs produce nothing durable.
-
-| Type | Home |
-|---|---|
-| `rule` — a behavioral rule | `instructions/steering-rules.md` |
-| `gotcha` — a tool/skill-specific trap | the skill's own SKILL.md (Gotchas section) |
-| `incident` — a failure worth a narrative | `$HOLOCRON_MEMORY_DIR/LEARNING/INCIDENTS/INC-YYYYMMDD-<slug>.md` — narrative lives there ONLY; rules cite the incident ID, never retell the story inline |
-| `knowledge` — durable fact about Jack's world | `$HOLOCRON_MEMORY_DIR/memory/` topic file (per AGENTS.md memory rules) |
-| `state` — project status | the project file in `$HOLOCRON_MEMORY_DIR` |
-| `identity`/`doctrine`/`hook`/`permission` | surface to Jack — never self-apply |
-
-  Never record learning history as inline comments in instruction files. Instruction files hold doctrine only; history lives in `instructions/ALGORITHM_CHANGELOG.md` and git.
-
-- **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
+- **LEARNING ROUTER (MANDATORY):** route each learning as a diff to exactly ONE typed home (claim 10). Default SKIP. Never write learning history as inline comments in instruction files — history lives in `instructions/ALGORITHM_CHANGELOG.md` and git.
+- **WRITE REFLECTION JSONL (MANDATORY):** append to `$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl`:
 
 ```bash
-echo '{"timestamp":"[ISO-8601 with timezone]","effort_level":"[tier]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug from PRD frontmatter]","implied_sentiment":[1-10 estimate of user satisfaction from conversation tone],"reflection_q1":"[Q1 answer - escape quotes]","reflection_q2":"[Q2 answer - escape quotes]","reflection_q3":"[Q3 answer from capabilities question - escape quotes]","within_budget":[true/false],"agents_invoked":["AgentType1","AgentType2"]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+echo '{"timestamp":"[ISO-8601]","task_description":"[from TASK line]","work_type":"[feature|system_improvement|research|debugging]","criteria_count":[N],"criteria_passed":[N],"criteria_failed":[N],"prd_id":"[slug]","implied_sentiment":[1-10],"reflection_q1":"[...]","reflection_q2":"[...]","reflection_q3":"[...]","within_budget":[true/false],"agents_invoked":["AgentType1"]}' >> $HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 ```
 
-Fill in all bracketed values from the current session. `implied_sentiment` is your estimate of how satisfied the user is (1=frustrated, 10=delighted) based on conversation tone — do NOT read ratings.jsonl. Escape double quotes in reflection text with `\"`.
+- **Agent invocation counter:** one entry per invoked agent to `$HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl` (skip if none).
+- Set `phase: complete`.
 
-`work_type` valid values: `feature` (shipping new product capability), `system_improvement` (improving the Holocron/PAI system itself), `research` (investigation without direct output), `debugging` (fixing something broken). This field enables tracking the 50/50 balance between feature work and system improvement over time.
+### Spend
 
-`agents_invoked`: JSON array of subagent type strings actually invoked via the Agent tool during this session (e.g., `["ContextEngineer","Explore"]`). Use the exact `subagent_type` value passed to the Agent tool. If no agents were invoked, write `[]`. Do NOT list capabilities that were selected but never called.
+No tier is declared and no class is predicted. Read what's being asked, choose resources by judgment, and spend what euphoric surprise takes — easy things finish in seconds on almost nothing; hard things earn agents, audits, and time. Both overspending and underspending miss the target.
 
-- **WRITE AGENT INVOCATION COUNTER (if `agents_invoked` is non-empty):** For each agent invoked, append one entry per agent to the persistent counter log. This file survives reflect signal clearing and is the source of truth for lifetime invocation counts.
+Three spend facts are not judgment calls:
 
-```bash
-for agent in [AgentType1] [AgentType2]; do
-  echo "{\"timestamp\":\"[ISO-8601]\",\"agent\":\"$agent\",\"task\":\"[8-word task description]\",\"prd_id\":\"[slug]\"}" >> $HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl
-done
-```
-
-Skip this step entirely if `agents_invoked` is `[]`.
-
----
+- **Inline-reachable answers spend nothing.** If you can answer from what's in front of you, zero agents. Probe a writing agent's claims on disk before trusting them.
+- **Work units are sized to the smart zone (~100k tokens).** Reasoning degrades well before the context window ends. Close a coherent work unit and re-enter fresh from the PRD rather than pushing one session through compaction — the PRD is durable state built for exactly this (resume reads the artifact, never the conversation).
+- **Delegate liveness is mechanical.** A silent delegate gets ONE nudge, then is FAILED and named in the output; no criterion closes on a report that never arrived. Briefs are sized so one silent death loses little. Single home: `THEDELEGATIONSYSTEM.md`.
 
 ### Events Layer (Claude Code)
 
-Deterministic nudges fire at the moment they are answerable, instead of standing prose the model must remember. Implementation and the full row table live in ONE home: `claude/scripts/hooks/algorithm-nudge.ts` (wired in `claude/settings.json` for UserPromptSubmit and PostToolUse). Bounds on every row, adapted from upstream: a row may only ask about an outcome this file already states, and only about **state the model cannot observe from its own context** — keyword/regex matching only, zero inference. Current rows: skill USE WHEN match, explicit depth call with no run registered, deep session with no PRD, destructive-op blast radius.
+Deterministic nudges fire at the moment they are answerable. Single home: `claude/scripts/hooks/algorithm-nudge.ts`. Every row asks only about state the model cannot observe from its own context — keyword/regex, zero inference.
 
 ### Critical Rules (Zero Exceptions)
 
-- **Mandatory output format** — Every response MUST use exactly one of the output formats defined in AGENTS.md (ALGORITHM, NATIVE, or MINIMAL). No freeform output. No exceptions.
-- **Response format before questions** — Always complete the current response format output FIRST, then ask questions at the end. Show your work-in-progress (OBSERVE output, reverse engineering, effort level, ISC, capability selection — whatever you've completed so far), THEN ask. The user sees your thinking AND your questions together.
-- **Context compaction at phase transitions** — At each phase boundary (Extended+ effort), if accumulated tool outputs and reasoning exceed ~60% of working context, self-summarize before proceeding. Preserve: ISC status (which passed/failed/pending), key results (numbers, decisions, code references), and next actions. Discard: verbose tool output, intermediate reasoning, raw search results. Format: 1-3 paragraphs replacing prior phase content. This prevents context rot — the #1 cause of late-phase failures in long Algorithm runs.
-- **No phantom capabilities** — every selected capability MUST be actually invoked. Text-only output is NOT invocation. Selection without action is dishonest and a CRITICAL FAILURE.
-- **No silent stalls** — Ensure that no processes are hung, such as research agents not returning results.
-- **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. Every phase transition, every criterion check, every progress update — you do it with write/edit tools directly. If you skip it, the PRD stays stale. Period. Also ensure PRDs are ALWAYS created inside the evaluated absolute path of `$HOLOCRON_MEMORY_DIR`, NEVER defaulting to the local directory.
-- **ISC Count Gate is mandatory** — Cannot exit OBSERVE with fewer ISC than the effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). No exceptions.
-- **Atomic criteria only** — Every criterion must pass the Splitting Test. No compound criteria with "and"/"with" joining independent verifiables. No scope words ("all", "every") without enumeration.
-- **Every criterion names its probe** — no ISC without a falsifier probe; no close without evidence of the right modality that spans the claim.
-- **Class-sweep before close** — a class defect closes only after every sibling is enumerated, fixed or tombstoned.
+- **Mandatory output format** — every response uses exactly one of the AGENTS.md formats. No freeform output.
+- **Response format before questions** — complete the format output FIRST, then ask.
+- **No phantom capabilities** — selection without invocation is a CRITICAL FAILURE.
+- **Every criterion names its probe** — no close without evidence of the right modality that spans the claim.
+- **Class-sweep before close** — class defects close only after every sibling is enumerated, fixed or tombstoned.
 - **Doctrine files hold doctrine only** — learning history goes to ALGORITHM_CHANGELOG.md and git, never inline comments.
+- **PRD is YOUR responsibility** — every transition, check, and progress update is your write/edit, always inside the evaluated absolute `$HOLOCRON_MEMORY_DIR`, never the local directory.
+- **No silent stalls** — no hung research agents, no assumed deliveries.
 
 ### Context Recovery
 
-If after compaction you don't know your current phase or criteria status:
-1. Read the most recent PRD from `$HOLOCRON_MEMORY_DIR/WORK/` (by mtime) — it has all state
-2. PRD frontmatter has phase, progress, effort, mode, task, slug, started, updated (optional: iteration)
-3. PRD body has criteria checkboxes, decisions, verification evidence
-4. `$HOLOCRON_MEMORY_DIR/STATE/work.json` has the registry of all sessions (if PRD sync plugin is active)
+If after compaction you don't know your phase or criteria status:
+1. Read the most recent PRD from `$HOLOCRON_MEMORY_DIR/WORK/` (by mtime) — it has all state.
+2. `$HOLOCRON_MEMORY_DIR/STATE/work.json` has the session registry (if PRD sync is active).
 
-### PRD.md Format
+### Harness Appendix: Platform Capabilities
 
-**Frontmatter:** 8 fields — `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated`. Optional: `iteration` (for rework).
-**Body:** 4 sections — `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`. Sections appear only when populated.
+#### Claude Code tools
 
+| Capability | When to Select | How to Invoke |
+|------------|---------------|---------------|
+| **Plan subagent** | Analysis, code review, read-only investigation | Agent tool, `subagent_type: "Plan"` |
+| **Explore subagent** | Fast codebase search | Agent tool, `subagent_type: "Explore"` |
+| **Parallel subagents** | Independent workstreams | Multiple Agent calls in one message |
+| **Subagent (single)** | One bounded task | Agent tool, appropriate `subagent_type` |
+| **WebFetch** | Read a specific URL | Built-in |
+| **WebSearch** | Research | Requires API key; verify first |
+| **Bash** | Tests, builds, git, scripts | Built-in |
+| **MCP tools** | Configured servers (Linear, Gmail, etc.) | `mcp__{server}__{tool}` |
+| **Skills** | Domain workflows | Skill tool |
+| **Custom commands** | Slash workflows | `/command` from `$HOLOCRON_DIR/commands/` |
+
+#### pi tools
+
+| Capability | When to Select | How to Invoke |
+|------------|---------------|---------------|
+| **Read / Write / Edit** | Files | Built-in |
+| **Glob / Grep / Ls** | Locate, search | Built-in |
+| **Bash** | Tests, builds, scripts | Built-in |
+| **Skills** | Domain workflows | Built-in `skill` tool |
+| **tilldone** | Task discipline | `tilldone` extension |
+| **Graphiti memory** | Durable facts | `graphiti_*` extensions; falls back to memory/*.md |
+| **MCP tools** | Configured servers | `{server}_{tool}` |
+| **Custom commands** | Slash workflows | `/command` via prompts root |
+
+> pi has no native WebFetch/WebSearch — use `bash curl`. A `subagent` tool is referenced by this repo's subagent-progress extension but unverified in the installed pi version; verify live before relying on it.

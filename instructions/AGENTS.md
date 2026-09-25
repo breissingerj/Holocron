@@ -27,9 +27,9 @@ Before starting any NATIVE or ALGORITHM mode task, retrieve only the personal me
 Known exact files—active PRDs, explicit user-provided paths, or files selected by a search result—may be read directly without a search call. Do not recursively inspect the vault or load every search result.
 
 **When to prime:**
-- ALGORITHM mode: always, before reading algorithm.md
-- NATIVE mode: always, before executing the task
-- MINIMAL mode (greetings, ratings, acks): skip
+- ALGORITHM-format work: always, before reading algorithm.md
+- NATIVE-format work: always, before executing the task
+- MINIMAL-format responses (greetings, ratings, acks): skip
 
 **Graphiti queries:**
 - Use `graphiti_search` for specific facts, constraints, and past decisions.
@@ -40,20 +40,18 @@ Known exact files—active PRDs, explicit user-provided paths, or files selected
 
 ---
 
-## Execution Modes
+## Output Formats
 
-Every response uses exactly one mode. **BEFORE ANY WORK**, classify the request and select a mode:
+Every response uses exactly one of the three formats below, chosen by judgment to match the response you are actually giving — there is no classification ceremony and no mode label to declare:
 
 - **Greetings, ratings, acknowledgments** → MINIMAL
-- **Single-step, quick tasks (under 2 minutes of work)** → NATIVE
-- **Everything else** → ALGORITHM
-
-Your first output MUST be the mode header. No freeform output. No skipping this step.
+- **Single-step, quick tasks answered inline** → NATIVE
+- **Work where done needs writing down** → ALGORITHM (read `instructions/algorithm.md` and follow it)
 
 ---
 
-## NATIVE MODE
-FOR: Simple tasks that won't take much effort or time.
+## NATIVE FORMAT
+FOR: Simple tasks answered inline.
 
 **Voice:** `bash $HOLOCRON_DIR/scripts/voice.sh "Executing using native mode"`
 
@@ -72,14 +70,14 @@ On follow-ups, include the ITERATION line. On first response to a new request, o
 
 ---
 
-## ALGORITHM MODE
-FOR: Multi-step, complex, or difficult work. Troubleshooting, debugging, building, designing, investigating, refactoring, planning, or any task requiring multiple files or steps.
+## ALGORITHM FORMAT
+FOR: Work where done needs writing down — multi-step, complex, or difficult tasks. Troubleshooting, debugging, building, designing, investigating, refactoring, planning, or any task requiring multiple files or steps.
 
 **MANDATORY FIRST ACTION:** Read `$HOLOCRON_DIR/instructions/algorithm.md`, then follow that file's instructions exactly. Do NOT improvise your own algorithm format — switch all processing and responses to the actual Algorithm in that file until it completes.
 
 ---
 
-## MINIMAL MODE
+## MINIMAL FORMAT
 FOR: Pure acknowledgments, ratings, one-word confirmations.
 
 ```
@@ -103,7 +101,7 @@ When you need context about the user, projects, system internals, or specific to
 
 ## Critical Rules (Zero Exceptions)
 
-- **Mandatory output format** — Every response MUST use exactly one of the output formats above. No freeform output.
+- **Mandatory output format** — Every response MUST use exactly one of the three output formats above, chosen by judgment. No freeform output, no mode-label ceremony.
 - **Response format before questions** — Always complete the current response format output FIRST, then ask questions at the end.
 - **Memory Location (CRITICAL)** — Never write session PRDs (`WORK/`), reflections (`LEARNING/`), or relationship memory (`memory/`) into the current project's local directory unless the current project IS the private memory repo. **Always** evaluate the environment variable `$HOLOCRON_MEMORY_DIR` to determine the correct absolute path before writing any memory or session state files. If the variable is unset, explicitly ask the user to configure it.
 - **Explicit memory requests — Holocron/Obsidian only, never the harness's built-in memory** — When the user says "remember", "note that", "keep in mind", "learn this", "store this", or "don't forget": that information goes into Holocron context via the `obsidian` MCP tools (`write_note`/`patch_note` against the `$HOLOCRON_MEMORY_DIR` vault) — never into a harness's own built-in/native memory feature (e.g. Claude Code's `~/.claude/.../memory/` auto-memory, or any other tool's local memory store), even when that built-in system is available and would otherwise auto-trigger. Write to `$HOLOCRON_MEMORY_DIR/memory/MEMORY.md` as a new bullet under the most relevant existing section (or a new section if none fits), format `- **[topic]**: [fact]`, or to a topic file per the size-discipline rule below. Do this as a tool call — do not just acknowledge it verbally. Confirm the write, and the file it landed in, in your response.
@@ -111,3 +109,4 @@ When you need context about the user, projects, system internals, or specific to
 - **MEMORY.md size discipline** — MEMORY.md is a curated index, not a dump. Keep it under ~200 lines. When a section grows beyond ~10 bullets or covers a distinct topic in depth, migrate it to a dedicated topic file at `$HOLOCRON_MEMORY_DIR/memory/{topic}.md` and replace the section in MEMORY.md with a single reference line: `→ see memory/{topic}.md`. Existing topic files (project-context.md, team-structure.md, etc.) follow this pattern.
 - **Topic file writes** — When writing directly to a topic file (not MEMORY.md), still confirm the write in your response and note the file path.
 - **Clean up git worktrees after merge** — Once a feature's MR/PR merges, remove its git worktree (`git worktree remove <path>`) rather than leaving it on disk. Applies in any repo using a worktree-per-task workflow.
+
