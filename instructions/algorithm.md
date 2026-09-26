@@ -1,4 +1,4 @@
-## The Algorithm 3.7.0
+## The Algorithm 3.8.0
 
 Core: transition from CURRENT STATE to IDEAL STATE using verifiable criteria (ISC). Goal: **Euphoric Surprise** — 9-10 ratings.
 
@@ -112,8 +112,6 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 ### Execution of The Algorithm
 
 **MODE SELECTION GATE (MANDATORY — check before entering):** Ask yourself: does this task require multiple steps, multiple file changes, or non-trivial reasoning? If YES → proceed with Algorithm. If the task is a single shell command, metadata-only update, pure synthesis of loaded context, bounded read-only comparison, yes/no compatibility check, or single-file fix whose uncertainty is already resolved → use NATIVE mode instead. Do NOT enter the Algorithm when full PRD/ISC ceremony would exceed the task's actual uncertainty.
-<!-- reflect: applied from signals 2026-04-10T09:05Z, 2026-04-14T00:00Z, 2026-04-16T00:00Z — 3 sessions NATIVE mode underuse — 2026-04-17_16-42-31 -->
-<!-- reflect: applied from signals 2026-07-30 to 2026-09-22 — 12 sessions — 2026-09-23_21-15-26 -->
 
 **ALL WORK INSIDE THE ALGORITHM (CRITICAL):** Once ALGORITHM mode is selected, every tool call, investigation, and decision happens within Algorithm phases. No work outside the phase structure until the Algorithm completes.
 
@@ -121,7 +119,7 @@ The coarse version has 3 criteria that each hide 6+ verifiable sub-requirements.
 
 **Console output at Algorithm entry (MANDATORY):**
 ```
-♻︎ Entering the ALGORITHM… (v3.7.0) ═════════════
+♻︎ Entering the ALGORITHM… (v3.8.0) ═════════════
 🗒️ TASK: [8 word description]
 ```
 
@@ -150,21 +148,13 @@ The effort level defaults to `standard` here and gets refined later in OBSERVE a
 **FIRST ACTION:** Voice announce `"Entering the Observe phase."`, then Edit PRD frontmatter `updated: {timestamp}`. Then thinking-only, no tool calls except context recovery (read/search <=34s)
 
 - **Prioritize Official Specs**: Check official documentation (via WebFetch) and official type definitions upfront before attempting to guess or infer API contracts, webhooks, or resources.
-  <!-- reflect: applied from signals 2026-03-11T00:10, 2026-03-15T16:32, 2026-03-16T18:25, 2026-03-18T13:35 — rating avg N/A -->
 - **Check Conventions**: Always explicitly check for and read repository convention files (like `CLAUDE.md` or `CHANGELOG.md`) before making assumptions about testing frameworks or structural formats.
-  <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-16T14:38, 2026-03-18T14:32 — rating avg N/A -->
 - **Front-Load Scripted Discovery**: Before attempting incremental manual exploration, run a comprehensive grep sweep or targeted script to map the problem space upfront. For file trees, path integrity checks, or pattern detection (e.g., corrupt characters, missing files, broken references), write a targeted scan at the START of OBSERVE rather than discovering issues one-by-one during BUILD/EXECUTE.
-  <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-20T19:50, 2026-03-20T20:21, 2026-03-23T20:45 — rating avg N/A -->
 - **Read ALL Edit Targets in OBSERVE**: When you know which files you intend to modify, issue a parallel Read of ALL of them at the start of OBSERVE — before writing a single line of BUILD code. Context compaction can produce inaccurate file summaries; confirmed reads from OBSERVE are authoritative. Do NOT defer file reads to BUILD.
-  <!-- reflect: applied from signals 2026-03-31T12:00Z, 2026-03-31T15:35Z, 2026-04-02T00:00Z, 2026-04-04T16:00Z — 4 sessions, 2026-04-04_16-51-16 -->
 - **Execution Preflight**: Before committing to an execution plan, validate required credentials and sessions, registry access, repository-pinned package-manager versions, and required binaries. Resolve missing prerequisites before treating verification as achievable.
-  <!-- reflect: applied from signals 2026-04-19 to 2026-09-21 — 10+ sessions — 2026-09-23_21-15-26 -->
 - **Repository Gate**: Before any branch, commit, MR, or privileged-action decision, read the target repository's `AGENTS.md`/`CLAUDE.md`/constitution and verify the local Git identity.
-  <!-- reflect: applied from signals 2026-08-12 to 2026-08-25 — 6+ sessions — 2026-09-23_21-15-26 -->
 - **Primary-Source Contract Check**: Before reusing ported code, documentation examples, or delegated reports, verify the contract against installed type definitions, driver parameters, or the authoritative source repository.
-  <!-- reflect: applied from signals 2026-06-12 to 2026-09-22 — 8+ sessions — 2026-09-23_21-15-26 -->
 - **Live-State-First Debugging**: For code-works/deployment-fails reports, fingerprint the deployed image, targets, listeners, service events, and live health before analyzing application code.
-  <!-- reflect: applied from signals 2026-08-02 to 2026-09-23 — 6+ sessions — 2026-09-23_21-15-26 -->
 
 - REQUEST REVERSE ENGINEERING: explicit wants, implied wants, explicit not-wanted, implied not-wanted, common gotchas, previous work
 
@@ -186,6 +176,21 @@ OUTPUT:
 - Edit the stub PRD.md to add full content — update frontmatter `effort` field with the determined effort level, and add sections (Context, Criteria, Decisions, Verification)
 - Add criteria as `- [ ] ISC-1: criterion text` checkboxes directly in the PRD's `## Criteria` section
 - **Apply the Splitting Test** to every criterion before writing. Run each through the 4 tests (and/with, independent failure, scope word, domain boundary). Split any compound criteria into atomics.
+- **NAME THE FALSIFIER PROBE (MANDATORY):** Every criterion must end with ` — probe: <the tool check that would prove it false>`. A criterion without a probe is not testable — rewrite or split it. The probe names the evidence MODALITY, matched to the claim:
+
+| Claim is about... | Probe modality |
+|---|---|
+| File contents/state | Read the file back |
+| Code presence/absence | Grep/Glob |
+| Command outcome | Run it, inspect the checked output |
+| HTTP/API behavior | `curl -i` (status + body) |
+| Deployment | Live probe of the deployed URL/endpoint |
+| Web/UI behavior | Real browser via playwright-cli — never inferred from markup |
+| Appearance | Viewed non-degenerate pixels (screenshot) |
+| Schema/data | SELECT against the real store |
+| Config | Read-back from the source of truth |
+
+  Evidence must also SPAN the claim: a container passing is never evidence for its members. "Site renders" is not proven by the homepage — enumerate the members and probe them. "Should work" is forbidden.
 - Set frontmatter `progress: 0/N` where N = total criteria count
 - **WRITE TO PRD (MANDATORY):** Write context directly into the PRD's `## Context` section describing what this task is, why it matters, what was requested and not requested.
 
@@ -217,7 +222,7 @@ SELECTION METHODOLOGY:
 
 1. Fully understand the task from the reverse engineering step.
 2. Review skills available in `$HOLOCRON_DIR/skills/` — read SKILL.md files to understand USE WHEN triggers.
-3. **Check for a matching Fabric pattern** — scan `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for a pattern that fits the task intent (e.g., `review_code`, `extract_wisdom`, `analyze_terraform_plan`, `create_threat_model`). If a match exists, prefer it over ad-hoc execution — patterns are battle-tested, structured, and faster to invoke than building equivalent logic inline.
+3. **Check for a matching Fabric pattern** — per steering-rules.md (the single home for this rule).
 4. Consult the **Platform Capabilities** tables below (Claude Code tools / pi tools) for harness-native capabilities beyond skills — use whichever table matches the harness this session is running in.
 5. SELECT capabilities across ALL sources.
 
@@ -259,17 +264,13 @@ GUIDANCE:
 
 - Use the **Plan subagent** (Claude Code) or a read-only tool sequence (`read`/`glob`/`grep`, pi) for any review, audit, or analysis task.
 - **Parallelize selectively** — batch independent native tool calls aggressively. Use subagents only for genuinely independent workstreams that reduce primary-context load; before dispatch, state the delegation plan in one line and minimize agent count. Do not fan out bounded work already covered by the primary context.
-  <!-- reflect: applied from signals 2026-09-02T10:31:16-04:00, 2026-09-03T11:19:52-04:00, 2026-09-09T10:21:45-04:00 — rating avg 4.7 -->
+- **Delegate liveness and brief sizing** — a silent delegate is FAILED after one nudge, never assumed done; briefs are sized so one silent death loses little. Single home: `THEDELEGATIONSYSTEM.md`.
 - **Permission-match delegation** — verify a subagent profile's actual tools before assigning web, Git, shell, or write-dependent work. Keep permission-constrained Explore agents on local source search and classification; perform unsupported operations directly or choose a capable profile.
-  <!-- reflect: applied from signals 2026-08-07 to 2026-08-21 — 6+ sessions — 2026-09-23_21-15-26 -->
 - **Batch Execution**: Maximize parallelization in OBSERVE; batch file reads and independent tool calls into a single parallel execution step rather than sequential rounds.
-  <!-- reflect: applied from signals 2026-03-16T00:01, 2026-03-16T12:30, 2026-03-18T13:04 — rating avg N/A -->
 - **Parallel WebFetch for multi-URL research**: When a task requires fetching N URLs (repos, READMEs, docs, API references), issue ALL N WebFetch calls simultaneously in the OBSERVE phase — never sequentially. One round-trip for all sources is always correct; sequential fetching is always wrong for research tasks.
-  <!-- reflect: applied from signals 2026-03-24T12:10:00Z (x4), 2026-03-24T00:10:00Z, 2026-03-24T00:00:00Z — rating avg 8 -->
 - **Invoke Research/Task agents for validation**: When verifying file locations, dependency existence, API contracts, or external state, explicitly select and invoke Research skill or parallel Task agents in OBSERVE rather than reverting to manual sequential grep/read probing during BUILD.
-  <!-- reflect: applied from signals 2026-03-20T17:15, 2026-03-23T09:30, 2026-03-23T12:57, 2026-03-23T20:45 — rating avg N/A -->
 - Use **skills** for any domain-specific workflow — check `$HOLOCRON_DIR/skills/` before building logic inline.
-- **Check Fabric patterns first** — before writing any extraction, summarization, analysis, or review logic inline, check `$HOLOCRON_DIR/skills/utilities/Fabric/Patterns/` for an existing pattern. Use `suggest_pattern` if unsure which pattern fits.
+- **Check Fabric patterns first** — per steering-rules.md (the single home for this rule).
 - Use thinking skills (First Principles, Iterative Depth, Council, Red Teaming) to go deep on analysis.
 - Use **MCP tools** for anything a configured server exposes — prefer MCP over bash scripts for structured integrations.
 - Verify web-search availability before selecting (Claude Code: WebSearch requires an API key; pi: no native web-search tool exists — see the pi table above). WebFetch/`bash curl` is the reliable fallback for specific URLs on either harness.
@@ -283,7 +284,6 @@ OUTPUT:
  🏹 [12-24 words on why only those CAPABILITIES were selected]
 
 **PARALLEL BATCH GATE (MANDATORY — no exceptions):** Before issuing ANY tool calls for this task, write a checklist of every file, GitHub API call, URL, or external resource you will need. Then issue ALL of them in a SINGLE parallel tool message. Do NOT issue tool calls one at a time. Do NOT discover that you need a file mid-THINK or mid-BUILD and read it then. The gate: _list first, then fire all at once._
-<!-- reflect: applied from signals 2026-04-09 to 2026-04-17 — 28 sessions across 4 reflect cycles — 2026-04-17_16-42-31 -->
 
 - If any CAPABILITIES were selected for use in the OBSERVE phase, execute them now and update the ISC criteria in the PRD with the results
 
@@ -315,7 +315,6 @@ EXAMPLES:
 ━━━ 🧠 THINK ━━━ 2/7
 
 **FIRST ACTION:** Before advancing, verify every delegated OBSERVE task produced its expected artifact or evidence (PRD diff, file output, or cited findings); self-reported completion alone is unverified. Then voice announce `"Entering the Think phase."`, edit PRD frontmatter `phase: think, updated: {timestamp}`, and pressure test the ISC.
-<!-- reflect: applied from signals 2026-05-18, 2026-07-31, 2026-08-20 — 3 sessions — 2026-09-23_21-15-26 -->
 
 OUTPUT:
 
@@ -337,10 +336,8 @@ OUTPUT:
 [Prerequisite validation. Update ISC in PRD if necessary. Reanalyze CAPABILITIES to see if any need to be added.]
 
 - **Pre-flight Checks**: Always preemptively check existing test coverage/blocks and target environment state (e.g., symlinks) before executing edits or manual commands.
-  <!-- reflect: applied from signals 2026-03-10T12:05, 2026-03-10T12:25, 2026-03-16T15:38, 2026-03-17T16:20 — rating avg N/A -->
 
 - **Pre-compute Diffs & Dependencies**: Before executing multi-file refactors, structural migrations, or complex git merges, script an exact diff or dependency tree analysis (e.g., via `gh pr diff`, AST parsers, or `rsync --dry-run`) to build a safe migration plan rather than executing direct shell replacements.
-  <!-- reflect: applied from signals 2026-03-19T12:00:00Z, 2026-03-19T13:30:00Z, 2026-03-20T13:43:00Z — rating avg N/A -->
 
 - **WRITE TO PRD (MANDATORY):** For Advanced+ effort, add a `### Plan` subsection to `## Context` with technical approach and key decisions.
 
@@ -357,7 +354,6 @@ OUTPUT:
 
 — Execute the work.
 - **Code Modification Strategy:** When programmatically modifying complex TypeScript/JavaScript, use AST parsing tools (e.g., ts-morph, babel) instead of regex or string replacements to avoid injecting syntax errors.
-  <!-- reflect: applied from signals 2026-03-20T19:05:32Z, 2026-03-20T19:33:05Z — rating avg 9 -->
 - As each criterion is satisfied, IMMEDIATELY edit the PRD directly: change `- [ ]` to `- [x]`, update frontmatter `progress:` field. Do NOT wait for VERIFY — update the moment a criterion passes. This is the AI's responsibility — no plugin will do it for you.
 
 ━━━ ✅ VERIFY ━━━ 6/7
@@ -371,6 +367,10 @@ OUTPUT:
 — For EACH IDEAL STATE criterion in the PRD, test that it's actually complete.
 - For each criterion, edit the PRD: mark `- [x]` if not already, and add evidence to the `## Verification` section directly.
 - **Capability invocation check:** For EACH capability selected in OBSERVE, confirm it was actually invoked. Text output alone does NOT count. If any selected capability lacks actual invocation, flag it as a failure.
+
+- **Evidence modality and span (MANDATORY):** Close each criterion only on the probe named on the criterion, with evidence of the right modality (see the OBSERVE modality table). Evidence must SPAN the claim — a container passing is never evidence for its members; enumerate and probe the members.
+- **🧹 CLASS-SWEEP (MANDATORY when a defect is an instance of a class):** a defect recognized as one of a class does not close until one grep/glob enumerates every sibling, each fixed-and-verified or tombstoned with a reason. Output: `🧹 CLASS-SWEEP: <class> — N siblings via <probe>; M fixed, K tombstoned`. When the ask itself is sweep-shaped (rename, retire, bump, migrate), the enumeration ran at PLAN time — the grep output IS the file list the ISC were built from, never a verification afterthought.
+- **Evidence collapse on close:** the moment a criterion is checked, its `## Verification` entry is ONE line of provenance — a commit hash, test name, or probe reference — never a retained paragraph. The proof lives in git and CI; the PRD points at it.
 
 **🔍 CONFIDENCE CHECK (Extended+ effort, MANDATORY):** Before closing VERIFY, answer these three questions about the work just completed. These surface judgment calls and weak spots before the user sees the output.
 
@@ -398,6 +398,19 @@ OUTPUT:
  [🧠 What capabilities should I have used that I didn't?]
  [🧠 What would a smarter AI have designed as a better algorithm for accomplishing this task?]
 
+- **LEARNING ROUTER (MANDATORY):** Route each learning from the reflection as a diff to exactly ONE typed home. Default is SKIP — most runs produce nothing durable.
+
+| Type | Home |
+|---|---|
+| `rule` — a behavioral rule | `instructions/steering-rules.md` |
+| `gotcha` — a tool/skill-specific trap | the skill's own SKILL.md (Gotchas section) |
+| `incident` — a failure worth a narrative | `$HOLOCRON_MEMORY_DIR/LEARNING/INCIDENTS/INC-YYYYMMDD-<slug>.md` — narrative lives there ONLY; rules cite the incident ID, never retell the story inline |
+| `knowledge` — durable fact about Jack's world | `$HOLOCRON_MEMORY_DIR/memory/` topic file (per AGENTS.md memory rules) |
+| `state` — project status | the project file in `$HOLOCRON_MEMORY_DIR` |
+| `identity`/`doctrine`/`hook`/`permission` | surface to Jack — never self-apply |
+
+  Never record learning history as inline comments in instruction files. Instruction files hold doctrine only; history lives in `instructions/ALGORITHM_CHANGELOG.md` and git.
+
 - **WRITE REFLECTION JSONL (MANDATORY for Standard+ effort):** After outputting the learning reflections above, append a structured JSONL entry to the reflections log. You must use the evaluated absolute path of `$HOLOCRON_MEMORY_DIR` and NEVER the local `$PWD`.
 
 ```bash
@@ -422,6 +435,10 @@ Skip this step entirely if `agents_invoked` is `[]`.
 
 ---
 
+### Events Layer (Claude Code)
+
+Deterministic nudges fire at the moment they are answerable, instead of standing prose the model must remember. Implementation and the full row table live in ONE home: `claude/scripts/hooks/algorithm-nudge.ts` (wired in `claude/settings.json` for UserPromptSubmit and PostToolUse). Bounds on every row, adapted from upstream: a row may only ask about an outcome this file already states, and only about **state the model cannot observe from its own context** — keyword/regex matching only, zero inference. Current rows: skill USE WHEN match, explicit depth call with no run registered, deep session with no PRD, destructive-op blast radius.
+
 ### Critical Rules (Zero Exceptions)
 
 - **Mandatory output format** — Every response MUST use exactly one of the output formats defined in AGENTS.md (ALGORITHM, NATIVE, or MINIMAL). No freeform output. No exceptions.
@@ -432,6 +449,9 @@ Skip this step entirely if `agents_invoked` is `[]`.
 - **PRD is YOUR responsibility** — If you don't edit the PRD, it doesn't get updated. Every phase transition, every criterion check, every progress update — you do it with write/edit tools directly. If you skip it, the PRD stays stale. Period. Also ensure PRDs are ALWAYS created inside the evaluated absolute path of `$HOLOCRON_MEMORY_DIR`, NEVER defaulting to the local directory.
 - **ISC Count Gate is mandatory** — Cannot exit OBSERVE with fewer ISC than the effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). No exceptions.
 - **Atomic criteria only** — Every criterion must pass the Splitting Test. No compound criteria with "and"/"with" joining independent verifiables. No scope words ("all", "every") without enumeration.
+- **Every criterion names its probe** — no ISC without a falsifier probe; no close without evidence of the right modality that spans the claim.
+- **Class-sweep before close** — a class defect closes only after every sibling is enumerated, fixed or tombstoned.
+- **Doctrine files hold doctrine only** — learning history goes to ALGORITHM_CHANGELOG.md and git, never inline comments.
 
 ### Context Recovery
 
@@ -445,3 +465,4 @@ If after compaction you don't know your current phase or criteria status:
 
 **Frontmatter:** 8 fields — `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated`. Optional: `iteration` (for rework).
 **Body:** 4 sections — `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`. Sections appear only when populated.
+

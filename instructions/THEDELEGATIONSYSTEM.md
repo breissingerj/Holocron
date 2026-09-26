@@ -108,6 +108,7 @@ When delegating, ALWAYS include:
 3. EXACTLY what to do (precise actions, file paths, patterns)
 4. SUCCESS CRITERIA (what output should look like)
 5. TIMING SCOPE (fast|standard|deep) — controls agent output verbosity
+6. FALLBACK — what the parent does if this agent goes silent (see Delegate Liveness Contract below)
 
 ### Timing Scope in Agent Prompts
 
@@ -166,3 +167,15 @@ Timing: DEEP — comprehensive analysis.
 - Workflows/Delegation.md - Operational delegation procedures
 - Workflows/BackgroundDelegation.md - Background agent patterns
 - skills/agents/SKILL.md - Custom agent creation system
+
+---
+
+## Delegate Liveness Contract
+
+A dispatched agent that goes idle without delivering gets exactly ONE nudge. Still silent → it is reported FAILED, its absence is named in the run's output, and **no ISC closes on a report that never arrived**. Silent absence is never completion. A fan-out that needs babysitting belongs in an orchestrated pattern (agent team or scripted retries) rather than loose dispatches.
+
+## Blast-Radius Brief Sizing
+
+Size every delegate brief so that one silent death loses little: one coherent work unit per agent, never a mega-brief spanning independent deliverables. If one agent dying would lose more than one deliverable, split the brief. Fan-outs past ~8 agents reserve verification budget and name a non-agent fallback in the PRD's Decisions section.
+
+(Origin: upstream LifeOS v8.18.0 — a delegate died holding four job outputs that two smaller agents would have halved.)

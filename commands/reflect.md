@@ -19,6 +19,9 @@ Algorithm reflections:
 Capture files:
 !`find $HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES -name "*.md" 2>/dev/null | wc -l` capture .md files
 
+Incident narratives (permanent record from the Learning Router, not a pending signal):
+!`find $HOLOCRON_MEMORY_DIR/LEARNING/INCIDENTS -name "INC-*.md" 2>/dev/null | wc -l` files in INCIDENTS/
+
 Agent invocations (lifetime):
 !`cat $HOLOCRON_MEMORY_DIR/LEARNING/SYSTEM/agent-invocations.jsonl 2>/dev/null | wc -l` total entries in agent-invocations.jsonl
 
@@ -49,6 +52,7 @@ Read and display all unprocessed signal data:
    ls "$HOLOCRON_MEMORY_DIR/WORK/" 2>/dev/null
    ```
    For each client with ≥ 2 matching sessions, flag it for client state synthesis in PHASE 2.
+5. List any `INC-*.md` files in `$HOLOCRON_MEMORY_DIR/LEARNING/INCIDENTS/` dated since the latest `PROCESSED/` snapshot. These are already-applied incident narratives from the Learning Router — use them as context when clustering themes and cite the incident ID in proposed changes instead of retelling the story. Do not reprocess them as pending signals.
 6. Scan `algorithm-reflections.jsonl` for recurring error classes or correction signals. Group by behavioral anti-pattern description (not by session). For each class that appears in ≥ 3 separate sessions, flag it for behavioral correction pattern synthesis in PHASE 2.
 7. Count total signals by type: explicit ratings, implicit ratings, algorithm reflections, captures
 8. Check memory size against caps (see "Memory size check" above): if `MEMORY.md` exceeds 200 lines, or any `memory/{topic}.md` file exceeds 300 lines, flag it as a distill candidate for PHASE 2 — this check runs every cycle regardless of whether any other signals exist.
@@ -238,6 +242,7 @@ Only clear signal files AFTER branches have been pushed (PHASES 4 and 5 complete
    # Remove processed capture files (already in snapshot)
    rm -rf "$HOLOCRON_MEMORY_DIR/LEARNING/CAPTURES/"*/
    # NOTE: Do NOT clear agent-invocations.jsonl — it is a lifetime counter, not a per-cycle signal file.
+   # NOTE: Do NOT clear or move LEARNING/INCIDENTS/ — incident narratives are permanent records cited by ID from steering rules.
    
    # Clean up old PRDs in WORK/ that have been processed for learnings
    grep -h -o '"prd_id":"[^"]*"' "$HOLOCRON_MEMORY_DIR/LEARNING/PROCESSED/"*/algorithm-reflections.jsonl "$SNAPSHOT_DIR/algorithm-reflections.jsonl" 2>/dev/null | cut -d'"' -f4 | sort -u | while read -r prd; do

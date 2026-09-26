@@ -78,6 +78,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bun run $HOLOCRON_DIR/claude/scripts/hooks/algorithm-nudge.ts"
+          },
+          {
+            "type": "command",
             "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/RatingCapture.hook.ts",
             "async": true
           },
@@ -95,6 +99,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run $HOLOCRON_DIR/claude/scripts/hooks/algorithm-nudge.ts",
+            "async": true
+          }
+        ]
+      },
       {
         "matcher": "Write|Edit",
         "hooks": [

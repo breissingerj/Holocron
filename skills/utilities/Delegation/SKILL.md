@@ -27,6 +27,14 @@ description: Parallelize work via background/foreground agents, built-in types, 
 - **Research + execution** can proceed simultaneously
 - **"Create an agent team"** — use TeamCreate for persistent coordinated teams
 
+## Delegate Liveness (Quick Reference)
+
+Full contract: `$HOLOCRON_DIR/instructions/THEDELEGATIONSYSTEM.md` (single home).
+
+- A silent delegate gets exactly ONE nudge → then FAILED, named in output; no ISC closes on a report that never arrived
+- Size briefs so one silent death loses little — one coherent work unit per agent
+- Fan-outs past ~8 agents: reserve verification budget, name a non-agent fallback in the PRD
+
 ## Delegation Patterns
 
 ### 1. Built-In Agents
