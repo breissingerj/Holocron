@@ -24,7 +24,7 @@ PRD_PATH=$(grep "^PRD_PATH:" "{chain_dir}/observe-output.md" 2>/dev/null | sed '
 echo "PRD: $PRD_PATH"
 ```
 
-Read the PRD at that path (for: task, slug, effort, final progress state).
+Read the PRD at that path (for: task, slug, final progress state).
 
 ## Step 2 — Read all available phase outputs
 
@@ -37,7 +37,7 @@ done
 ```
 
 Read each FOUND file:
-- `observe-output.md` — capabilities selected, effort level, ISC count
+- `observe-output.md` — capabilities selected, spend, ISC count
 - `think-output.md` — risks identified, prerequisites, ISC splitting flags
 - `plan-output.md` — implementation steps, decisions
 - `build-output.md` — capabilities invoked and findings (may be absent if build was skipped)
@@ -52,7 +52,6 @@ Write a concise session brief to `summary-output.md`. Aim for under 150 lines. O
 # Session Summary: [task description]
 
 **Slug:** [slug]
-**Effort:** [tier]
 **Date:** [ISO date from PRD started field]
 
 ## What was accomplished

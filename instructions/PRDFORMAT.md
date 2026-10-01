@@ -1,17 +1,16 @@
-# PAI PRD Format Specification v2.1
+# PAI PRD Format Specification v3.0
 
 The PRD (Product Requirements Document) is the single source of truth for every Algorithm run.
 The AI writes all PRD content directly using Write/Edit tools. Hooks only read PRDs to sync state.
 
 ## Frontmatter (YAML)
 
-Eight required fields, one optional:
+Seven required fields, one optional:
 
 ```yaml
 ---
 task: "8 word task description"           # What this work is
 slug: YYYYMMDD-HHMMSS_kebab-task          # Unique ID, directory name
-effort: standard                          # standard|extended|advanced|deep|comprehensive
 phase: observe                            # observe|think|plan|build|execute|verify|learn|complete
 progress: 0/8                             # checked criteria / total criteria
 mode: interactive                         # interactive|loop
@@ -30,7 +29,6 @@ iteration: 2                              # Incremented when revisiting a comple
 
 - `task`: Imperative mood, max 60 chars. Describes the deliverable, not the process.
 - `slug`: Format `YYYYMMDD-HHMMSS_kebab-description`. Used as directory name under `MEMORY/WORK/`.
-- `effort`: Determines ISC count range and time budget. See Algorithm for tier definitions.
 - `phase`: Updated at the START of each Algorithm phase. Set to `complete` when done.
 - `progress`: Format `M/N` where M = checked ISC criteria, N = total ISC criteria. Updated immediately when a criterion passes (don't wait for VERIFY).
 - `mode`: `interactive` (single Algorithm run) or `loop` (multiple iterations toward ideal state). Determines whether `iteration` tracking is active.
@@ -57,9 +55,9 @@ For Advanced+ effort, a `### Plan` subsection may be added with technical approa
 ISC (Ideal State Criteria) checkboxes. Written during OBSERVE, checked during EXECUTE/VERIFY.
 
 ```markdown
-- [ ] ISC-1: Criterion text (8-12 words, binary testable, state not action) — probe: bun test auth.test.ts
-- [ ] ISC-2: Another criterion — probe: curl -i https://deployed-url/health
-- [ ] ISC-A-1: Anti: What must NOT happen — probe: grep -ri "pii-pattern" output/
+- [ ] ISC-1: Criterion text (8-12 words, binary testable, state not action)
+- [ ] ISC-2: Another criterion
+- [ ] ISC-A-1: Anti: What must NOT happen
 ```
 
 **Rules:**
@@ -68,9 +66,6 @@ ISC (Ideal State Criteria) checkboxes. Written during OBSERVE, checked during EX
 - **Atomic**: one verifiable thing per criterion — no compound statements
 - Anti-criteria prefixed `ISC-A-`: things that must NOT be true
 - ID format: `ISC-N` for criteria, `ISC-A-N` for anti-criteria
-- **Probe required**: every criterion ends with `— probe: <the tool check that would falsify it>`. A criterion without a probe is not testable
-- **Evidence modality**: the probe matches the claim — file→Read, code→Grep, command→checked output, HTTP→`curl -i`, deploy→live probe, web/UI→real browser (playwright-cli), appearance→viewed pixels, schema→SELECT, config→read-back
-- **Evidence span**: a container passing is never evidence for its members; enumerate and probe the members
 - Check (`- [x]`) immediately when satisfied — don't batch at VERIFY
 - Update frontmatter `progress` on every check change
 
@@ -80,7 +75,7 @@ ISC (Ideal State Criteria) checkboxes. Written during OBSERVE, checked during EX
 - Contains "all"/"every"/"complete"? → enumerate what that means
 - Crosses domain boundaries (UI/API/data/logic)? → one per boundary
 
-**Count enforcement:** Total ISC must meet effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). If below floor after first pass, decompose compound criteria until met.
+**Count by judgment (v3.0):** there is no floor. The right number of criteria is however many independently verifiable end states the outcome has — decompose until each criterion is one probe away from proven, then stop.
 
 ### ## Decisions
 
@@ -96,13 +91,10 @@ Timestamped decision log. Written during any phase when non-obvious choices are 
 Evidence for each criterion. Written during VERIFY phase.
 
 ```markdown
-- ISC-1: commit 3fa9c2e, screenshot artifacts/hero-320.png
-- ISC-2: bun test, 14/14 green (CI run #412)
-- ISC-A-1: grep -ri "pii-pattern" output/ — 0 hits
-- CLASS-SWEEP: stale-import class — 6 siblings via grep -r "old-import"; 6 fixed, 0 tombstoned
+- ISC-1: Screenshot confirms layout renders correctly
+- ISC-2: `bun test` passes, 14/14 tests green
+- ISC-A-1: Confirmed no PII in output via grep
 ```
-
-**Evidence collapse**: one line of provenance per criterion (commit hash, test name, probe reference) — never a retained paragraph. The proof lives in git and CI; the PRD points at it.
 
 ## File Location
 
@@ -141,10 +133,9 @@ This format is informed by research across Kiro (AWS), spec-kit (GitHub), OpenSp
 Google Design Docs, Amazon 6-pagers, Shape Up pitches, and 48 production PAI PRDs.
 
 Key design choices:
-- **8 fields, not 15**: Only fields consumed by the sync pipeline. Dead fields waste tokens.
+- **7 fields, not 15**: Only fields consumed by the sync pipeline. Dead fields waste tokens. (`effort` removed in v3.0 — the Algorithm 4.0.0 outcome contract declares no tiers.)
 - **4 sections, not 7**: Risks merged into Context. Plan merged into Context. Changelog dropped (git serves this purpose).
 - **Checkboxes over EARS/BDD**: Simpler to parse, write, and verify. ISC pattern proven over 48 PRDs.
-- **Probe per criterion (v2.1)**: the spec names its own test suite. A criterion that names its falsifier cannot close on "should work."
 - **YAML frontmatter over JSON**: Universal standard (Jekyll, Hugo, Astro, Kiro, spec-kit all use it).
 - **Convention-based sections**: Sections appear when needed, not as empty boilerplate.
 - **Reference file pattern**: This spec lives at `$HOLOCRON_DIR/instructions/PRDFORMAT.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.

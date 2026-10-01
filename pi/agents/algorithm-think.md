@@ -30,7 +30,7 @@ echo "PRD: $PRD_PATH"
 ```
 
 Use the read tool to read the PRD at that path. Extract:
-- The task description and effort level
+- The task description
 - All ISC criteria (`- [ ] ISC-N:` lines)
 
 ## Step 2 — Apply the Splitting Test to every criterion

@@ -83,7 +83,7 @@ python3 -m json.tool ~/.claude/settings.json > /dev/null 2>&1 \
 ### 2.1 CLAUDE.md contains the canonical AGENTS.md content
 
 ```bash
-grep -q "^## Execution Modes" ~/.claude/CLAUDE.md \
+grep -q "^## Output Formats" ~/.claude/CLAUDE.md \
   && echo "✓ CLAUDE.md contains AGENTS.md content" \
   || echo "✗ CLAUDE.md does not contain AGENTS.md content — run install.sh"
 ```

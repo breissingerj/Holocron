@@ -29,7 +29,7 @@ fi
 echo "PRD: $PRD_PATH"
 ```
 
-Read the PRD at that path (for ISC criteria, effort level, task description).
+Read the PRD at that path (for ISC criteria, task description).
 Read plan-output.md from the chain directory (for implementation steps, decisions).
 
 ## Step 2 — Execute the plan

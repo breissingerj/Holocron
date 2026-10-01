@@ -70,12 +70,12 @@ echo "▶ Gap 1 — CLAUDE.md is Claude-native"
 check_file_exists        "ISC-1a: CLAUDE.md exists" "$CLAUDE_MD"
 check_file_not_contains  "ISC-1: CLAUDE.md does NOT import opencode AGENTS.md" \
   "$CLAUDE_MD" "@.*opencode/AGENTS.md"
-check_file_contains      "ISC-2: CLAUDE.md has NATIVE mode definition" \
-  "$CLAUDE_MD" "NATIVE MODE"
-check_file_contains      "ISC-2b: CLAUDE.md has ALGORITHM mode definition" \
-  "$CLAUDE_MD" "ALGORITHM MODE"
-check_file_contains      "ISC-2c: CLAUDE.md has MINIMAL mode definition" \
-  "$CLAUDE_MD" "MINIMAL MODE"
+check_file_contains      "ISC-2: CLAUDE.md has NATIVE format definition" \
+  "$CLAUDE_MD" "NATIVE FORMAT"
+check_file_contains      "ISC-2b: CLAUDE.md has ALGORITHM format definition" \
+  "$CLAUDE_MD" "ALGORITHM FORMAT"
+check_file_contains      "ISC-2c: CLAUDE.md has MINIMAL format definition" \
+  "$CLAUDE_MD" "MINIMAL FORMAT"
 check_file_contains      "ISC-3: CLAUDE.md references ~/.claude/instructions/algorithm.md" \
   "$CLAUDE_MD" "~/.claude/instructions/algorithm.md"
 check_file_contains      "ISC-4: CLAUDE.md imports steering-rules.md" \

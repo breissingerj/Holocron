@@ -43,8 +43,8 @@ python3 -m json.tool ~/.claude/settings.json > /dev/null 2>&1 && ok "settings.js
 
 section "2. Canonical content resolution"
 
-grep -q "^## Execution Modes" ~/.claude/CLAUDE.md 2>/dev/null \
-  && ok "CLAUDE.md contains the canonical AGENTS.md content (Execution Modes section found)" \
+grep -q "^## Output Formats" ~/.claude/CLAUDE.md 2>/dev/null \
+  && ok "CLAUDE.md contains the canonical AGENTS.md content (Output Formats section found)" \
   || fail "CLAUDE.md does not contain AGENTS.md content — regeneration may have failed, run install.sh"
 
 grep -q "HOLocrON-MARKER-001" ~/.claude/CLAUDE.md 2>/dev/null \

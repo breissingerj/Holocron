@@ -211,13 +211,14 @@ If there are algorithm/system changes to apply:
    ```
 
 2. Apply each "Apply" item from the synthesis table to the correct file:
-   - Algorithm process improvements → `instructions/algorithm.md` (open items section or inline at relevant phase)
+   - Algorithm process improvements → doctrine changes go in `instructions/algorithm.md` as clean doctrine (no inline history); the change record goes in `instructions/ALGORITHM_CHANGELOG.md`; learnings route via the Learning Router in algorithm.md
    - Behavioral steering changes → `instructions/steering-rules.md`
    - Roadmap items or deferred work surfaced by signals → `ROADMAP.md`
    - Agent improvements → the single canonical `agents/{AgentName}.md`. Only update the body content that the signals call out — preserve existing frontmatter (voice, persona, color, tools). Apply the ContextEngineer's own audit protocol when editing agent files: identify the specific section that caused the problem before adding new rules.
 
 3. For EVERY change, add a source annotation comment:
    `<!-- reflect: applied from signals {TIMESTAMP_1}, {TIMESTAMP_2} — rating avg {N} -->`
+   **Exception:** never annotate `instructions/algorithm.md` or other doctrine files (algorithm.md, PRDFORMAT.md) — they hold doctrine only. Record the source signals in the `instructions/ALGORITHM_CHANGELOG.md` entry instead.
 
 4. Commit the changes:
    ```bash
