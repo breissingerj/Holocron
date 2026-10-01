@@ -33,7 +33,6 @@ slug=$(extract "slug")
 task=$(extract "task")
 phase=$(extract "phase")
 progress=$(extract "progress")
-effort=$(extract "effort")
 mode=$(extract "mode")
 updated=$(extract "updated")
 
@@ -52,10 +51,9 @@ echo "$existing" | jq \
   --arg task "$task" \
   --arg phase "$phase" \
   --arg progress "$progress" \
-  --arg effort "$effort" \
   --arg mode "$mode" \
   --arg updated "$updated" \
-  '.[$slug] = {slug: $slug, task: $task, phase: $phase, progress: $progress, effort: $effort, mode: $mode, updated: $updated}' \
+  '.[$slug] = {slug: $slug, task: $task, phase: $phase, progress: $progress, mode: $mode, updated: $updated}' \
   > "${work_json}.tmp" && mv "${work_json}.tmp" "$work_json"
 
 exit 0

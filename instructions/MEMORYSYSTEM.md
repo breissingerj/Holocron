@@ -62,7 +62,7 @@ $HOLOCRON_MEMORY_DIR/
 ├── SECURITY/               # Security audit events
 │   └── security-events.jsonl
 ├── STATE/                  # Operational state
-│   ├── algorithms/         # Per-session algorithm state (phase, criteria, effort level)
+│   ├── algorithms/         # Per-session algorithm state (phase, criteria)
 │   ├── kitty-sessions/     # Per-session Kitty terminal env (listenOn, windowId)
 │   ├── tab-titles/         # Per-window tab state (title, color, phase)
 │   ├── events.jsonl        # Unified event log (append-only, typed events from hooks)
@@ -108,7 +108,7 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 **Purpose:** Track all discrete work units with lineage, verification, and feedback
 
 **PRD.md Structure (v4.0 — consolidated single file):**
-- **YAML frontmatter** — session metadata (id, title, session_id, status, effort_level, completed_at, iteration count, verification_summary)
+- **YAML frontmatter** — session metadata (id, title, session_id, status, completed_at, iteration count, verification_summary)
 - **STATUS** — progress table (criteria passing, phase, next action, blockers)
 - **APPETITE** — time budget, circuit breaker, ISC target count
 - **CONTEXT** — problem space from user prompt, key files
@@ -206,7 +206,7 @@ This is the actual "firehose" - every message, tool call, and response. PAI leve
 **Key Property:** Ephemeral - can be rebuilt from RAW or other sources. Optimized for speed, not permanence.
 
 **Key contents:**
-- `algorithms/` - Per-session algorithm state files (`{sessionId}.json` — phase, criteria, effort level, active flag)
+- `algorithms/` - Per-session algorithm state files (`{sessionId}.json` — phase, criteria, active flag)
 - `kitty-sessions/` - Per-session Kitty terminal env (`{sessionId}.json` — listenOn, windowId for tab control and voice gating)
 - `tab-titles/` - Per-window tab state (`{windowId}.json` — title, color, phase for daemon recovery)
 - `session-names.json` - Auto-generated session names from SessionAutoName hook

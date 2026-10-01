@@ -74,7 +74,7 @@ Facts have `valid_at` / `invalid_at` timestamps. A null `invalid_at` means the f
 
 ### Task Classification
 
-A TillDone list is **always required** before any tool use. When creating a new list, classify the request into one of three execution modes (definitions in `Holocron/claude/CLAUDE.md` → Execution Modes) — the mode determines the **format** of the list:
+A TillDone list is **always required** before any tool use. When creating a new list, pick one of three output formats by judgment (definitions in `Holocron/claude/CLAUDE.md` → Output Formats) — the mode determines the **format** of the list:
 
 | Mode | When | List format |
 |------|------|-------------|
@@ -91,7 +91,7 @@ For Extended tasks, the TillDone list must follow this structure:
 3. *(work tasks derived from the plan)*
 4. **Learn** — Final step: write any new facts, decisions, or preferences discovered during execution to Graphiti (see Graphiti → When to Write)
 
-Extended tasks are also the appropriate place to invoke the Algorithm (see `Holocron/claude/CLAUDE.md` → ALGORITHM MODE).
+Extended tasks are also the appropriate place to invoke the Algorithm (see `Holocron/claude/CLAUDE.md` → ALGORITHM FORMAT).
 
 ### List Lifecycle
 

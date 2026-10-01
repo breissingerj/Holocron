@@ -10,21 +10,13 @@ description: Run the Holocron Algorithm — OBSERVE inline, then dispatch specia
   Use this command from any AI coding agent (pi, Claude Code, etc.).
 -->
 
-## The Algorithm 3.8.0 (Dynamic Orchestration)
+## The Algorithm 4.0.0 (Dynamic Orchestration)
 
 Core: transition from CURRENT STATE to IDEAL STATE using verifiable criteria (ISC). Goal: **Euphoric Surprise** — 9-10 ratings.
 
-### Effort Levels
+### Spend
 
-| Tier | Budget | ISC Range | Min Capabilities | When |
-|------|--------|-----------|-----------------|------|
-| **Standard** | <2min | 8-16 | 1-2 | Normal request (DEFAULT) |
-| **Extended** | <8min | 16-32 | 3-5 | Quality must be extraordinary |
-| **Advanced** | <16min | 24-48 | 4-7 | Substantial multi-file work |
-| **Deep** | <32min | 40-80 | 6-10 | Complex design |
-| **Comprehensive** | <120min | 64-150 | 8-15 | No time pressure |
-
-**Min Capabilities** = minimum number of distinct capabilities to **actually invoke**. Listing without acting is a **CRITICAL FAILURE**.
+No effort tiers, time budgets, or capability quotas. Scale resources to the outcome by judgment; Jack's explicit calls ("go heavy", "quick pass") outrank. Every capability you select MUST actually be invoked — listing without acting is a **CRITICAL FAILURE**. Doctrine: `instructions/algorithm.md`.
 
 ### Voice
 
@@ -39,7 +31,7 @@ bash ~/.pi/agent/scripts/voice.sh "MESSAGE"
 
 PRD.md lives at `$HOLOCRON_MEMORY_DIR/WORK/{slug}/PRD.md`. It is the shared context — every subagent reads and writes to it. The main agent creates it in OBSERVE and owns the path.
 
-- Frontmatter: `task`, `slug`, `effort`, `phase`, `progress`, `mode`, `started`, `updated`
+- Frontmatter: `task`, `slug`, `phase`, `progress`, `mode`, `started`, `updated`
 - Body: `## Context`, `## Criteria` (ISC checkboxes), `## Decisions`, `## Verification`
 - Criteria: `- [ ] ISC-1: text` (unchecked) / `- [x] ISC-1: text` (done)
 - Progress: `progress: 3/8` — updated as criteria are satisfied
@@ -61,7 +53,7 @@ Every criterion = one atomic verifiable thing. Apply before finalizing:
 
 **Console output (MANDATORY):**
 ```
-♻︎ Entering the ALGORITHM… (v3.8.0) ═════════════
+♻︎ Entering the ALGORITHM… (v4.0.0) ═════════════
 🗒️ TASK: [8 word description]
 ```
 
@@ -69,7 +61,7 @@ Every criterion = one atomic verifiable thing. Apply before finalizing:
 ```bash
 WORK_DIR=$(echo $HOLOCRON_MEMORY_DIR)/WORK/YYYYMMDD-HHMMSS_kebab-slug
 mkdir -p "$WORK_DIR"
-# Write PRD.md with frontmatter only (effort/phase/progress to be filled next)
+# Write PRD.md with frontmatter only (phase/progress to be filled next)
 ```
 
 **OBSERVE work:**
@@ -82,44 +74,27 @@ OUTPUT:
  🔎 [Explicit wants — multiple, granular, one per line]
  🔎 [Explicit not-wanted]
  🔎 [Implied not-wanted]
- 🔎 [Desired speed — factor in EFFORT LEVEL]
-```
-
-- EFFORT LEVEL:
-
-OUTPUT:
-```
-💪🏼 EFFORT LEVEL: [TIER] | [8 word reasoning]
+ 🔎 [Desired speed]
 ```
 
 - ISC CRITERIA GENERATION — write into PRD:
-  - Set `effort`, add `## Context`, `## Criteria`, `## Decisions`, `## Verification`
+  - Add `## Context`, `## Criteria`, `## Decisions`, `## Verification`
   - Add criteria as checkboxes. Apply the Splitting Test to every criterion.
   - Set `progress: 0/N`
 
 OUTPUT: `[Show ISC criteria list]`
 
-**ISC COUNT GATE (MANDATORY):**
-
-| Tier | Floor | Action if below |
-|------|-------|-----------------|
-| Standard | 8 | Decompose further |
-| Extended | 16 | Almost certainly compound criteria |
-| Advanced | 24 | Decompose by domain boundaries |
-| Deep | 40 | Full decomposition + edge cases |
-| Comprehensive | 64 | Every sub-requirement gets its own ISC |
-
-If ISC count < floor: **DO NOT proceed.** Decompose and recount.
+**Decomposition standard:** keep splitting until each criterion is one probe away from proven. No count floors — the Splitting Test decides.
 
 - CAPABILITY SELECTION:
 
 | Capability | When | How to Invoke |
 |------------|------|---------------|
 | **algorithm-think** | Always | subagent tool |
-| **algorithm-plan** | Standard+ effort, multi-step changes | subagent tool |
+| **algorithm-plan** | multi-step changes | subagent tool |
 | **algorithm-build** | Preparation / context gathering | subagent tool (parallel if workstreams) |
 | **algorithm-execute** | File edits, implementation | subagent tool (parallel if workstreams) |
-| **algorithm-verify** | Standard+ effort | subagent tool |
+| **algorithm-verify** | Anything beyond a trivial edit | subagent tool |
 | **algorithm-learn** | Always | subagent tool (last) |
 | **research-orchestrator** | Multi-source research | subagent tool |
 | **Skills** | Domain workflows | Read SKILL.md first |
@@ -146,7 +121,7 @@ After OBSERVE, output your dispatch plan before calling any subagents.
 |-------|--------|----------|
 | **CREATIVE** | Think → Build | Pure generation (text, prompts, docs) — no verification needed |
 | **STANDARD** | Think → Plan → Execute → Verify | Single focused change, ≤3 files |
-| **FULL** | Think → Plan → Build → Execute → Verify | Multi-file implementation, Standard+ |
+| **FULL** | Think → Plan → Build → Execute → Verify | Multi-file implementation |
 | **CUSTOM** | Any subset + parallelism | Task explicitly demands it |
 
 All routes end with **LEARN** (always last).
@@ -237,12 +212,12 @@ Brief summary of what each subagent does (for task composition):
 - **Parallel = same message** — to run two subagents concurrently, call both in the same response turn.
 - **Sequential = await** — call, await the result, then call the next. Do not fire VERIFY before EXECUTE completes.
 - **LEARN is always last** — never skip it; it captures the reflection JSONL.
-- **ISC Count Gate is mandatory** — cannot exit OBSERVE below tier floor.
+- **Decompose until each criterion is one probe away from proven** — no count floors.
 - **Atomic criteria only** — every criterion must pass the Splitting Test.
 
 ### Context Recovery
 
 If you don't know the current phase or criteria status:
 1. Read the most recent PRD: `ls -t $HOLOCRON_MEMORY_DIR/WORK/*/PRD.md | head -1`
-2. PRD frontmatter has phase, progress, effort, task, slug, started, updated
+2. PRD frontmatter has phase, progress, task, slug, started, updated
 3. PRD body has criteria checkboxes, decisions, verification evidence

@@ -109,4 +109,3 @@ When you need context about the user, projects, system internals, or specific to
 - **MEMORY.md size discipline** — MEMORY.md is a curated index, not a dump. Keep it under ~200 lines. When a section grows beyond ~10 bullets or covers a distinct topic in depth, migrate it to a dedicated topic file at `$HOLOCRON_MEMORY_DIR/memory/{topic}.md` and replace the section in MEMORY.md with a single reference line: `→ see memory/{topic}.md`. Existing topic files (project-context.md, team-structure.md, etc.) follow this pattern.
 - **Topic file writes** — When writing directly to a topic file (not MEMORY.md), still confirm the write in your response and note the file path.
 - **Clean up git worktrees after merge** — Once a feature's MR/PR merges, remove its git worktree (`git worktree remove <path>`) rather than leaving it on disk. Applies in any repo using a worktree-per-task workflow.
-

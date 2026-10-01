@@ -27,7 +27,7 @@ fi
 echo "PRD: $PRD_PATH"
 ```
 
-Read the PRD at that path (for ISC criteria, context, effort level).
+Read the PRD at that path (for ISC criteria, context).
 Read observe-output.md (for: capabilities selected, key findings, files already read).
 Read plan-output.md (for: implementation steps, decisions, prerequisites).
 

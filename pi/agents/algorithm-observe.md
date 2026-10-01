@@ -1,6 +1,6 @@
 ---
 name: algorithm-observe
-description: Holocron Algorithm OBSERVE phase (1/8). Accepts the user's task directly, creates the PRD in $HOLOCRON_MEMORY_DIR, performs reverse engineering, generates atomic ISC criteria with the Splitting Test, enforces the ISC count gate, and selects capabilities.
+description: Holocron Algorithm OBSERVE phase (1/8). Accepts the user's task directly, creates the PRD in $HOLOCRON_MEMORY_DIR, performs reverse engineering, generates atomic ISC criteria with the Splitting Test, enforces the decomposition check, and selects capabilities.
 tools: read, write, edit, bash, grep, find, ls
 model: anthropic/claude-sonnet-4-6
 thinking: high
@@ -44,7 +44,6 @@ cat > "$PRD_PATH" << PRDEOF
 ---
 task: $TASK
 slug: $SLUG
-effort: standard
 phase: observe
 progress: 0/0
 mode: interactive
@@ -73,21 +72,9 @@ Analyse the request and produce:
   Speed expectation: [fast / normal / take your time]
 ```
 
-## Step 3 — Effort level
+## Step 3 — Spend
 
-Based on complexity and scope:
-
-| Tier | Budget | ISC Floor |
-|------|--------|-----------|
-| Standard | <2 min | 8 |
-| Extended | <8 min | 16 |
-| Advanced | <16 min | 24 |
-| Deep | <32 min | 40 |
-| Comprehensive | <120 min | 64 |
-
-Output: `💪 EFFORT LEVEL: [tier] | [8-word rationale]`
-
-Update PRD frontmatter: set `effort: <tier>`.
+No effort tiers, time budgets, or ISC floors. Decide by judgment how much depth the outcome earns; an explicit call from the user ("go heavy", "quick pass") outranks your default. Output one line: `💪 SPEND: [what depth and why, ≤12 words]`
 
 ## Step 4 — Front-load codebase discovery
 
@@ -112,17 +99,9 @@ Also write a `## Context` section describing: what was asked, why it matters, wh
 
 Update PRD frontmatter: `progress: 0/N` where N = total criteria count.
 
-## Step 6 — ISC count gate (MANDATORY)
+## Step 6 — Decomposition check (MANDATORY)
 
-Count the criteria you wrote. Check against the effort floor:
-
-```bash
-echo "ISC count: N"
-echo "Floor for [tier]: M"
-echo "Gate: PASS / FAIL"
-```
-
-**If count < floor: DO NOT proceed.** Re-read each criterion, apply Splitting Test, decompose further, rewrite, recount. Do not leave OBSERVE until the gate passes.
+Re-read each criterion. Apply the Splitting Test and ask: *is this one probe away from proven?* If not, decompose further, rewrite, and update `progress`. Every criterion names the tool check that would falsify it. Do not leave OBSERVE until every criterion passes. There is no count floor — a small task legitimately has few criteria.
 
 ## Step 7 — Capability selection
 
@@ -153,11 +132,11 @@ SLUG: the-slug
 
 ## OBSERVE Output
 
-### Effort level
-[tier]
+### Spend
+[one line: depth chosen and why]
 
 ### ISC count
-[N] criteria — gate PASSED at floor [M]
+[N] criteria — decomposition check PASSED
 
 ### Capabilities selected
 - [capability]: [when invoked] — [why]

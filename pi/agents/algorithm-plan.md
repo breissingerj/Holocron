@@ -29,7 +29,7 @@ fi
 echo "PRD: $PRD_PATH"
 ```
 
-Read the PRD at that path (for task description, effort level, ISC criteria).
+Read the PRD at that path (for task description, ISC criteria).
 Also read think-output.md from the chain directory (for risks, prerequisites, ISC splitting flags).
 
 ## Step 2 — Address prerequisites

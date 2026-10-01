@@ -57,7 +57,7 @@ function nudgesForPrompt(prompt: string): Nudge[] {
     }
   }
   if (DEPTH_RE.test(prompt)) {
-    out.push({ row: "depth-call", ask: "Explicit depth call: Jack's call outranks effort defaults — write done down (PRD) and name what the depth earns, or state why inline is enough. (algorithm-nudge)" });
+    out.push({ row: "depth-call", ask: "Explicit depth call: Jack's call outranks default spend — write done down (PRD) and name what the depth earns, or state why inline is enough. (algorithm-nudge)" });
   }
   if (SUBSTANTIAL_RE.test(prompt) && prompt.length > 120) {
     out.push({ row: "prd-check", ask: "Substantial request: if this session has no PRD yet, does done need writing down? (algorithm-nudge)" });

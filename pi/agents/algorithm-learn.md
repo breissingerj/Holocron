@@ -28,7 +28,7 @@ echo "PRD: $PRD_PATH"
 
 Update PRD frontmatter: `phase: learn`, `updated: <ISO timestamp>`.
 
-Read the PRD (for: task description, slug, effort level, total criteria count, progress field).
+Read the PRD (for: task description, slug, total criteria count, progress field).
 Read verify-output.md (for: PASS/FAIL counts, failures, confidence check).
 
 ## Step 2 — Extract counts from verify output
@@ -74,7 +74,6 @@ mkdir -p "$HOLOCRON_MEMORY_DIR/LEARNING/REFLECTIONS"
 
 TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S+00:00")
 SLUG=$(grep "^slug:" "$PRD_PATH" | sed 's/slug: *//')
-EFFORT=$(grep "^effort:" "$PRD_PATH" | sed 's/effort: *//')
 TASK_DESC=$(grep "^task:" "$PRD_PATH" | sed 's/task: *//')
 
 # Compose the JSON — fill in all values, escape any quotes in reflection text
@@ -85,12 +84,11 @@ prd_path = os.environ.get('PRD_PATH', '')
 mem_dir = os.environ.get('HOLOCRON_MEMORY_DIR', '')
 
 # Read PRD fields
-slug, effort, task_desc, criteria_count = '', 'standard', '', 0
+slug, task_desc, criteria_count = '', '', 0
 with open(prd_path) as f:
     for line in f:
         line = line.strip()
         if line.startswith('slug:'): slug = line.split(':', 1)[1].strip()
-        if line.startswith('effort:'): effort = line.split(':', 1)[1].strip()
         if line.startswith('task:'): task_desc = line.split(':', 1)[1].strip()
         if line.startswith('progress:'):
             prog = line.split(':', 1)[1].strip()
@@ -157,7 +155,6 @@ for r in [reflection_q1, reflection_q2, reflection_q3]:
 
 entry = {
     "timestamp": subprocess.check_output(['date', '-u', '+%Y-%m-%dT%H:%M:%S+00:00']).decode().strip(),
-    "effort_level": effort,
     "task_description": task_desc,
     "work_type": "feature",
     "criteria_count": criteria_count,
@@ -165,7 +162,7 @@ entry = {
     "criteria_failed": criteria_failed,
     "prd_id": slug,
     "implied_sentiment": 7,  # UPDATE: estimate 1-10 from conversation tone before running
-    "within_budget": True,   # UPDATE: set False if elapsed time exceeded effort budget
+    "within_budget": True,   # UPDATE: set False if spend was not matched to the outcome (see algorithm.md Spend)
     "agents_invoked": agents_invoked,
     "reflection_q1": reflection_q1,
     "reflection_q2": reflection_q2,
