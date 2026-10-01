@@ -9,7 +9,7 @@
 #   docker run -p 8000:8000 -e OPENAI_API_KEY=... -e FALKORDB_HOST=graphiti \
 #     ghcr.io/breissingerj/graphiti-mcp:latest
 
-FROM python:3.12-slim AS build
+FROM python:3.14-slim AS build
 
 # uv for fast, reproducible installs from uv.lock
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -32,7 +32,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # ── runtime image ────────────────────────────────────────────────────────────
-FROM python:3.12-slim AS runtime
+FROM python:3.14-slim AS runtime
 
 # Non-root runtime user.
 RUN useradd --create-home --uid 10001 app
