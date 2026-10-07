@@ -149,97 +149,51 @@ converge_entry() {
   return 1
 }
 
-# merge_link_skills PUBLIC_SRC PRIVATE_SRC DEST LABEL
-# Whole-directory symlink per public skill, EXCEPT a case-insensitive name
-# collision with a private skill, which becomes a real directory with
-# file-level symlinks merged from both sources (the one sanctioned merge
-# point, FR-008). Repairs stale differently-cased entries left over from a
-# rename (e.g. Agents -> agents). Hand-added external symlinks are reported,
-# never touched (FR-016/R6).
-merge_link_skills() {
-  local public_src="$1" private_src="$2" dest="$3" label="$4"
-
-  if [[ -L "$dest" ]]; then rm "$dest"; fi
+# install_claude_skills SKILLS_SRC
+# Skills reach Claude Code through the `skills` CLI (npx skills add), one
+# skill at a time, instead of being symlinked from the repo by hand.
+#  1. Legacy cleanup: symlinks into $SKILLS_SRC (and the old merged real
+#     directory) left in ~/.claude/skills by earlier installers are removed.
+#  2. Each skill in $SKILLS_SRC with a SKILL.md is installed globally for the
+#     claude-code agent. Already-installed skills are skipped (use
+#     `npx skills update` to refresh them).
+# Hand-added external skills are never touched.
+install_claude_skills() {
+  local src="$1" dest="$CLAUDE_DIR/skills" entry name target
   mkdir -p "$dest"
 
-  for skill_dir in "$public_src"/*/; do
-    [[ -d "$skill_dir" ]] || continue
-    local skill_name; skill_name="$(basename "$skill_dir")"
-    local dest_skill="$dest/$skill_name"
-
-    # Repair a stale legacy-named entry left over from a slug rename
-    # (case-only, e.g. Agents -> agents, or CamelCase -> hyphenated, e.g.
-    # ContentAnalysis -> content-analysis).
-    local existing; existing="$(find_renamed_match "$dest" "$skill_name")"
-    if [[ -n "$existing" ]]; then
-      if $CHECK_MODE; then
-        report "$dest/$existing" "STALE" "$existing (old name)" "$skill_name" "would repair"
-      else
-        rm -rf "$dest/$existing"
-        report "$dest/$existing" "STALE" "$existing (old name)" "$skill_name" "REPAIRED (renamed)"
-      fi
-    fi
-
-    local private_match=""
-    [[ -n "$private_src" ]] && private_match="$(find_case_insensitive_match "$private_src" "$skill_name")"
-
-    if [[ -n "$private_match" ]]; then
-      # Sanctioned file-level merge
-      if [[ -L "$dest_skill" ]]; then rm "$dest_skill"; fi
-      mkdir -p "$dest_skill"
-      local f fname
-      for f in "$skill_dir"/*; do
-        [[ -e "$f" ]] || continue
-        fname="$(basename "$f")"
-        converge_entry "$f" "$dest_skill/$fname" "$label/$skill_name/$fname" false >/dev/null
-      done
-      for f in "$private_src/$private_match"/*; do
-        [[ -e "$f" ]] || continue
-        fname="$(basename "$f")"
-        if [[ -e "$dest_skill/$fname" || -L "$dest_skill/$fname" ]]; then
-          continue # public file of the same name wins
-        fi
-        ln -s "$f" "$dest_skill/$fname"
-        report "$dest_skill/$fname" "MISSING" "(absent)" "$f" "CREATED (private)"
-      done
-    else
-      converge_entry "$skill_dir" "$dest_skill" "$label/$skill_name" false
-    fi
-  done
-
-  # Skills that exist ONLY in the private source
-  if [[ -n "$private_src" && -d "$private_src" ]]; then
-    local skill_dir skill_name
-    for skill_dir in "$private_src"/*/; do
-      [[ -d "$skill_dir" ]] || continue
-      skill_name="$(basename "$skill_dir")"
-      [[ -n "$(find_case_insensitive_match "$dest" "$skill_name")" ]] && continue
-      converge_entry "$skill_dir" "$dest/$skill_name" "$label/$skill_name (private-only)" false
-    done
-  fi
-
-  # External (non-Holocron) entries — never created by us, never removed.
-  # Skip anything already handled above (current skills, or legacy renamed
-  # entries already reported as STALE) so nothing is double-reported.
-  local entry name
   for entry in "$dest"/*; do
     [[ -e "$entry" || -L "$entry" ]] || continue
     name="$(basename "$entry")"
-    [[ -d "$public_src/$name" ]] && continue
-    [[ -n "$(find_case_insensitive_match "$public_src" "$name")" ]] && continue
-    [[ -n "$private_src" && -n "$(find_case_insensitive_match "$private_src" "$name")" ]] && continue
-    local is_legacy=""
-    for skill_dir2 in "$public_src"/*/; do
-      [[ -d "$skill_dir2" ]] || continue
-      local candidate; candidate="$(basename "$skill_dir2")"
-      local flat_name flat_candidate
-      flat_name="${name//-/}"; flat_name="${flat_name,,}"
-      flat_candidate="${candidate//-/}"; flat_candidate="${flat_candidate,,}"
-      if [[ "$flat_name" == "$flat_candidate" ]]; then is_legacy="yes"; break; fi
-    done
-    [[ -n "$is_legacy" ]] && continue
+    target=""
     if [[ -L "$entry" ]]; then
-      report "$entry" "EXTERNAL" "$(readlink "$entry")" "-" "left untouched"
+      target="$(readlink "$entry")"
+      [[ "$target" == "$src"/* || "$target" == "$src" ]] || continue
+    elif [[ -d "$entry" && -n "$(find_case_insensitive_match "$src" "$name")" ]] \
+         && [[ -z "$(find "$entry" -mindepth 1 -maxdepth 1 ! -type l -print -quit)" ]]; then
+      target="(merged symlink dir)"
+    else
+      continue
+    fi
+    if $CHECK_MODE; then
+      report "$entry" "STALE" "$target" "npx skills add" "would remove legacy link"
+    else
+      rm -rf "$entry"
+      report "$entry" "STALE" "$target" "npx skills add" "REMOVED (legacy link)"
+    fi
+  done
+
+  local skill_dir skill_name
+  for skill_dir in "$src"/*/; do
+    [[ -f "$skill_dir/SKILL.md" ]] || continue
+    skill_name="$(basename "$skill_dir")"
+    [[ -e "$dest/$skill_name/SKILL.md" ]] && continue
+    if $CHECK_MODE; then
+      report "$dest/$skill_name" "MISSING" "(absent)" "npx skills add" "would install"
+    elif npx --yes skills add "$HOLOCRON_DIR" -g -a claude-code -s "$skill_name" -y >/dev/null 2>&1; then
+      report "$dest/$skill_name" "MISSING" "(absent)" "npx skills add" "INSTALLED"
+    else
+      report "$dest/$skill_name" "MISSING" "(absent)" "npx skills add" "FAILED — run: npx skills add $HOLOCRON_DIR -g -a claude-code -s $skill_name -y"
     fi
   done
 }
@@ -401,9 +355,8 @@ mkdir -p "$CLAUDE_DIR" 2>/dev/null || true
 
 converge_entry "$HOLOCRON_DIR/commands" "$CLAUDE_DIR/commands" "claude/commands" false
 
-PRIVATE_SKILLS=""
-[[ -n "$HOLOCRON_MEMORY_DIR" && -d "$HOLOCRON_MEMORY_DIR/skills" ]] && PRIVATE_SKILLS="$HOLOCRON_MEMORY_DIR/skills"
-merge_link_skills "$HOLOCRON_DIR/skills" "$PRIVATE_SKILLS" "$CLAUDE_DIR/skills" "claude/skills"
+# Skills: installed per-skill via `npx skills add` (no manual symlink sync).
+install_claude_skills "$HOLOCRON_DIR/skills"
 
 # Agents: single canonical source (repo agents/) — no private source exists
 # (T008 retired 2026-08-31, see DECISIONS.md).
