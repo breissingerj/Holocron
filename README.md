@@ -69,9 +69,21 @@ Install the following global pi packages after running `install.sh`:
 pi package install https://pi.dev/packages/@juicesharp/rpiv-ask-user-question
 ```
 
-`install.sh` symlinks `skills/`, `commands/`, `agents/`, and `instructions/` into each harness's home directory and converges the live machine to match the repo on every run — stale, dangling, or missing links are repaired and every change is printed. Run `install.sh --check` to see drift (if any) without changing anything; exit code 0 means clean, 1 means drift was found.
+`install.sh` symlinks `commands/`, `agents/`, and `instructions/` into each harness's home directory, installs Claude Code skills one at a time with `npx skills add` (see below), and converges the live machine to match the repo on every run — stale, dangling, or missing links are repaired and every change is printed. Run `install.sh --check` to see drift (if any) without changing anything; exit code 0 means clean, 1 means drift was found.
 
 **Supported harnesses:** Claude Code (`~/.claude/`) and pi.dev (`~/.pi/agent/`). The pi branch maps `commands/` to pi's `prompts/` directory (prompt templates), discovers skills via the `skill-roots.ts` extension rather than a fan-out copy, and leaves a user-configured `~/.pi/agent/settings.json` (a real file, not a Holocron-managed symlink) untouched.
+
+### Claude Code skills (`npx skills`)
+
+Claude Code skills are no longer symlinked from the repo. `install.sh` removes any legacy Holocron symlinks from `~/.claude/skills/` and installs each skill in `skills/` with the [`skills`](https://www.npmjs.com/package/skills) CLI. Installing or re-installing a single skill by hand:
+
+```bash
+npx skills add ~/Projects/PersonalProjects/Holocron -g -a claude-code -s <skill-name> -y
+npx skills update            # refresh installed skills
+npx skills remove <skill>    # uninstall one
+```
+
+`-s` is required so repo-development skills (`speckit-*`) are not installed. `install.sh --check` reports skills that are not yet installed.
 
 ### Private memory repo
 
