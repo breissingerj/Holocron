@@ -244,8 +244,11 @@ export default function (pi: ExtensionAPI) {
 
 	// ── Sidebar launch (fire-and-forget non-capturing overlay) ───────────
 
+	// Set HOLOCRON_TILLDONE_SIDEBAR=off to keep TillDone's task tracking and
+	// gating but skip the right-hand sidebar overlay (machine-local opt-out).
 	const launchSidebar = (ctx: ExtensionContext) => {
 		if (!ctx.hasUI) return;
+		if (process.env.HOLOCRON_TILLDONE_SIDEBAR === "off") return;
 
 		ctx.ui
 			.custom<void>(

@@ -417,17 +417,34 @@ elif [[ -L "$PI_DIR/skills" ]]; then
 fi
 
 # extensions/ — link every subdir and flat .ts file (skip _-prefixed helpers).
+# Machine-local opt-out: HOLOCRON_PI_DISABLED_EXTENSIONS="tilldone other" (names
+# without .ts) skips linking and unlinks any existing Holocron-managed link. The
+# source stays in the repo.
+ext_disabled() {
+  local n="${1%.ts}" d
+  for d in $HOLOCRON_PI_DISABLED_EXTENSIONS; do [[ "$d" == "$n" ]] && return 0; done
+  return 1
+}
 if [[ -d "$HOLOCRON_DIR/pi/extensions" ]]; then
   mkdir -p "$PI_DIR/extensions" 2>/dev/null || true
+  for _link in "$PI_DIR/extensions"/*; do
+    [[ -L "$_link" ]] || continue
+    ext_disabled "$(basename "$_link")" || continue
+    [[ "$(readlink "$_link")" == "$HOLOCRON_DIR"/* ]] || continue
+    if $CHECK_MODE; then report "$_link" "UNEXPECTED" "(disabled locally)" "-" "would remove"
+    else rm "$_link"; report "$_link" "UNEXPECTED" "(disabled locally)" "-" "REMOVED"; fi
+  done
   for ext_dir in "$HOLOCRON_DIR/pi/extensions"/*/; do
     [[ -d "$ext_dir" ]] || continue
     ext_name="$(basename "$ext_dir")"
     [[ "$ext_name" == _* ]] && continue
+    ext_disabled "$ext_name" && continue
     converge_entry "$ext_dir" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name" false
   done
   for ext_file in "$HOLOCRON_DIR/pi/extensions"/*.ts; do
     [[ -f "$ext_file" ]] || continue
     ext_name="$(basename "$ext_file")"
+    ext_disabled "$ext_name" && continue
     converge_entry "$ext_file" "$PI_DIR/extensions/$ext_name" "pi/extensions/$ext_name" false
   done
 
