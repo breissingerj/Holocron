@@ -5,7 +5,6 @@ updates:
     directories:
       - /pi/extensions/google-drive
       - /pi/extensions/graphiti-memory
-      - /pi/extensions/pi-devin-auth
     schedule:
       interval: weekly
     groups:
