@@ -40,10 +40,19 @@ $HOLOCRON_MEMORY_DIR/
 │       └── YYYY-MM/
 │           └── *_LEARNING_sentiment-rating-N.md  ← Per-session learning files for ratings ≤ 4
 │
-└── STATE/                         ← Runtime state (harness-agnostic)
-    ├── volume.level               ← Current voice volume level (0–5); read by voice.sh
-    └── work.json                  ← PRD registry; written by PRD sync plugin (M7)
+├── STATE/                         ← Runtime state (harness-agnostic)
+│   ├── volume.level               ← Current voice volume level (0–5); read by voice.sh
+│   └── work.json                  ← PRD registry; written by PRD sync plugin (M7)
+│
+└── instinct/                      ← OPTIONAL: Instinct-style backend (HOLOCRON_MEMORY_BACKEND=instinct; specs/002)
+    ├── profile.md onepager.md recap.md board.md
+    ├── store/{entities,knowledge,timeline}/   ← written ONLY by `instinct consolidate` / `forget`
+    ├── store/_archive/                        ← superseded / expired / forgotten bullets (soft-forget; git keeps history)
+    ├── inbox/*.jsonl (+ processed/)           ← candidate facts: explicit tool, Haiku session-end extraction, sweep
+    └── .state/checkpoints.json                ← transcript offsets per session
 ```
+
+**Instinct backend (optional).** Core: `tools/instinct/instinct.ts`; adapters: `pi/extensions/instinct-memory.ts`, `claude/scripts/hooks/instinct-*.sh`. With the backend unset (or `files`/`graphiti`) nothing under `instinct/` is read or written and behavior is unchanged. `memory/` is read once by `instinct seed` and never modified by it.
 
 ---
 

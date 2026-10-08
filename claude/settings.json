@@ -31,6 +31,10 @@
           {
             "type": "command",
             "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/LoadContext.hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOLOCRON_DIR/claude/scripts/hooks/instinct-session-start.sh"
           }
         ]
       }
@@ -94,6 +98,10 @@
             "type": "command",
             "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/UpdateTabTitle.hook.ts",
             "async": true
+          },
+          {
+            "type": "command",
+            "command": "bash $HOLOCRON_DIR/claude/scripts/hooks/instinct-prompt.sh"
           }
         ]
       }
@@ -199,6 +207,10 @@
           {
             "type": "command",
             "command": "bun run $HOLOCRON_MEMORY_DIR/hooks/SessionCleanup.hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOLOCRON_DIR/claude/scripts/hooks/instinct-stop.sh"
           }
         ]
       }
@@ -209,6 +221,10 @@
           {
             "type": "command",
             "command": "bash ~/.claude/scripts/hooks/session-start.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash $HOLOCRON_DIR/claude/scripts/hooks/instinct-stop.sh"
           }
         ]
       }

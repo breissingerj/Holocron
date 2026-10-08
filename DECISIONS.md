@@ -678,3 +678,29 @@ Each entry has:
 - **Decision** — Adopted upstream LifeOS's outcome-contract model (PR #77). The Algorithm doctrine now states what must be true when a run is done (13 completion claims plus a judgment-scaled Spend section); effort tiers, time budgets, ISC count floors/COUNT GATE, min-capability quotas, and the "first output MUST be the mode header" gate are removed. MINIMAL/NATIVE/ALGORITHM remain as output *formats*, chosen by judgment. PRDFORMAT 3.0 drops the `effort` frontmatter field and the reflection JSONL drops `effort_level`. Downstream consumers were updated in the same PR: `pi/agents/algorithm-*.md`, `commands/algorithm.md`, both `prd-sync.sh` copies (and the sample in `CLAUDE_CLI_COMPATIBILITY.md`), `MEMORYSYSTEM.md`, `algorithm-nudge.ts` wording, `test-hooks.sh` / `validate-claude-cli.sh` (now check "… FORMAT" / "Output Formats" headings), `pi/APPEND_SYSTEM.md`, and `commands/reflect.md` (no more inline annotations in doctrine files; history goes to `ALGORITHM_CHANGELOG.md`).
 - **Options considered** — Keep tiers and only add the completion claims; land the doctrine alone and update consumers in a follow-up PR; drop the mode header but keep the "under 2 minutes" NATIVE cutoff.
 - **Rationale** — Tiers and floors made count-hitting the goal rather than proof; the claims target what actually fails (unverified criteria, unswept classes). Jack confirmed losing the mode header is acceptable. Consumers were updated in-PR rather than split out so the pi workflow and `/algorithm` command never contradict the doctrine. Accepted risk: with the classifier gone, NATIVE underuse (the failure earlier reflect entries addressed) now relies on judgment; the deleted inline reflect annotations remain recoverable via `git log -p --follow instructions/algorithm.md`. Existing PRDs that still carry `effort` stay valid — sync ignores the field.
+
+## 2026-10-08
+
+### Instinct-style memory as an opt-in backend (`HOLOCRON_MEMORY_BACKEND=instinct`)
+
+- **Decision** — Add a third memory backend modeled on Instinct's (inferred) design: budgeted per-prompt layers (profile, one-pager, rolling recap, board) injected by hooks, long-term facts as git-tracked markdown with aliases/`[[links]]`, agent-writes-inbox / consolidator-writes-store, alias+fuzzy keyword retrieval (no vectors), Haiku extraction at SessionEnd/PreCompact plus a `sweep` backstop. Opt-in only; backend unset/`files`/`graphiti` behave exactly as before. Core in `tools/instinct/`, thin adapters in `pi/` and `claude/` (Constitution I). Spec: `specs/002-instinct-memory-backend/`.
+- **Options considered** — (a) Extend MEMORY.md curation only; (b) OpenViking / vector DB (already deferred in MEMORY_CONTRACT: alpha, always-on server); (c) Graphiti (unreachable from the Rivian network); (d) tool-only injection (model must call a tool to fetch memory).
+- **Rationale** — Files-only fits the Rivian-network constraint and the Obsidian/git source of truth; hook-based injection removes dependence on the model deciding to look; the inbox/consolidator split means a bad extraction costs only a rejected candidate, never a corrupted store.
+
+### Timestamps and soft-forgetting live in the consolidator
+
+- **Decision** — Every bullet carries `asserted/conf/src/expires`; contradictions are resolved by a Haiku judge (Jaccard fallback) that archives the older bullet with `superseded_by`; expired and forgotten bullets move to `store/_archive/` (never deleted; git keeps history); recall is recency-weighted (pinned exempt); stale (>180d) and low-confidence (<0.5) bullets are FLAGGED, never auto-archived.
+- **Options considered** — Hard delete; no forgetting (Instinct's observed gap); auto-archive low-confidence.
+- **Rationale** — Reversibility and reviewability beat tidiness for a personal memory store.
+
+### Explicit "remember" routes to the inbox in instinct mode
+
+- **Decision** — With backend=instinct, "remember/note that" requests queue to `instinct/inbox/` (`instinct_remember` tool or `instinct.ts capture`) instead of writing `memory/MEMORY.md` directly; the legacy rule is unchanged for other backends.
+- **Options considered** — Keep writing MEMORY.md (two writers, drift); write store/ directly (violates the read-only-agent rule).
+- **Rationale** — Single writer to the store; consolidator dedupes and timestamps.
+
+### Hooks: SessionEnd + PreCompact only (not Stop)
+
+- **Decision** — Extraction runs on SessionEnd and PreCompact, not Stop, because Stop fires every turn and would call Haiku continuously; `instinct sweep` backstops crashed sessions and harnesses without hooks.
+- **Options considered** — Stop with throttling; per-turn extraction.
+- **Rationale** — Cost and latency; transcript-delta checkpoints make the coarser cadence lossless.

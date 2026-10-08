@@ -58,7 +58,7 @@ const MCP_TOKEN = process.env.GRAPHITI_MCP_TOKEN;
 // the Graphiti setup is removed — this is a pure runtime switch. Leave unset
 // (or "graphiti") on networks that can reach the home MCP server.
 const MEMORY_BACKEND = (process.env.HOLOCRON_MEMORY_BACKEND ?? "graphiti").toLowerCase();
-const GRAPHITI_ENABLED = MEMORY_BACKEND !== "files";
+const GRAPHITI_ENABLED = MEMORY_BACKEND !== "files" && MEMORY_BACKEND !== "instinct";
 
 // ── MCP client (lazy singleton, reused across tool calls) ─────────────────────
 

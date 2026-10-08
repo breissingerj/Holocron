@@ -270,3 +270,14 @@ The algorithm leans on `voice.sh` for all phase announcements. Current state: Ma
 - **Opportunistic migration:** Public Claude hooks → `claude/scripts/hooks/` on next touch (identity-coupled handlers stay in private memory repo)
 
 **Recommended first PR:** Phase 1 + Phase 2 only — gets pi to functional parity for most-used behaviors.
+
+---
+
+## Milestone 17 — Instinct-Style Memory Backend
+*Opt-in context-management mode: budgeted hook-injected layers, inbox → consolidator → store, timestamps + soft-forgetting, Haiku capture.*
+
+**Spec:** [`specs/002-instinct-memory-backend/`](specs/002-instinct-memory-backend/) · Core: `tools/instinct/` · Adapters: `pi/extensions/instinct-memory.ts`, `claude/scripts/hooks/instinct-*.sh`
+- ✅ Core CLI (seed, assemble, recall, capture, session-end, sweep, consolidate, forget, status) + 20 tests
+- ✅ pi + Claude adapters; legacy loaders yield when backend=instinct
+- Deferred: per-turn extraction cadence tuning, LLM one-pager regen scheduling (launchd), P5 A/B evaluation vs default backend
+
