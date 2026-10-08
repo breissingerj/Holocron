@@ -175,3 +175,126 @@ describe("sweep", () => {
     expect(calls).toBe(1);
   });
 });
+
+// ─── quality fixes ────────────────────────────────────────────────────────────
+const jl = (rows: object[]) => rows.map((r) => JSON.stringify(r)).join("\n");
+const longTranscript = (extra: object[] = []) => jl([...Array.from({ length: 30 }, (_, i) => ({ type: i % 2 ? "assistant" : "user", message: { role: i % 2 ? "assistant" : "user", content: `turn ${i} ${"z".repeat(60)}` } })), ...extra]);
+
+describe("sweep/subagent fixes", () => {
+  test("sweep skips agent-* transcripts and never writes recap.md", async () => {
+    const home = mkdtempSync(join(tmpdir(), "home-")); const d = join(home, "p"); mkdirSync(d, { recursive: true });
+    writeFileSync(join(d, "agent-abc.jsonl"), longTranscript()); writeFileSync(join(d, "main1.jsonl"), longTranscript());
+    w("instinct/recap.md", "ORIGINAL RECAP");
+    let calls = 0; const llm = async () => { calls++; return { facts: [], recap: { anchors: ["x"], open_loops: [], identifiers: [], completed: [] } }; };
+    const r = await I.sweep({ dirs: [home], llm });
+    expect(Object.keys(r)).toEqual(["main1"]); expect(calls).toBe(1);
+    expect(readFileSync(join(mem, "instinct/recap.md"), "utf-8")).toBe("ORIGINAL RECAP");
+  });
+  test("sessionEnd skips subagent transcript paths directly", async () => {
+    w("agent-x.jsonl", longTranscript());
+    expect(((await I.sessionEnd({ sessionId: "a", transcriptPath: join(mem, "agent-x.jsonl"), llm: async () => ({}) })) as any).skipped).toBe("subagent transcript");
+  });
+});
+
+describe("entity canonicalization", () => {
+  beforeEach(() => {
+    w("instinct/store/knowledge/topics/bifrost.md", storeFile("bifrost", ["bifrost"], [bullet("b1", "Bifrost is VPN gated", "2026-10-01")]));
+    w("instinct/store/knowledge/topics/gatehouse-onboarding.md", storeFile("gatehouse-onboarding", ["gatehouse", "onboarding"], [bullet("g1", "OIDC config", "2026-10-01")]));
+    w("instinct/store/knowledge/topics/sprint-agent.md", storeFile("sprint-agent", ["sprint", "agent"], [bullet("s1", "Bedrock-backed", "2026-10-01")]));
+  });
+  const c = (fact: string, entity: string, type = "decision") => ({ ts: "2026-10-08T10:00:00Z", fact, entity, type, conf: 0.8, src: "t" });
+  const files = () => I.loadStore();
+  test("descriptive entity containing a rare store token folds into that file", () => {
+    expect(I.resolveTarget(files(), c("Stale JWKS keys fail closed", "Bifrost JWKS verifier")).file?.id).toBe("bifrost");
+  });
+  test("path-like / MR / ticket entities resolve by rare token in the fact text", () => {
+    expect(I.resolveTarget(files(), c("Bifrost disables default request logging", "apps/bifrost/backend/src/lib/request-log.ts")).file?.id).toBe("bifrost");
+    expect(I.resolveTarget(files(), c("Gatehouse MR was reviewed read-only", "Gatehouse MR !200")).file?.id).toBe("gatehouse-onboarding");
+    expect(I.resolveTarget(files(), c("Bifrost per-user ACC is active", "FT-522", "project")).file?.id).toBe("bifrost");
+  });
+  test("generic entity with no matching fact goes to a general file, not preference.md", () => {
+    const r = I.resolveTarget(files(), c("Reviews must be read-only", "preference", "preference"));
+    expect(r.file).toBeUndefined(); expect(r.general).toBe(true);
+  });
+  test("a genuinely new named entity still creates its own file", () => {
+    const r = I.resolveTarget(files(), c("Tommy sets team boundaries", "Tommy Magee", "person"));
+    expect(r.file).toBeUndefined(); expect(r.general).toBe(false);
+  });
+  test("consolidate routes generic preference to knowledge/preferences/general.md", async () => {
+    w("instinct/inbox/x.jsonl", JSON.stringify({ ts: "2026-10-08T10:00:00Z", fact: "Reviews must be read-only", entity: "preference", type: "preference", conf: 0.9, src: "t" }) + "\n");
+    await I.consolidate({ judge: async () => ({ action: "add" }), noSuggest: true });
+    expect(existsSync(join(mem, "instinct/store/knowledge/preferences/general.md"))).toBe(true);
+    expect(existsSync(join(mem, "instinct/store/knowledge/preferences/preference.md"))).toBe(false);
+  });
+  test("judge supersede on an unrelated bullet is downgraded to add", async () => {
+    w("instinct/inbox/y.jsonl", JSON.stringify({ ts: "2026-10-08T10:00:00Z", fact: "Gatehouse needs a machine credential", entity: "Bifrost", type: "decision", conf: 0.9, src: "t" }) + "\n");
+    const plan = await I.consolidate({ judge: async (ex) => ({ action: "supersede", supersedes: [ex[0]!.id] }), noSuggest: true });
+    expect(plan.superseded).toHaveLength(0);
+    expect(readFileSync(join(mem, "instinct/store/knowledge/topics/bifrost.md"), "utf-8")).toContain("Bifrost is VPN gated");
+  });
+});
+
+describe("skill/agent prompt signals → suggestions", () => {
+  let hd = "";
+  const sig = (target: string, session: string, o: Record<string, unknown> = {}) => I.captureSignal({ target, kind: "recommendation", observation: `obs from ${session}`, suggested_change: "add a rule", conf: 0.7, session, ...o });
+  beforeEach(() => {
+    hd = mkdtempSync(join(tmpdir(), "hd-")); process.env.HOLOCRON_DIR = hd;
+    mkdirSync(join(hd, "skills/acli"), { recursive: true });
+    writeFileSync(join(hd, "skills/acli/SKILL.md"), "---\nname: acli\ndescription: Jira via CLI\n---\n# acli\nUse acli for Jira.\nAlways authenticate first.\n");
+    mkdirSync(join(hd, "agents"), { recursive: true }); writeFileSync(join(hd, "agents/Engineer.md"), "---\nname: Engineer\n---\nYou are an engineer.\n");
+  });
+  const llm = async () => ({ summary: "s", rationale: "r", edits: [{ where: "top", before: "Always authenticate first.", after: "Always authenticate first.\nIf acli says unauthorized, use the Atlassian MCP instead." }, { where: "bad", before: "THIS TEXT DOES NOT EXIST", after: "x" }] });
+
+  test("transcript digest includes skill, agent, and tool-error markers", () => {
+    const raw = jl([{ type: "assistant", message: { role: "assistant", content: [{ type: "tool_use", name: "Skill", input: { skill: "acli" } }, { type: "tool_use", name: "Agent", input: { subagent_type: "Engineer", description: "build it" } }] } }, { type: "user", message: { role: "user", content: [{ type: "tool_result", is_error: true, content: "unauthorized" }] } }]);
+    const t = I.transcriptText(raw).text;
+    expect(t).toContain("[SKILL invoked: acli]"); expect(t).toContain("[AGENT Engineer: build it]"); expect(t).toContain("[TOOL ERROR: unauthorized]");
+  });
+  test("sessionEnd persists skill_signals to signals/ with normalized targets", async () => {
+    w("t.jsonl", longTranscript());
+    const r: any = await I.sessionEnd({ sessionId: "s-1", transcriptPath: join(mem, "t.jsonl"), llm: async () => ({ facts: [], recap: null, skill_signals: [{ target: "skill: ACLI", kind: "failure", observation: "unauthorized error", suggested_change: "fallback to MCP", conf: 0.9 }] }) });
+    expect(r.signals).toBe(1);
+    expect(readFileSync(join(mem, "instinct/signals", readdirSync(join(mem, "instinct/signals"))[0]!), "utf-8")).toContain('"target":"skill:acli"');
+  });
+  test("below threshold: one low-conf signal from one session → no suggestion", async () => {
+    sig("skill:acli", "s1"); const r = await I.suggest({ llm });
+    expect(r.written).toHaveLength(0); expect(r.skipped[0]).toContain("below threshold");
+  });
+  test("2 sessions → suggestion written, unanchored edit dropped, target file untouched, signals consumed", async () => {
+    sig("skill:acli", "s1"); sig("skill:acli", "s2");
+    const before = readFileSync(join(hd, "skills/acli/SKILL.md"), "utf-8");
+    const r = await I.suggest({ llm });
+    expect(r.written).toHaveLength(1);
+    const f = readdirSync(join(mem, "instinct/suggestions"))[0]!; const body = readFileSync(join(mem, "instinct/suggestions", f), "utf-8");
+    expect(body).toContain("status: proposed"); expect(body).toContain("Atlassian MCP"); expect(body).not.toContain("THIS TEXT DOES NOT EXIST");
+    expect(readFileSync(join(hd, "skills/acli/SKILL.md"), "utf-8")).toBe(before);
+    expect((await I.suggest({ llm })).written).toHaveLength(0); // signals consumed
+    expect(I.assemble()).toContain("1 pending skill/agent prompt-change suggestion");
+  });
+  test("strong single-session failure is eligible; agent targets resolve", async () => {
+    sig("agent:Engineer", "s1", { kind: "failure", conf: 0.9 });
+    const r = await I.suggest({ llm: async () => ({ summary: "", rationale: "", edits: [{ where: "end", before: "", after: "Run tests before reporting done." }] }) });
+    expect(r.written).toHaveLength(1);
+  });
+  test("dry-run lists eligible targets but writes nothing and calls no LLM", async () => {
+    sig("skill:acli", "s1"); sig("skill:acli", "s2"); let called = 0;
+    const snap = snapshot(join(mem, "instinct"));
+    const r = await I.suggest({ dryRun: true, llm: async () => { called++; return null; } });
+    expect(r.eligible).toHaveLength(1); expect(called).toBe(0); expect(snapshot(join(mem, "instinct"))).toBe(snap);
+  });
+  test("apply edits the prompt file once and marks applied; reject marks rejected; stale anchor refuses", async () => {
+    sig("skill:acli", "s1"); sig("skill:acli", "s2"); await I.suggest({ llm });
+    const sg = I.listSuggestions()[0]!;
+    I.applySuggestion(sg.id, { dryRun: true }); expect(readFileSync(join(hd, "skills/acli/SKILL.md"), "utf-8")).not.toContain("Atlassian MCP");
+    I.applySuggestion(sg.id);
+    expect(readFileSync(join(hd, "skills/acli/SKILL.md"), "utf-8")).toContain("Atlassian MCP"); expect(I.listSuggestions()[0]!.status).toBe("applied");
+    expect(() => I.applySuggestion(sg.id)).toThrow(/applied/);
+  });
+  test("consolidate surfaces suggestions in its plan; --no-suggest skips", async () => {
+    sig("skill:acli", "s1"); sig("skill:acli", "s2");
+    const dry = await I.consolidate({ dryRun: true, judge: async () => ({ action: "add" }) });
+    expect(dry.suggestions[0]).toContain("ELIGIBLE skill:acli");
+    const none = await I.consolidate({ dryRun: true, noSuggest: true, judge: async () => ({ action: "add" }) });
+    expect(none.suggestions).toHaveLength(0);
+  });
+});
