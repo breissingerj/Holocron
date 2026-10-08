@@ -704,3 +704,16 @@ Each entry has:
 - **Decision** — Extraction runs on SessionEnd and PreCompact, not Stop, because Stop fires every turn and would call Haiku continuously; `instinct sweep` backstops crashed sessions and harnesses without hooks.
 - **Options considered** — Stop with throttling; per-turn extraction.
 - **Rationale** — Cost and latency; transcript-delta checkpoints make the coarser cadence lossless.
+
+### Instinct quality fixes after first live consolidation
+
+- **Decision** — Sweep ignores subagent (`agent-*`) transcripts and never writes `recap.md`; candidate entities are canonicalized onto existing store files by rare-token match (path/MR/ticket/generic entities fold by fact text or go to `general.md`); the supersession judge is guarded (deterministic dedupe first; same-attribute overlap required; never supersede with an older fact).
+- **Options considered** — Leave as is and clean up manually; make the LLM do entity canonicalization (non-deterministic, extra cost); hard-block low-confidence candidates.
+- **Rationale** — The first live run produced 26 one-fact files from review-subagent transcripts, overwrote the recap with an unrelated review summary, and misjudged a supersession. Deterministic, testable guards address each failure without more LLM calls.
+
+### Skill/agent prompt feedback as a first-class signal → proposed (never auto-applied) edits
+
+- **Decision** — Session-end extraction emits `skill_signals` into `instinct/signals/`; consolidation groups them per skill/agent and, at ≥2 sessions (or one high-confidence failure), proposes minimal anchored edits as `instinct/suggestions/*.md` (status `proposed`). Applying is only via `instinct suggestions apply <id>`; prompt files are never edited by the consolidator.
+- **Options considered** — Auto-apply edits; route signals through the existing `reflect` skill only; use ratings/reflections as the only source.
+- **Rationale** — Skills/agents are doctrine; edits need a human gate (Algorithm claim 10: doctrine changes surface to Jack). The suggestions directory feeds the existing reflect/Learning Router flow without coupling to it; ratings and reflections (currently sparse) are used as corroborating evidence.
+

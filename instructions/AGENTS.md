@@ -18,7 +18,7 @@ Before doing any work, read and internalize `$HOLOCRON_DIR/instructions/steering
 
 Before starting any NATIVE or ALGORITHM mode task, retrieve only the personal memory relevant to the request. Treat `$HOLOCRON_MEMORY_DIR` Markdown files as canonical.
 
-**Instinct backend (`HOLOCRON_MEMORY_BACKEND=instinct`):** memory is injected automatically by hooks (session-start layers + per-prompt retrieval) — do not run the retrieval order below. Use `instinct_recall` (pi) or `bun $HOLOCRON_DIR/tools/instinct/instinct.ts recall "<query>"` only for deeper lookups. Explicit remember requests queue to the inbox (`instinct_remember` / `instinct.ts capture --fact "..."`), never directly to `memory/` or `instinct/store/`; "forget X" → `instinct.ts forget "X"`.
+**Instinct backend (`HOLOCRON_MEMORY_BACKEND=instinct`):** memory is injected automatically by hooks (session-start layers + per-prompt retrieval) — do not run the retrieval order below. Use `instinct_recall` (pi) or `bun $HOLOCRON_DIR/tools/instinct/instinct.ts recall "<query>"` only for deeper lookups. Explicit remember requests queue to the inbox (`instinct_remember` / `instinct.ts capture --fact "..."`), never directly to `memory/` or `instinct/store/`; "forget X" → `instinct.ts forget "X"`. If the injected Board lists pending skill/agent prompt-change suggestions, mention them to Jack at a natural point; apply only with his approval (`instinct.ts suggestions apply <id>`).
 
 **Retrieval order:**
 1. If `graphiti_search` tools are available, run 1–3 targeted Graphiti queries for semantic or temporal retrieval.

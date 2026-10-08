@@ -31,3 +31,13 @@ Format: `[ID] [P?] [Story] Description`
 - [x] T016 (install.sh --check drift is pre-existing path-case staleness, unrelated; new extension auto-linked by existing *.ts glob) `install.sh --check` still passes; backend-unset parity check
 - [ ] T017 Commit, push, PR, merge to main; pull main
 - [ ] T018 Migration: seed live memory, wire hooks in memory repo settings, set `HOLOCRON_MEMORY_BACKEND=instinct`, verify injection live
+
+## Phase 6: Quality fixes + prompt-change signals (follow-up, 2026-10-08)
+- [x] T019 Sweep skips agent-* transcripts; sweep never writes recap.md (FR-017)
+- [x] T020 Entity canonicalization (rare-token resolution, general files) + stricter extraction prompt (FR-018)
+- [x] T021 Judge guards: deterministic dedupe first; supersede requires same-attribute overlap and not-newer (FR-019)
+- [x] T022 Skill/agent signals: transcript markers, `skill_signals` extraction, `signals/` store (FR-020)
+- [x] T023 `suggest` + `suggestions list|apply|reject`, evidence from ratings/reflections, Board pending count, consolidate integration (FR-021)
+- [x] T024 Tests (16 new, 36 total) + live Haiku/Sonnet verification
+- [ ] T025 Reprocess live memory with the fixed tooling (revert fa4e9cd, re-sweep, re-consolidate)
+

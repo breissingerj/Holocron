@@ -60,6 +60,8 @@ const P = {
   inbox: () => join(root(), "inbox"),
   processed: () => join(root(), "inbox", "processed"),
   state: () => join(root(), ".state"),
+  signals: () => join(root(), "signals"),
+  suggestions: () => join(root(), "suggestions"),
 };
 
 const read = (p: string) => { try { return readFileSync(p, "utf-8"); } catch { return ""; } };
@@ -245,7 +247,8 @@ export function assemble(opts: { prompt?: string; sessionStart?: boolean } = {})
     sec("Profile", clip(read(P.profile()), BUDGET_TOKENS.profile));
     sec("Memory One-Pager", clip(read(P.onepager()), BUDGET_TOKENS.onepager));
     sec("Session Recap (open loops, identifiers)", clip(read(P.recap()), BUDGET_TOKENS.recap));
-    sec("Board", clip([read(P.board()).trim(), ...activePrds()].filter(Boolean).join("\n"), BUDGET_TOKENS.board));
+    const pend = listSuggestions().filter((x) => x.status === "proposed").length;
+    sec("Board", clip([read(P.board()).trim(), ...activePrds(), pend ? `- ⚠ ${pend} pending skill/agent prompt-change suggestion(s) — review: bun $HOLOCRON_DIR/tools/instinct/instinct.ts suggestions` : ""].filter(Boolean).join("\n"), BUDGET_TOKENS.board));
   }
   if (opts.prompt) sec("Relevant Memory (auto-retrieved)", formatHits(recall(opts.prompt)));
   parts.push("<!-- end instinct-memory -->");
@@ -307,6 +310,7 @@ export function capture(c: Omit<Candidate, "ts" | "conf" | "src"> & { conf?: num
 
 export function transcriptText(raw: string, fromLine = 0): { text: string; lines: number } {
   const lines = raw.split("\n").filter(Boolean); const out: string[] = [];
+  const flat = (c: any): string => typeof c === "string" ? c : Array.isArray(c) ? c.map((x: any) => x?.text ?? "").join(" ") : "";
   for (const l of lines.slice(fromLine)) {
     let o: any; try { o = JSON.parse(l); } catch { continue; }
     const msg = o.message ?? o; const role = msg.role ?? o.type;
@@ -314,13 +318,34 @@ export function transcriptText(raw: string, fromLine = 0): { text: string; lines
     const c = msg.content;
     const text = typeof c === "string" ? c : Array.isArray(c) ? c.filter((x: any) => x?.type === "text").map((x: any) => x.text).join("\n") : "";
     if (text.trim() && !text.startsWith("<system-reminder>")) out.push(`${role.toUpperCase()}: ${text.trim()}`);
+    if (Array.isArray(c)) for (const b of c) {
+      // Skill/agent/tool markers: evidence for prompt-change signals (skills and agents misbehaving or misrouted)
+      if (b?.type === "tool_use" && b.name === "Skill") out.push(`[SKILL invoked: ${b.input?.skill ?? "?"}${b.input?.args ? " args: " + String(b.input.args).slice(0, 120) : ""}]`);
+      else if (b?.type === "tool_use" && (b.name === "Agent" || b.name === "Task")) out.push(`[AGENT ${b.input?.subagent_type ?? "general"}: ${String(b.input?.description ?? b.input?.prompt ?? "").slice(0, 160)}]`);
+      else if (b?.type === "tool_result" && b.is_error) out.push(`[TOOL ERROR: ${flat(b.content).slice(0, 200)}]`);
+    }
   }
   return { text: out.join("\n\n"), lines: lines.length };
 }
 
-const EXTRACT_SYSTEM = `You maintain a personal memory store for one user. From the conversation excerpt, extract (1) DURABLE facts worth remembering across sessions (preferences, decisions, constraints, people, projects, standing context) — never ephemeral task chatter — and (2) an updated rolling session recap.
-Return ONLY JSON: {"facts":[{"fact":"...","entity":"<name or empty>","type":"person|org|project|preference|decision|topic","conf":0.0-1.0,"expires":"YYYY-MM-DD or empty"}],"recap":{"anchors":["..."],"open_loops":["..."],"identifiers":["exact ticket ids, paths, urls, branch names"],"completed":["..."]}}
-Rules: facts must be self-contained sentences; conf<0.6 if inferred; set expires for time-bound facts; keep recap terse; carry forward still-open loops from the previous recap.`;
+function knownPromptNames(): { skills: string[]; agents: string[] } {
+  const root_ = process.env.HOLOCRON_DIR ?? process.env.HOLOCRON_REPO_ROOT ?? "";
+  const ls = (d: string) => { try { return readdirSync(d, { withFileTypes: true }); } catch { return []; } };
+  return {
+    skills: ls(join(root_, "skills")).filter((e) => e.isDirectory()).map((e) => e.name).slice(0, 60),
+    agents: ls(join(root_, "agents")).filter((e) => e.name.endsWith(".md")).map((e) => e.name.replace(/\.md$/, "")).slice(0, 60),
+  };
+}
+
+export function extractSystem(): string {
+  const k = knownPromptNames();
+  return `You maintain a personal memory store for one user. From the conversation excerpt, extract (1) DURABLE facts worth remembering across sessions, (2) an updated rolling session recap, and (3) feedback signals about the user's skills and agents (their prompts).
+Return ONLY JSON: {"facts":[{"fact":"...","entity":"<canonical name>","type":"person|org|project|preference|decision|topic","conf":0.0-1.0,"expires":"YYYY-MM-DD or empty"}],"recap":{"anchors":["..."],"open_loops":["..."],"identifiers":["exact ticket ids, paths, urls, branch names"],"completed":["..."]},"skill_signals":[{"target":"skill:<name> or agent:<name>","kind":"failure|gap|recommendation","observation":"what went wrong or was missing","suggested_change":"concrete change to that skill/agent prompt","conf":0.0-1.0}]}
+FACT RULES: facts are self-contained sentences about standing context — preferences, decisions, constraints, people, projects. NOT durable: individual code-review findings, per-MR/ticket implementation details, file-level bugs, test results, task chatter — unless they encode a standing preference or decision (e.g. "reviews must be read-only"). conf<0.6 if inferred; set expires for time-bound facts.
+ENTITY RULES: entity is the short canonical name of a person, org, project or product (e.g. "Bifrost", "Gatehouse", "Tommy Magee") — NEVER a file path, MR/PR number, ticket id, or function name. For ticket or MR facts use the owning project name. Use "" only for facts about the user in general.
+RECAP RULES: terse; carry forward still-open loops from the previous recap.
+SKILL SIGNAL RULES: emit only with evidence in the transcript: the skill/agent errored or produced wrong output, the user corrected it or overrode its behavior, it should have triggered but didn't (or triggered wrongly), or the user stated a standing instruction about how it should behave. Use exact names (known skills: ${k.skills.join(", ") || "n/a"}; known agents: ${k.agents.join(", ") || "n/a"}). At most 5; [] when none. Do not invent signals.`;
+}
 
 type LlmFn = (system: string, user: string) => Promise<any | null>;
 
@@ -340,21 +365,24 @@ function recapMarkdown(r: any, previous: string): string {
   return `# Recap (updated ${nowDate().toISOString()})\n\n## Anchors\n${li(r.anchors)}\n\n## Open loops\n${li(r.open_loops)}\n\n## Exact identifiers\n${li(r.identifiers)}\n\n## Completed\n${li(r.completed)}\n`;
 }
 
-export async function sessionEnd(opts: { sessionId: string; transcriptPath: string; llm?: LlmFn; dryRun?: boolean }) {
+export async function sessionEnd(opts: { sessionId: string; transcriptPath: string; llm?: LlmFn; dryRun?: boolean; writeRecap?: boolean; includeSubagents?: boolean }) {
   if (process.env.INSTINCT_CAPTURE === "off") return { skipped: "INSTINCT_CAPTURE=off" };
+  if (!opts.includeSubagents && basename(opts.transcriptPath).startsWith("agent-")) return { skipped: "subagent transcript" };
   const raw = read(opts.transcriptPath); if (!raw) return { skipped: "empty transcript" };
   const ck = loadCk(); const { text, lines } = transcriptText(raw, ck[opts.sessionId] ?? 0);
   if (text.length < 400) return { skipped: "short delta" };
   const prev = read(P.recap());
   const user = `PREVIOUS RECAP:\n${clip(prev, 2500)}\n\nCONVERSATION EXCERPT (most recent last):\n${text.slice(-30000)}`;
-  const res = await (opts.llm ?? haikuLlm)(EXTRACT_SYSTEM, user);
+  const res = await (opts.llm ?? haikuLlm)(extractSystem(), user);
   if (!res) return { skipped: "llm unavailable" };
-  if (opts.dryRun) return { facts: res.facts ?? [], recap: res.recap };
+  if (opts.dryRun) return { facts: res.facts ?? [], recap: res.recap, skill_signals: res.skill_signals ?? [] };
   let n = 0;
   for (const f of res.facts ?? []) if (f?.fact) { capture({ fact: f.fact, entity: f.entity || undefined, type: f.type, conf: Number(f.conf) || 0.6, src: `session:${opts.sessionId.slice(0, 8)}`, expires: f.expires || undefined, session: opts.sessionId }); n++; }
-  if (res.recap) write(P.recap(), clip(recapMarkdown(res.recap, prev), BUDGET_TOKENS.recap));
+  let sig = 0;
+  for (const g of res.skill_signals ?? []) if (g?.target && g?.observation) { captureSignal({ target: String(g.target), kind: g.kind ?? "recommendation", observation: String(g.observation), suggested_change: g.suggested_change, conf: Number(g.conf) || 0.6, session: opts.sessionId }); sig++; }
+  if (res.recap && opts.writeRecap !== false) write(P.recap(), clip(recapMarkdown(res.recap, prev), BUDGET_TOKENS.recap));
   ck[opts.sessionId] = lines; write(ckPath(), JSON.stringify(ck));
-  return { candidates: n, recap: !!res.recap };
+  return { candidates: n, signals: sig, recap: !!res.recap && opts.writeRecap !== false };
 }
 
 // ─── Sweep (backstop: transcripts that never produced candidates) ────────────
@@ -366,9 +394,9 @@ export async function sweep(opts: { dirs?: string[]; max?: number; days?: number
   const files: { p: string; m: number }[] = [];
   const scan = (d: string) => { if (!existsSync(d)) return; for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) scan(p); else if (e.name.endsWith(".jsonl")) { const m = statSync(p).mtimeMs; if (m >= cutoff) files.push({ p, m }); } } };
   dirs.forEach(scan);
-  const pending = files.filter((f) => !(basename(f.p, ".jsonl") in ck)).sort((a, b) => a.m - b.m).slice(0, opts.max ?? 5);
+  const pending = files.filter((f) => !basename(f.p).startsWith("agent-") && !(basename(f.p, ".jsonl") in ck)).sort((a, b) => a.m - b.m).slice(0, opts.max ?? 5);
   const results: Record<string, unknown> = {};
-  for (const f of pending) { const id = basename(f.p, ".jsonl"); results[id] = await sessionEnd({ sessionId: id, transcriptPath: f.p, llm: opts.llm }); const c = loadCk(); if (!(id in c)) { c[id] = -1; write(ckPath(), JSON.stringify(c)); } }
+  for (const f of pending) { const id = basename(f.p, ".jsonl"); results[id] = await sessionEnd({ sessionId: id, transcriptPath: f.p, llm: opts.llm, writeRecap: false }); const c = loadCk(); if (!(id in c)) { c[id] = -1; write(ckPath(), JSON.stringify(c)); } }
   return results;
 }
 
@@ -385,7 +413,7 @@ Examples: existing "Prefers VSCode" + new "Now prefers Cursor" => supersede. Exi
 
 export const llmJudge: JudgeFn = async (existing, cand) => {
   const fallback = jaccardJudge(existing, cand);
-  if (!existing.length) return fallback;
+  if (!existing.length || fallback.action === "duplicate") return fallback; // deterministic dedupe first; LLM only for the ambiguous cases
   const r = await haikuLlm(JUDGE_SYSTEM, `EXISTING:\n${existing.map((b) => `[${b.id}] ${b.text} (${b.asserted})`).join("\n")}\n\nNEW: ${cand.fact}`);
   if (r && ["add", "duplicate", "supersede"].includes(r.action)) return { action: r.action, supersedes: (r.supersedes ?? []).filter((x: string) => existing.some((b) => b.id === x)) };
   return fallback;
@@ -402,11 +430,50 @@ function findFile(store: StoreFile[], entity: string): StoreFile | undefined {
     ?? store.find((f) => [f.id, f.title, ...f.aliases].some((n) => { const nt = tokens(n); return nt.length && nt.length === e.length && nt.every((t, i) => fuzzyEq(e[i]!, t)); }));
 }
 
-export interface Plan { created: string[]; added: string[]; duplicates: number; superseded: string[]; archivedExpired: string[]; flagged: string[]; processed: string[] }
+const GENERIC_ENTITY = new Set(["", "none", "null", "n/a", "na", "user", "me", "unknown", "general", "preference", "preferences", "decision", "decisions", "topic", "topics", "project", "projects"]);
+const PATHISH = /[\/\\]|\.(ts|tsx|js|tf|sh|md|json|hcl|ya?ml|py|sql)\b|^(mr|pr)\s*!?\d|!\d{2,}|\b[A-Za-z]{2,5}-\d+\b/i;
 
-export async function consolidate(opts: { dryRun?: boolean; judge?: JudgeFn; regenOnepager?: boolean; commit?: boolean } = {}): Promise<Plan> {
+/** Rare-token score: tokens that name only 1-2 store files are strong signals; common tokens are ignored. */
+function nameTokenIndex(files: StoreFile[]): { names: Map<StoreFile, Set<string>>; df: Map<string, number> } {
+  const names = new Map<StoreFile, Set<string>>(); const df = new Map<string, number>();
+  for (const f of files) {
+    const set = new Set([f.id, f.title, ...f.aliases].flatMap(tokens).filter((t) => t.length >= 4));
+    names.set(f, set); for (const t of set) df.set(t, (df.get(t) ?? 0) + 1);
+  }
+  return { names, df };
+}
+function bestByTokens(files: StoreFile[], query: Set<string>, factText: string): StoreFile | undefined {
+  const { names, df } = nameTokenIndex(files); const fact = tokens(factText);
+  let best: { f: StoreFile; score: number } | undefined;
+  for (const [f, set] of names) {
+    let score = 0;
+    for (const t of set) if (query.has(t) && (df.get(t) ?? 9) <= 2) score += 1 / (df.get(t) ?? 1);
+    if (score < 0.5) continue;
+    score = score * 10 + fact.filter((t) => set.has(t)).length;
+    if (!best || score > best.score) best = { f, score };
+  }
+  return best?.f;
+}
+
+/** Map a candidate to an existing store file (canonicalizing noisy entity names), or signal that a general/new file is needed. */
+export function resolveTarget(files: StoreFile[], c: Candidate): { file?: StoreFile; general: boolean } {
+  const entity = (c.entity ?? "").trim(); const key = entity.toLowerCase();
+  const generic = GENERIC_ENTITY.has(key); const pathish = !generic && PATHISH.test(entity);
+  if (!generic && !pathish) {
+    const exact = findFile(files, entity); if (exact) return { file: exact, general: false };
+    const near = bestByTokens(files, new Set(tokens(entity)), c.fact); if (near) return { file: near, general: false };
+    return { general: false };
+  }
+  const byFact = bestByTokens(files, new Set(tokens(c.fact)), c.fact);
+  if (byFact) return { file: byFact, general: false };
+  return { general: true };
+}
+
+export interface Plan { created: string[]; added: string[]; duplicates: number; superseded: string[]; archivedExpired: string[]; flagged: string[]; processed: string[]; suggestions: string[] }
+
+export async function consolidate(opts: { dryRun?: boolean; judge?: JudgeFn; regenOnepager?: boolean; commit?: boolean; noSuggest?: boolean; suggestLlm?: LlmFn } = {}): Promise<Plan> {
   const judge = opts.judge ?? llmJudge; const t = today();
-  const plan: Plan = { created: [], added: [], duplicates: 0, superseded: [], archivedExpired: [], flagged: [], processed: [] };
+  const plan: Plan = { created: [], added: [], duplicates: 0, superseded: [], archivedExpired: [], flagged: [], processed: [], suggestions: [] };
   const store = loadStore();
   const files = new Map<string, StoreFile>(store.map((f) => [f.path, f]));
   const archive = new Map<string, Bullet[]>(); // store-relative path → bullets to append in _archive
@@ -432,15 +499,22 @@ export async function consolidate(opts: { dryRun?: boolean; judge?: JudgeFn; reg
       let c: Candidate; try { c = JSON.parse(line); } catch { continue; }
       if (!c.fact) continue;
       const entity = c.entity || "";
-      let f = entity ? findFile([...files.values()], entity) : undefined;
+      const target = resolveTarget([...files.values()], c);
+      let f = target.file;
       if (!f) {
         const dir = TYPE_DIR[c.type ?? ""] ?? "knowledge/misc";
-        const id = slug(entity || (c.type ?? "general"));
+        const id = target.general ? "general" : slug(entity || (c.type ?? "general"));
+        const title = target.general ? `General (${c.type ?? "misc"})` : entity || id;
         const path = join(P.store(), dir, `${id}.md`);
-        f = files.get(path) ?? { path, rel: relative(P.store(), path), id, type: c.type ?? "topic", aliases: entity ? [entity] : [], updated: t, pinned: false, title: entity || id, bullets: [], preamble: `# ${entity || id}`, raw: "" };
+        f = files.get(path) ?? { path, rel: relative(P.store(), path), id, type: c.type ?? "topic", aliases: target.general ? ["general"] : entity ? [entity] : [], updated: t, pinned: false, title, bullets: [], preamble: `# ${title}`, raw: "" };
         if (!files.has(path)) { files.set(path, f); plan.created.push(f.rel); }
       }
       const j = await judge(f.bullets, c);
+      if (j.action === "supersede") { // guard: only same-attribute (shared token), older bullets may be superseded
+        const ft = new Set(tokens(c.fact)); const day = (c.ts || t).slice(0, 10);
+        j.supersedes = (j.supersedes ?? []).filter((sid) => { const o = f!.bullets.find((b) => b.id === sid); return !!o && tokens(o.text).some((x) => ft.has(x)) && (o.asserted || "") <= day; });
+        if (!j.supersedes.length) j.action = "add";
+      }
       if (j.action === "duplicate") { plan.duplicates++; continue; }
       const nb: Bullet = { id: hash(c.fact + c.ts), text: c.fact.trim(), asserted: (c.ts || t).slice(0, 10), conf: c.conf ?? 0.7, src: c.src, expires: c.expires };
       if (j.action === "supersede") {
@@ -459,6 +533,12 @@ export async function consolidate(opts: { dryRun?: boolean; judge?: JudgeFn; reg
   for (const f of files.values()) if (!f.pinned) for (const b of f.bullets) {
     if (b.asserted && ageDays(b.asserted) > STALE_DAYS) plan.flagged.push(`STALE ${f.rel}: ${b.text.slice(0, 70)} (asserted ${b.asserted})`);
     else if (b.conf < LOW_CONF) plan.flagged.push(`LOW-CONF ${f.rel}: ${b.text.slice(0, 70)} (conf ${b.conf})`);
+  }
+
+  // 3b. skill/agent prompt-change suggestions from accumulated signals (never edits the prompt files themselves)
+  if (!opts.noSuggest) {
+    const sg = await suggest({ dryRun: opts.dryRun, llm: opts.suggestLlm });
+    plan.suggestions = [...sg.eligible.map((x) => `ELIGIBLE ${x}`), ...sg.written.map((x) => `WROTE ${x}`), ...sg.skipped.map((x) => `SKIP ${x}`)];
   }
 
   if (opts.dryRun) return plan;
@@ -491,6 +571,116 @@ function gitCommit(msg: string) {
   } catch { /* nothing to commit or not a repo */ }
 }
 
+// ─── Skill / agent prompt signals → suggestions ──────────────────────────────
+
+export interface SkillSignal { id: string; ts: string; target: string; kind: string; observation: string; suggested_change?: string; conf: number; session: string }
+export const normTarget = (t: string): string => { const m = t.toLowerCase().trim().match(/^(skill|agent)[:\s]+(.+)$/); return m ? `${m[1]}:${slug(m[2]!)}` : `skill:${slug(t)}`; };
+
+export function captureSignal(g: Omit<SkillSignal, "id" | "ts">): SkillSignal {
+  const target = normTarget(g.target);
+  const sig: SkillSignal = { id: hash(`${target}|${g.observation}|${g.session}`), ts: nowDate().toISOString(), ...g, target };
+  mkdirSync(P.signals(), { recursive: true });
+  appendFileSync(join(P.signals(), `${today()}.jsonl`), JSON.stringify(sig) + "\n");
+  return sig;
+}
+const usedPath = () => join(P.state(), "signals-used.json");
+const loadUsed = (): string[] => { try { return JSON.parse(read(usedPath()) || "[]"); } catch { return []; } };
+function loadSignals(): SkillSignal[] {
+  const out = new Map<string, SkillSignal>();
+  if (existsSync(P.signals())) for (const n of readdirSync(P.signals()).filter((x) => x.endsWith(".jsonl")).sort())
+    for (const l of read(join(P.signals(), n)).split("\n").filter(Boolean)) { try { const g = JSON.parse(l) as SkillSignal; if (g.id) out.set(g.id, g); } catch { /* skip */ } }
+  return [...out.values()];
+}
+
+const repoRoot = () => process.env.HOLOCRON_DIR ?? process.env.HOLOCRON_REPO_ROOT ?? "";
+export function findPromptFile(target: string): string | null {
+  const [kind, name] = [target.split(":")[0], target.split(":").slice(1).join(":")];
+  const hd = repoRoot(); const md = process.env.HOLOCRON_MEMORY_DIR ?? "";
+  if (kind === "skill") {
+    for (const base of [join(hd, "skills"), join(hd, "pi", "skills"), join(md, "skills")])
+      for (const p of walk(base).filter((x) => basename(x) === "SKILL.md")) {
+        const fm = read(p).match(/^name:\s*(.+)$/m)?.[1]?.replace(/^["']|["']$/g, "") ?? "";
+        if (slug(basename(dirname(p))) === name || slug(fm) === name) return p;
+      }
+  } else if (kind === "agent") {
+    for (const base of [join(hd, "agents"), join(hd, "pi", "agents"), join(md, "agents")])
+      for (const p of walk(base)) if (slug(basename(p, ".md")) === name) return p;
+  }
+  return null;
+}
+
+function otherEvidence(name: string): string[] {
+  const q = name.toLowerCase(); const out: string[] = [];
+  for (const rel of ["LEARNING/SIGNALS/ratings.jsonl", "LEARNING/REFLECTIONS/algorithm-reflections.jsonl"]) {
+    const lines = read(join(memDir(), rel)).split("\n").filter((l) => l.toLowerCase().includes(q));
+    for (const l of lines.slice(-3)) out.push(`[${basename(rel)}] ${l.slice(0, 300)}`);
+  }
+  return out;
+}
+
+const SUGGEST_SYSTEM = `You improve prompt files (skills and agents) from feedback signals. Given the CURRENT FILE and SIGNALS (plus optional other evidence), propose MINIMAL targeted edits that address the signals.
+Return ONLY JSON: {"summary":"one line","rationale":"why these edits fix the signals","edits":[{"where":"section/heading","before":"EXACT existing text to replace, verbatim, appearing exactly once — or empty string to append","after":"replacement or addition text"}]}.
+Rules: never rewrite the whole file; prefer adding a short rule, example or trigger phrase; keep the file's voice and format; if the signals do not justify a change return {"summary":"","rationale":"","edits":[]}.`;
+
+export const suggestLlm: LlmFn = async (system, user) => {
+  const { inference } = await import("../Inference.ts");
+  const r = await inference({ systemPrompt: system, userPrompt: user, level: "standard", model: process.env.INSTINCT_SUGGEST_MODEL || undefined, expectJson: true, timeout: 120000 });
+  return r.success ? (r.parsed ?? null) : null;
+};
+
+export async function suggest(opts: { dryRun?: boolean; llm?: LlmFn; minSessions?: number } = {}) {
+  const used = new Set(loadUsed()); const sigs = loadSignals().filter((g) => !used.has(g.id));
+  const out = { eligible: [] as string[], written: [] as string[], skipped: [] as string[] };
+  const groups = new Map<string, SkillSignal[]>();
+  for (const g of sigs) groups.set(g.target, [...(groups.get(g.target) ?? []), g]);
+  for (const [target, g] of groups) {
+    const sessions = new Set(g.map((x) => x.session)).size;
+    const strongFailure = g.some((x) => x.kind === "failure" && x.conf >= 0.85);
+    if (sessions < (opts.minSessions ?? 2) && !strongFailure) { out.skipped.push(`${target}: ${g.length} signal(s) from ${sessions} session(s) — below threshold`); continue; }
+    out.eligible.push(`${target} (${g.length} signals, ${sessions} sessions)`);
+    if (opts.dryRun) continue;
+    const file = findPromptFile(target);
+    if (!file) { out.skipped.push(`${target}: no skill/agent prompt file found`); continue; }
+    const current = read(file);
+    const user = `TARGET: ${target}\nFILE: ${file}\n\nCURRENT FILE:\n${clip(current, 6000)}\n\nSIGNALS:\n${g.map((x) => `- [${x.kind}, conf ${x.conf}, ${x.ts.slice(0, 10)}] ${x.observation}${x.suggested_change ? ` | suggested: ${x.suggested_change}` : ""}`).join("\n")}\n\nOTHER EVIDENCE:\n${otherEvidence(target.split(":")[1] ?? "").join("\n") || "(none)"}`;
+    const res = await (opts.llm ?? suggestLlm)(SUGGEST_SYSTEM, user);
+    if (!res || !Array.isArray(res.edits)) { out.skipped.push(`${target}: llm unavailable`); continue; }
+    const edits = res.edits.filter((e: any) => e && typeof e.after === "string" && e.after.trim() && (!e.before || current.split(e.before).length === 2));
+    if (!edits.length) { out.skipped.push(`${target}: no anchored edits proposed`); continue; }
+    const id = `sug-${hash(target + today() + JSON.stringify(edits))}`;
+    const md = `---\nid: ${id}\ntarget: ${target}\nfile: ${file}\nstatus: proposed\ncreated: ${today()}\nsignals: ${g.length}\n---\n# Suggested prompt change: ${target}\n\n${res.summary ?? ""}\n\n## Why\n${res.rationale ?? ""}\n\n## Evidence\n${g.map((x) => `- ${x.ts.slice(0, 10)} [${x.kind}] ${x.observation} (session ${x.session.slice(0, 8)})`).join("\n")}\n\n## Proposed edits\n${edits.map((e: any, i: number) => `### ${i + 1}. ${e.where ?? ""}\n**before**\n\`\`\`\n${e.before ?? "(append)"}\n\`\`\`\n**after**\n\`\`\`\n${e.after}\n\`\`\``).join("\n\n")}\n\n## Machine edits\n\`\`\`json\n${JSON.stringify(edits)}\n\`\`\`\n`;
+    write(join(P.suggestions(), `${today()}-${slug(target)}.md`), md);
+    writeFileSync2(usedPath(), JSON.stringify([...loadUsed(), ...g.map((x) => x.id)]));
+    out.written.push(`${id} → suggestions/${today()}-${slug(target)}.md`);
+  }
+  return out;
+}
+const writeFileSync2 = (p: string, d: string) => write(p, d);
+
+export interface Suggestion { id: string; target: string; status: string; file: string; path: string }
+export function listSuggestions(): Suggestion[] {
+  if (!existsSync(P.suggestions())) return [];
+  return readdirSync(P.suggestions()).filter((n) => n.endsWith(".md")).map((n) => {
+    const path = join(P.suggestions(), n); const t = read(path); const g = (k: string) => t.match(new RegExp(`^${k}:\\s*(.*)$`, "m"))?.[1] ?? "";
+    return { id: g("id"), target: g("target"), status: g("status"), file: g("file"), path };
+  });
+}
+const setStatus = (path: string, status: string) => write(path, read(path).replace(/^status:.*$/m, `status: ${status}`));
+
+export function applySuggestion(id: string, opts: { dryRun?: boolean } = {}): string {
+  const sg = listSuggestions().find((x) => x.id === id); if (!sg) throw new Error(`no suggestion ${id}`);
+  if (sg.status !== "proposed") throw new Error(`suggestion ${id} is ${sg.status}`);
+  const edits: { before?: string; after: string }[] = JSON.parse(read(sg.path).match(/## Machine edits\n```json\n([\s\S]*?)\n```/)![1]!);
+  let cur = read(sg.file); const log: string[] = [];
+  for (const e of edits) {
+    if (e.before) { if (cur.split(e.before).length !== 2) throw new Error(`edit anchor not found exactly once in ${sg.file} — file changed since suggestion; reject and regenerate`); cur = cur.replace(e.before, () => e.after); log.push(`replace: ${e.before.slice(0, 60)}… → ${e.after.slice(0, 60)}…`); }
+    else { cur = cur.replace(/\n*$/, "\n\n") + e.after.trim() + "\n"; log.push(`append: ${e.after.slice(0, 80)}…`); }
+  }
+  if (!opts.dryRun) { write(sg.file, cur); setStatus(sg.path, "applied"); }
+  return `${opts.dryRun ? "[dry-run] " : ""}${sg.target} → ${sg.file}\n${log.join("\n")}`;
+}
+export function rejectSuggestion(id: string) { const sg = listSuggestions().find((x) => x.id === id); if (!sg) throw new Error(`no suggestion ${id}`); setStatus(sg.path, "rejected"); }
+
 // ─── Forget ───────────────────────────────────────────────────────────────────
 
 export function forget(query: string, opts: { dryRun?: boolean } = {}): string[] {
@@ -519,7 +709,7 @@ export function status(): string {
   return [`backend: ${process.env.HOLOCRON_MEMORY_BACKEND ?? "(unset)"}${isActive() ? " (ACTIVE)" : ""}`, `root: ${root()}`,
     `profile ${r(P.profile())}/${BUDGET_TOKENS.profile} tok | onepager ${r(P.onepager())}/${BUDGET_TOKENS.onepager} | recap ${r(P.recap())}/${BUDGET_TOKENS.recap} | board ${r(P.board())}/${BUDGET_TOKENS.board}`,
     `store: ${store.length} files, ${store.reduce((n, f) => n + f.bullets.length, 0)} bullets | archive: ${walk(P.archive(), false).length} files | pending inbox files: ${inbox}`,
-    `assembled session-start block: ~${tok(assemble())} tok`].join("\n");
+    `signals pending: ${loadSignals().filter((g) => !loadUsed().includes(g.id)).length} | suggestions proposed: ${listSuggestions().filter((x) => x.status === "proposed").length}`, `assembled session-start block: ~${tok(assemble())} tok`].join("\n");
 }
 
 // ─── CLI ──────────────────────────────────────────────────────────────────────
@@ -537,7 +727,9 @@ async function main() {
     case "status": console.log(status()); break;
     case "recall": console.log(formatHits(recall(a.filter((x) => !x.startsWith("--")).join(" "))) || "(no matches)"); break;
     case "capture": { const c = capture({ fact: flag(a, "fact") ?? a.join(" "), entity: flag(a, "entity"), type: flag(a, "type"), conf: flag(a, "conf") ? Number(flag(a, "conf")) : undefined, expires: flag(a, "expires") }); console.log(`queued: ${c.fact}`); break; }
-    case "consolidate": { const p = await consolidate({ dryRun: has(a, "dry-run"), judge: has(a, "no-llm") ? async (e, c) => jaccardJudge(e, c) : undefined, regenOnepager: has(a, "regen-onepager") }); console.log(JSON.stringify(p, null, 2)); break; }
+    case "suggest": console.log(JSON.stringify(await suggest({ dryRun: has(a, "dry-run") }), null, 2)); break;
+    case "suggestions": { const [sub, id] = a; if (sub === "apply") console.log(applySuggestion(id!, { dryRun: has(a, "dry-run") })); else if (sub === "reject") { rejectSuggestion(id!); console.log(`rejected ${id}`); } else console.log(listSuggestions().map((x) => `${x.id}  ${x.status.padEnd(9)} ${x.target}  → ${x.file}`).join("\n") || "(none)"); break; }
+    case "consolidate": { const p = await consolidate({ dryRun: has(a, "dry-run"), noSuggest: has(a, "no-suggest"), judge: has(a, "no-llm") ? async (e, c) => jaccardJudge(e, c) : undefined, regenOnepager: has(a, "regen-onepager") }); console.log(JSON.stringify(p, null, 2)); break; }
     case "forget": { const r = forget(a.filter((x) => !x.startsWith("--")).join(" "), { dryRun: has(a, "dry-run") }); console.log(r.length ? r.join("\n") : "(nothing matched)"); break; }
     case "sweep": console.log(JSON.stringify(await sweep({ max: flag(a, "max") ? Number(flag(a, "max")) : undefined }), null, 2)); break;
     case "session-end": { const r = await sessionEnd({ sessionId: flag(a, "session") ?? "manual", transcriptPath: flag(a, "transcript") ?? "", dryRun: has(a, "dry-run") }); console.log(JSON.stringify(r)); break; }
@@ -545,7 +737,7 @@ async function main() {
     case "hook-session-start": { if (!isActive() || process.env.INSTINCT_INTERNAL) break; process.stdout.write(claudeHook("SessionStart", assemble())); break; }
     case "hook-prompt": { if (!isActive() || process.env.INSTINCT_INTERNAL) break; const j = await stdinJson(); process.stdout.write(claudeHook("UserPromptSubmit", assemble({ prompt: j.prompt, sessionStart: false }))); break; }
     case "hook-stop": { if (!isActive() || process.env.INSTINCT_INTERNAL) break; const j = await stdinJson(); process.env.INSTINCT_INTERNAL = "1"; const r = await sessionEnd({ sessionId: j.session_id ?? "unknown", transcriptPath: j.transcript_path ?? "" }); if (process.env.INSTINCT_DEBUG) console.error(JSON.stringify(r)); break; }
-    default: console.error("usage: instinct.ts <seed|assemble|status|recall|capture|consolidate|forget|sweep|session-end|hook-session-start|hook-prompt|hook-stop> [flags]"); process.exit(cmd ? 1 : 0);
+    default: console.error("usage: instinct.ts <seed|assemble|status|recall|capture|consolidate|forget|sweep|suggest|suggestions|session-end|hook-session-start|hook-prompt|hook-stop> [flags]"); process.exit(cmd ? 1 : 0);
   }
 }
 if (import.meta.main) main().catch((e) => { console.error(`instinct: ${e.message}`); process.exit(1); });

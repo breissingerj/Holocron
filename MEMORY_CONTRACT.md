@@ -49,6 +49,8 @@ $HOLOCRON_MEMORY_DIR/
     ├── store/{entities,knowledge,timeline}/   ← written ONLY by `instinct consolidate` / `forget`
     ├── store/_archive/                        ← superseded / expired / forgotten bullets (soft-forget; git keeps history)
     ├── inbox/*.jsonl (+ processed/)           ← candidate facts: explicit tool, Haiku session-end extraction, sweep
+    ├── signals/*.jsonl                        ← skill/agent prompt feedback (failure|gap|recommendation)
+    ├── suggestions/*.md                       ← proposed prompt edits (status proposed|applied|rejected); never auto-applied
     └── .state/checkpoints.json                ← transcript offsets per session
 ```
 

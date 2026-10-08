@@ -44,6 +44,11 @@ Candidate facts are appended to `inbox/` (explicit tool, Haiku extraction hook, 
 - **FR-014 (decay)**: Recall score is weighted by recency (`0.5 + 0.5*exp(-age/180d)`); pinned files exempt.
 - **FR-015 (explicit forget)**: `instinct forget <query> [--dry-run]` archives matching bullets/entity files; "forget X" in conversation routes to it.
 - **FR-016 (staleness report)**: Consolidate reports bullets older than 180d (not pinned) and bullets with conf < 0.5 as FLAGGED for review; never auto-archived.
+- **FR-017 (sweep hygiene)**: `sweep` skips `agent-*` (subagent) transcripts and never writes `recap.md`; `sessionEnd` also skips subagent transcript paths unless `includeSubagents`.
+- **FR-018 (entity canonicalization)**: Candidate entities are mapped onto existing store files by rare-token match (tokens naming ≤2 files); path-like, MR/PR-number, and ticket-id entities and generic entities (`preference`, `user`, `none`…) resolve by rare-token match in the fact text, else to `<type-dir>/general.md`; only genuinely new named entities create new files. The extraction prompt forbids paths/MR numbers/ticket ids as entities and excludes code-review findings and per-ticket detail from durable facts.
+- **FR-019 (judge guards)**: Deterministic Jaccard duplicate check runs before the LLM judge; a `supersede` is honored only for bullets sharing ≥1 token with the new fact and not newer than it, else downgraded to `add`.
+- **FR-020 (prompt-change signals)**: Session-end extraction also emits `skill_signals` (`target` = `skill:<name>`/`agent:<name>`, `kind` failure|gap|recommendation, `observation`, `suggested_change`, `conf`); the transcript digest carries Skill/Agent invocations and tool errors as evidence. Signals append to `instinct/signals/*.jsonl` (separate from the facts inbox).
+- **FR-021 (suggestions)**: `consolidate` (and `suggest`) groups unused signals by target; a target is eligible with signals from ≥2 distinct sessions or one failure with conf ≥0.85. For eligible targets whose skill/agent prompt file is found, an LLM proposes minimal edits whose `before` text must appear verbatim exactly once; the result is a `suggestions/<date>-<target>.md` (status `proposed`) with evidence from signals plus matching ratings/reflections. The prompt file is NEVER edited automatically; `instinct suggestions apply|reject <id>` is the only path, and the Board shows the pending count. `--dry-run` lists eligible targets without calling an LLM or writing.
 - **FR-010**: Explicit "remember" requests route to `inbox/` in instinct mode (DECISIONS.md entry).
 
 ## Success Criteria
@@ -52,4 +57,5 @@ Candidate facts are appended to `inbox/` (explicit tool, Haiku extraction hook, 
 - **SC-003**: Recap resume test passes (open loop + identifier present in next session's injection).
 - **SC-004**: Recall eval ≥ 90% hit-rate on the 20-query fixture incl. typos/synonyms.
 - **SC-006**: Contradicting-fact fixture: older bullet archived with `superseded_by`, absent from recall; expired bullet archived on consolidate; `forget --dry-run` writes nothing.
+- **SC-007**: Sweep never touches recap.md or reads agent-* transcripts; entity fixtures (descriptive, path-like, MR, ticket, generic) all land in the expected files; a signals→suggestion fixture produces a proposed suggestion, leaves the prompt file byte-identical, and consumes the signals.
 - **SC-005**: `consolidate --dry-run` leaves `git status` clean.
