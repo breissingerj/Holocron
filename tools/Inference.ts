@@ -39,6 +39,8 @@ export interface InferenceOptions {
   systemPrompt: string;
   userPrompt: string;
   level?: InferenceLevel;
+  /** Override the level's default model (e.g. a pinned model id) */
+  model?: string;
   expectJson?: boolean;
   timeout?: number;
 }
@@ -78,7 +80,7 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
 
     const args = [
       '--print',
-      '--model', config.model,
+      '--model', options.model || config.model,
       '--tools', '',  // Disable tools for faster response
       '--output-format', 'text',
       '--setting-sources', '',  // Disable hooks to prevent recursion

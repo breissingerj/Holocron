@@ -378,3 +378,7 @@ Use scout to understand this code then ask me clarification questions.
 /subagents-status
 /subagents-doctor
 ```
+
+## instinct-memory.ts
+Adapter for the Instinct-style memory backend (spec `specs/002-instinct-memory-backend`). Inert unless `HOLOCRON_MEMORY_BACKEND=instinct`. Tier 1 session-start injection, Tier 2 per-prompt retrieval, `instinct_recall` / `instinct_remember` tools, `/instinct-status`, detached Haiku session-end capture. Core logic: `tools/instinct/instinct.ts`.
+

@@ -370,6 +370,10 @@ function formatMemoryBlock(ctx: MemoryContext): string {
 
 export default function holocronMemory(pi: ExtensionAPI) {
   // ── session_start: load memory context once ──────────────────────────────
+  // Instinct backend (specs/002) owns context injection — legacy loader yields.
+  const INSTINCT = (process.env.HOLOCRON_MEMORY_BACKEND ?? "").toLowerCase() === "instinct";
+  if (INSTINCT) return;
+
   pi.on("session_start", async (_event, ctx) => {
     const dir = process.env.HOLOCRON_MEMORY_DIR;
 
