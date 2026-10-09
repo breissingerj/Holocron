@@ -1,10 +1,10 @@
 ---
-description: Scan the inbox for new meeting recording/transcript emails and ingest durable details into memory via MemoryIngest
+description: Scan the inbox for new meeting recording/transcript emails and ingest durable details into memory (instinct inbox, or MemoryIngest fallback)
 ---
 
-You are running the Process Meetings workflow. This command scans Gmail for meeting recording and transcript notifications, opens each transcript, extracts durable facts, and promotes them into memory through the MemoryIngest skill. It only processes transcripts created since the last time this command ran.
+You are running the Process Meetings workflow. This command scans Gmail for meeting recording and transcript notifications, opens each transcript, extracts durable facts, and promotes them into memory through the active memory backend (the instinct inbox when `HOLOCRON_MEMORY_BACKEND=instinct`, otherwise the MemoryIngest skill). It only processes transcripts created since the last time this command ran.
 
-**Do not write raw transcript text directly into any memory file. All memory writes go through the MemoryIngest skill.**
+**Do not write raw transcript text directly into any memory file. All memory writes go through the active backend's sanctioned path: the instinct inbox when `HOLOCRON_MEMORY_BACKEND=instinct`, otherwise the MemoryIngest skill. Never write to `memory/` or `instinct/store/` directly.**
 
 ---
 
@@ -69,7 +69,21 @@ For each transcript you successfully opened, extract only durable, reusable fact
 
 Discard small talk, filler, and anything that is not a durable fact per the MemoryIngest promotion gate.
 
-For each extracted fact (or small batch of related facts from the same meeting), invoke the **MemoryIngest** skill via the Skill tool — do not write to `memory/MEMORY.md` or any memory file directly. Let MemoryIngest handle classification, duplicate resolution, and the actual write.
+Check the backend first: `echo "${HOLOCRON_MEMORY_BACKEND:-}"`.
+
+**If `instinct`:** queue each fact as a candidate in the instinct inbox:
+
+```
+bun $HOLOCRON_DIR/tools/instinct/instinct.ts capture --fact "<self-contained fact>" --entity "<canonical name>" --type <person|org|project|preference|decision|topic> --conf 0.75 --src "meeting:<thread-id>" [--expires YYYY-MM-DD]
+```
+
+- Make each fact self-contained (who, what, when) — it is read later without the transcript.
+- Always pass `--entity` and `--type`; consolidation uses them to decide supersede vs. add and to route the fact to a store file.
+- Use `--expires` for time-bound items (action-item deadlines, one-off dates) so they age out.
+- Use `--conf 0.7`–`0.8` (meeting extraction is less certain than an explicit statement); `--src` tags provenance.
+- Do NOT run `consolidate` from this command — only `consolidate`/`forget` write `instinct/store/`. If a failed run is re-covered, duplicate candidates may be queued; consolidation folds them.
+
+**Otherwise (`files`/`graphiti`/unset):** for each extracted fact (or small batch of related facts from the same meeting), invoke the **MemoryIngest** skill via the Skill tool — do not write to `memory/MEMORY.md` or any memory file directly. Let MemoryIngest handle classification, duplicate resolution, and the actual write.
 
 ---
 
@@ -79,12 +93,12 @@ Only after every matching thread from PHASE 2 has been processed (opened-and-ing
 
 If the run fails partway through (a tool error, an unrecoverable exception), do NOT write the new watermark — leave it at its prior value so the next run re-covers this window.
 
-This command does not create commits, branches, or pushes. It only touches Gmail/Drive read tools, the MemoryIngest skill, and its own STATE file.
+This command does not create commits, branches, or pushes. It only touches Gmail/Drive read tools, the instinct inbox (or MemoryIngest on non-instinct backends), and its own STATE file. On the instinct backend, finish by running `bun $HOLOCRON_DIR/tools/instinct/instinct.ts status` and report the pending inbox count.
 
 Output:
 
 **Meetings processed:** [count]
-**Facts ingested via MemoryIngest:** [count]
+**Facts captured (instinct inbox / MemoryIngest):** [count]
 **Unopenable transcripts:** [list of thread IDs + reasons, or "none"]
 **New watermark:** [timestamp written to process-meetings-last-run.txt]
 

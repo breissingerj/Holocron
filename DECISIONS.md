@@ -717,3 +717,11 @@ Each entry has:
 - **Options considered** — Auto-apply edits; route signals through the existing `reflect` skill only; use ratings/reflections as the only source.
 - **Rationale** — Skills/agents are doctrine; edits need a human gate (Algorithm claim 10: doctrine changes surface to Jack). The suggestions directory feeds the existing reflect/Learning Router flow without coupling to it; ratings and reflections (currently sparse) are used as corroborating evidence.
 
+
+## 2026-10-09
+
+### process-meetings routes facts by memory backend
+
+- **Decision** — `/process-meetings` PHASE 4 branches on `HOLOCRON_MEMORY_BACKEND`: with `instinct` it queues facts via `instinct.ts capture` (entity/type/conf/expires/src); otherwise it keeps the MemoryIngest path. `capture` gained a `--src` flag for provenance (`meeting:<thread-id>`).
+- **Options considered** — Instinct-only (drop fallback); make MemoryIngest instinct-aware.
+- **Rationale** — MemoryIngest writes Obsidian/`memory/`, which instinct no longer retrieves from; the inbox is the sanctioned single writer path. Keeping the fallback allows reverting the backend to `files`.

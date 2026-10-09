@@ -726,7 +726,7 @@ async function main() {
     case "assemble": console.log(assemble({ prompt: flag(a, "prompt"), sessionStart: !has(a, "prompt-only") })); break;
     case "status": console.log(status()); break;
     case "recall": console.log(formatHits(recall(a.filter((x) => !x.startsWith("--")).join(" "))) || "(no matches)"); break;
-    case "capture": { const c = capture({ fact: flag(a, "fact") ?? a.join(" "), entity: flag(a, "entity"), type: flag(a, "type"), conf: flag(a, "conf") ? Number(flag(a, "conf")) : undefined, expires: flag(a, "expires") }); console.log(`queued: ${c.fact}`); break; }
+    case "capture": { const c = capture({ fact: flag(a, "fact") ?? a.join(" "), entity: flag(a, "entity"), type: flag(a, "type"), conf: flag(a, "conf") ? Number(flag(a, "conf")) : undefined, expires: flag(a, "expires"), src: flag(a, "src") }); console.log(`queued: ${c.fact}`); break; }
     case "suggest": console.log(JSON.stringify(await suggest({ dryRun: has(a, "dry-run") }), null, 2)); break;
     case "suggestions": { const [sub, id] = a; if (sub === "apply") console.log(applySuggestion(id!, { dryRun: has(a, "dry-run") })); else if (sub === "reject") { rejectSuggestion(id!); console.log(`rejected ${id}`); } else console.log(listSuggestions().map((x) => `${x.id}  ${x.status.padEnd(9)} ${x.target}  → ${x.file}`).join("\n") || "(none)"); break; }
     case "consolidate": { const p = await consolidate({ dryRun: has(a, "dry-run"), noSuggest: has(a, "no-suggest"), judge: has(a, "no-llm") ? async (e, c) => jaccardJudge(e, c) : undefined, regenOnepager: has(a, "regen-onepager") }); console.log(JSON.stringify(p, null, 2)); break; }
